@@ -8,13 +8,13 @@ type Card = {
   value: number;
 };
 
-type GameStatus = "ready" | "playing" | "playerWin" | "dealerWin" | "push";
-type Result = "win" | "loss" | "push";
+type GameResult = "win" | "loss" | "push";
+type GameStatus = "ready" | "playing" | "done";
 
 type HandRecord = {
   handNumber: number;
   timestamp: string;
-  result: Result;
+  result: GameResult;
   playerScore: number;
   dealerScore: number;
   playerCards: string;
@@ -33,7 +33,7 @@ type Position = {
 
 type Direction = "up" | "down" | "left" | "right";
 
-type SnakeGameRecord = {
+type SnakeRecord = {
   gameNumber: number;
   timestamp: string;
   score: number;
@@ -108,10 +108,9 @@ function shuffleDeck(deck: Card[]) {
 
   for (let i = shuffled.length - 1; i > 0; i--) {
     const randomIndex = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[randomIndex]] = [
-      shuffled[randomIndex],
-      shuffled[i],
-    ];
+    const temp = shuffled[i]!;
+    shuffled[i] = shuffled[randomIndex]!;
+    shuffled[randomIndex] = temp;
   }
 
   return shuffled;
@@ -193,7 +192,7 @@ function parseCsvText(text: string) {
 
     if (char === '"' && insideQuotes && nextChar === '"') {
       currentCell += '"';
-      i++;
+      i += 1;
     } else if (char === '"') {
       insideQuotes = !insideQuotes;
     } else if (char === "," && !insideQuotes) {
@@ -201,7 +200,7 @@ function parseCsvText(text: string) {
       currentCell = "";
     } else if ((char === "\n" || char === "\r") && !insideQuotes) {
       if (char === "\r" && nextChar === "\n") {
-        i++;
+        i += 1;
       }
 
       currentRow.push(currentCell.trim());
@@ -341,13 +340,12 @@ export default function PlaygroundPage() {
   const [snakeElapsedSeconds, setSnakeElapsedSeconds] = useState(0);
   const [snakeMoves, setSnakeMoves] = useState(0);
   const [snakeTurns, setSnakeTurns] = useState(0);
-  const [snakeGameHistory, setSnakeGameHistory] = useState<SnakeGameRecord[]>(
-    []
-  );
+  const [snakeGameHistory, setSnakeGameHistory] = useState<SnakeRecord[]>([]);
 
   const [csvFileName, setCsvFileName] = useState("No file uploaded");
   const [csvRows, setCsvRows] = useState<string[][]>([]);
   const [csvError, setCsvError] = useState("");
+  const [selectedNumericColumn, setSelectedNumericColumn] = useState("");
 
   const [weather, setWeather] = useState<WeatherInputs>({
     city: "San Jacinto, CA",
@@ -371,14 +369,18 @@ export default function PlaygroundPage() {
     const wins = handHistory.filter((hand) => hand.result === "win").length;
     const losses = handHistory.filter((hand) => hand.result === "loss").length;
     const pushes = handHistory.filter((hand) => hand.result === "push").length;
+
     const playerBlackjacks = handHistory.filter(
       (hand) => hand.playerBlackjack
     ).length;
+
     const dealerBlackjacks = handHistory.filter(
       (hand) => hand.dealerBlackjack
     ).length;
+
     const playerBusts = handHistory.filter((hand) => hand.playerBust).length;
     const dealerBusts = handHistory.filter((hand) => hand.dealerBust).length;
+
     const totalHits = handHistory.reduce(
       (sum, hand) => sum + hand.playerHits,
       0
@@ -570,6 +572,85 @@ export default function PlaygroundPage() {
     };
   }, [csvRows]);
 
+  const csvVisualization = useMemo(() => {
+    if (csvRows.length < 2) {
+      return {
+        numericColumns: [],
+        selectedColumn: "",
+        bins: [],
+      };
+    }
+
+    const headers = csvRows[0] ?? [];
+    const dataRows = csvRows.slice(1);
+
+    const numericColumns = headers.filter((_, columnIndex) => {
+      const values = dataRows
+        .map((row) => row[columnIndex])
+        .filter((value) => value && value.trim() !== "");
+
+      if (values.length === 0) return false;
+
+      const numericValues = values.filter(
+        (value) => !Number.isNaN(Number(value))
+      );
+
+      return numericValues.length / values.length >= 0.8;
+    });
+
+    const selectedColumn =
+      selectedNumericColumn && numericColumns.includes(selectedNumericColumn)
+        ? selectedNumericColumn
+        : numericColumns[0] ?? "";
+
+    const selectedIndex = headers.indexOf(selectedColumn);
+
+    const values =
+      selectedIndex === -1
+        ? []
+        : dataRows
+            .map((row) => Number(row[selectedIndex]))
+            .filter((value) => !Number.isNaN(value));
+
+    if (values.length === 0) {
+      return {
+        numericColumns,
+        selectedColumn,
+        bins: [],
+      };
+    }
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const binCount = Math.min(8, Math.max(4, Math.ceil(Math.sqrt(values.length))));
+    const range = max - min || 1;
+    const binSize = range / binCount;
+
+    const bins = Array.from({ length: binCount }, (_, index) => {
+      const start = min + index * binSize;
+      const end = index === binCount - 1 ? max : start + binSize;
+
+      const count = values.filter((value) => {
+        if (index === binCount - 1) {
+          return value >= start && value <= end;
+        }
+
+        return value >= start && value < end;
+      }).length;
+
+      return {
+        label: `${start.toFixed(1)} - ${end.toFixed(1)}`,
+        count,
+      };
+    });
+
+    return {
+      numericColumns,
+      selectedColumn,
+      bins,
+    };
+  }, [csvRows, selectedNumericColumn]);
+
   const weatherScores = useMemo(() => {
     const tempComfort = clamp(100 - Math.abs(weather.tempF - 70) * 3);
     const humidityPenalty =
@@ -730,8 +811,11 @@ export default function PlaygroundPage() {
 
     const intervalId = window.setInterval(() => {
       setSnake((previousSnake) => {
+        const head = previousSnake[0];
+
+        if (!head) return startingSnake;
+
         const activeDirection = nextDirection;
-        const head = previousSnake[0]!;
 
         setDirection(activeDirection);
 
@@ -797,13 +881,13 @@ export default function PlaygroundPage() {
   }, [snakeRunning, snakeGameOver, nextDirection, food]);
 
   function recordHand(
-    result: Result,
+    result: GameResult,
     finalPlayerHand: Card[],
     finalDealerHand: Card[],
     playerHits: number
   ) {
-    const playerScore = getHandValue(finalPlayerHand);
-    const dealerScore = getHandValue(finalDealerHand);
+    const playerScoreNow = getHandValue(finalPlayerHand);
+    const dealerScoreNow = getHandValue(finalDealerHand);
 
     setHandHistory((previous) => [
       ...previous,
@@ -811,34 +895,27 @@ export default function PlaygroundPage() {
         handNumber: previous.length + 1,
         timestamp: new Date().toLocaleString(),
         result,
-        playerScore,
-        dealerScore,
+        playerScore: playerScoreNow,
+        dealerScore: dealerScoreNow,
         playerCards: formatCards(finalPlayerHand),
         dealerCards: formatCards(finalDealerHand),
         playerBlackjack: isBlackjack(finalPlayerHand),
         dealerBlackjack: isBlackjack(finalDealerHand),
-        playerBust: playerScore > 21,
-        dealerBust: dealerScore > 21,
+        playerBust: playerScoreNow > 21,
+        dealerBust: dealerScoreNow > 21,
         playerHits,
       },
     ]);
   }
 
   function settleGame(
-    result: Result,
+    result: GameResult,
     finalMessage: string,
     finalPlayerHand: Card[],
     finalDealerHand: Card[],
     playerHits: number
   ) {
-    if (result === "win") {
-      setStatus("playerWin");
-    } else if (result === "loss") {
-      setStatus("dealerWin");
-    } else {
-      setStatus("push");
-    }
-
+    setStatus("done");
     setMessage(finalMessage);
     recordHand(result, finalPlayerHand, finalDealerHand, playerHits);
   }
@@ -869,7 +946,13 @@ export default function PlaygroundPage() {
     }
 
     if (dealerBlackjack) {
-      settleGame("loss", "Dealer has blackjack. Dealer wins.", player, dealer, 0);
+      settleGame(
+        "loss",
+        "Dealer has blackjack. Dealer wins.",
+        player,
+        dealer,
+        0
+      );
       return;
     }
 
@@ -890,16 +973,16 @@ export default function PlaygroundPage() {
     const updatedHits = currentHandHits + 1;
     const updatedDeck = deck.slice(1);
     const updatedPlayerHand = [...playerHand, nextCard];
-    const playerScore = getHandValue(updatedPlayerHand);
+    const playerScoreNow = getHandValue(updatedPlayerHand);
 
     setCurrentHandHits(updatedHits);
     setDeck(updatedDeck);
     setPlayerHand(updatedPlayerHand);
 
-    if (playerScore > 21) {
+    if (playerScoreNow > 21) {
       settleGame(
         "loss",
-        `You busted with ${playerScore}. Dealer wins.`,
+        `You busted with ${playerScoreNow}. Dealer wins.`,
         updatedPlayerHand,
         dealerHand,
         updatedHits
@@ -907,7 +990,7 @@ export default function PlaygroundPage() {
       return;
     }
 
-    if (playerScore === 21) {
+    if (playerScoreNow === 21) {
       setMessage("You hit 21. Stand to finish the hand.");
       return;
     }
@@ -929,16 +1012,16 @@ export default function PlaygroundPage() {
       updatedDealerHand.push(nextCard);
     }
 
-    const playerScore = getHandValue(playerHand);
-    const dealerScore = getHandValue(updatedDealerHand);
+    const playerScoreNow = getHandValue(playerHand);
+    const dealerScoreNow = getHandValue(updatedDealerHand);
 
     setDeck(updatedDeck);
     setDealerHand(updatedDealerHand);
 
-    if (dealerScore > 21) {
+    if (dealerScoreNow > 21) {
       settleGame(
         "win",
-        `Dealer busted with ${dealerScore}. Player wins with ${playerScore}.`,
+        `Dealer busted with ${dealerScoreNow}. Player wins with ${playerScoreNow}.`,
         playerHand,
         updatedDealerHand,
         currentHandHits
@@ -946,10 +1029,10 @@ export default function PlaygroundPage() {
       return;
     }
 
-    if (playerScore > dealerScore) {
+    if (playerScoreNow > dealerScoreNow) {
       settleGame(
         "win",
-        `Player wins ${playerScore} to ${dealerScore}.`,
+        `Player wins ${playerScoreNow} to ${dealerScoreNow}.`,
         playerHand,
         updatedDealerHand,
         currentHandHits
@@ -957,10 +1040,10 @@ export default function PlaygroundPage() {
       return;
     }
 
-    if (dealerScore > playerScore) {
+    if (dealerScoreNow > playerScoreNow) {
       settleGame(
         "loss",
-        `Dealer wins ${dealerScore} to ${playerScore}.`,
+        `Dealer wins ${dealerScoreNow} to ${playerScoreNow}.`,
         playerHand,
         updatedDealerHand,
         currentHandHits
@@ -970,14 +1053,14 @@ export default function PlaygroundPage() {
 
     settleGame(
       "push",
-      `Push. Both sides ended with ${playerScore}.`,
+      `Push. Both sides ended with ${playerScoreNow}.`,
       playerHand,
       updatedDealerHand,
       currentHandHits
     );
   }
 
-  function simulateOneHand(): Result {
+  function simulateOneHand(): GameResult {
     const simDeck = shuffleDeck(makeDeck());
 
     const player = [simDeck[0]!, simDeck[2]!];
@@ -1001,12 +1084,12 @@ export default function PlaygroundPage() {
       cursor += 1;
     }
 
-    const playerScore = getHandValue(player);
-    const dealerScore = getHandValue(dealer);
+    const playerScoreNow = getHandValue(player);
+    const dealerScoreNow = getHandValue(dealer);
 
-    if (dealerScore > 21) return "win";
-    if (playerScore > dealerScore) return "win";
-    if (dealerScore > playerScore) return "loss";
+    if (dealerScoreNow > 21) return "win";
+    if (playerScoreNow > dealerScoreNow) return "win";
+    if (dealerScoreNow > playerScoreNow) return "loss";
 
     return "push";
   }
@@ -1141,6 +1224,7 @@ export default function PlaygroundPage() {
 
     setCsvFileName(file.name);
     setCsvError("");
+    setSelectedNumericColumn("");
 
     const reader = new FileReader();
 
@@ -1265,6 +1349,11 @@ export default function PlaygroundPage() {
     y: Math.floor(index / gridSize),
   }));
 
+  const histogramMaxCount = Math.max(
+    ...csvVisualization.bins.map((bin) => bin.count),
+    1
+  );
+
   return (
     <main className="min-h-screen bg-black px-6 py-8 text-white">
       <section className="mx-auto max-w-7xl">
@@ -1302,9 +1391,9 @@ export default function PlaygroundPage() {
           </h1>
 
           <p className="mt-6 max-w-3xl text-lg leading-8 text-zinc-300">
-            This playground tests game logic, CSV analytics, weather decision
-            scoring, state management, simulations, keyboard input, local
-            storage, and CSV export workflows.
+            This playground tests game logic, CSV analytics, histograms, weather
+            decision scoring, keyboard input, local storage, and CSV export
+            workflows.
           </p>
         </section>
 
@@ -1549,7 +1638,7 @@ export default function PlaygroundPage() {
                 }}
               >
                 {snakeCells.map((cell) => {
-                  const isHead = isSameCell(cell, snake[0]!);
+                  const isHead = isSameCell(cell, snake[0] ?? startingSnake[0]!);
                   const isSnake = snake.some((snakeCell) =>
                     isSameCell(snakeCell, cell)
                   );
@@ -1668,8 +1757,8 @@ export default function PlaygroundPage() {
 
             <p className="mt-3 text-sm leading-6 text-zinc-400">
               Upload a CSV and the tool checks row count, column count, missing
-              cells, duplicate rows, numeric columns, and a simple data quality
-              score.
+              cells, duplicate rows, numeric columns, a quality score, and a
+              histogram for numeric data.
             </p>
 
             <label className="mt-6 block cursor-pointer rounded-2xl border border-dashed border-cyan-300/40 bg-black/30 p-6 text-center transition hover:bg-cyan-300/10">
@@ -1704,6 +1793,57 @@ export default function PlaygroundPage() {
                 accent
               />
             </div>
+
+            {csvVisualization.numericColumns.length > 0 && (
+              <div className="mt-8 rounded-2xl border border-zinc-800 bg-black/40 p-5">
+                <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+                  <div>
+                    <p className="text-sm font-semibold text-cyan-300">
+                      Histogram / Distribution
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-400">
+                      Pick a numeric column to see how the values are distributed.
+                    </p>
+                  </div>
+
+                  <select
+                    value={csvVisualization.selectedColumn}
+                    onChange={(event) =>
+                      setSelectedNumericColumn(event.target.value)
+                    }
+                    className="rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white outline-none transition focus:border-cyan-300"
+                  >
+                    {csvVisualization.numericColumns.map((column) => (
+                      <option key={column} value={column}>
+                        {column}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="mt-6 space-y-3">
+                  {csvVisualization.bins.map((bin) => {
+                    const width = `${(bin.count / histogramMaxCount) * 100}%`;
+
+                    return (
+                      <div key={bin.label}>
+                        <div className="mb-1 flex justify-between text-xs text-zinc-400">
+                          <span>{bin.label}</span>
+                          <span>{bin.count}</span>
+                        </div>
+
+                        <div className="h-4 rounded-full bg-zinc-900">
+                          <div
+                            className="h-4 rounded-full bg-cyan-300"
+                            style={{ width }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <button
               onClick={exportCsvQualityReport}

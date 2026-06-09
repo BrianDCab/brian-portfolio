@@ -1,41 +1,45 @@
 const featuredProjects = [
   {
-    title: "Loyalty Campaign ROI Dashboard",
-    status: "In Progress",
-    tools: "SQL • Python • Power BI / Streamlit",
+    title: "Interactive Analytics Playground",
+    label: "Live Demo",
     description:
-      "A synthetic casino marketing analytics project focused on campaign performance, redemption rates, customer segments, and ROI.",
+      "A browser-based lab with blackjack simulation, snake game analytics, CSV quality checks, histogram generation, weather scoring, local storage, and CSV export workflows.",
+    stack: ["Next.js", "React", "TypeScript", "Tailwind", "CSV"],
+    href: "/playground",
   },
   {
-    title: "Marketing Export Automation Tool",
-    status: "In Progress",
-    tools: "Python • Excel • CSV Automation",
+    title: "CSV Data Quality Analyzer",
+    label: "Data Tool",
     description:
-      "A workflow tool that cleans campaign files, validates offer data, and generates structured exports for marketing operations.",
+      "Uploads CSV files, detects missing cells, duplicate rows, numeric columns, quality score, and renders a histogram/distribution for selected numeric data.",
+    stack: ["TypeScript", "CSV Parsing", "Data Profiling", "Visualization"],
+    href: "/playground",
   },
   {
-    title: "Customer Data Quality Audit Pipeline",
-    status: "Planned",
-    tools: "Python • SQL • Pandas",
+    title: "Casino Marketing Data Automation",
+    label: "Professional Systems",
     description:
-      "A data quality project that detects duplicates, missing IDs, invalid emails, bad dates, and inconsistent customer records.",
+      "Workflow-focused data work involving campaign exports, player lists, offer validation, reporting, audit checks, and cleaner operational outputs.",
+    stack: ["SQL", "Excel", "VBA", "Python", "Reporting"],
+    href: "/projects",
   },
 ];
 
-const gameProjects = [
+const strengths = [
   {
-    title: "Trashfire Games",
-    role: "Gameplay Programmer",
-    tools: "C# • Unity • Gameplay Systems",
+    title: "SQL & Reporting",
     description:
-      "Worked on gameplay programming tasks, feature implementation, debugging, and interactive systems for game projects.",
+      "Querying, cleaning, validating, and preparing business data for reports, dashboards, campaign workflows, and decision-making.",
   },
   {
-    title: "Personal Game Projects",
-    role: "Programmer",
-    tools: "Unity • C# • Game Design",
+    title: "Python & Automation",
     description:
-      "Built and experimented with small gameplay prototypes focused on mechanics, player interaction, and technical problem-solving.",
+      "Automating repetitive data tasks, file exports, quality checks, reporting steps, and business processes.",
+  },
+  {
+    title: "Business Analytics",
+    description:
+      "Turning customer, marketing, operational, and campaign data into useful insights, cleaner processes, and better decisions.",
   },
 ];
 
@@ -57,267 +61,262 @@ const skills = [
   "Data Cleaning",
   "Reporting",
   "Automation",
+  "CSV Workflows",
 ];
+
+function SkillBadge({ skill }: { skill: string }) {
+  return (
+    <span className="rounded-full border border-zinc-700 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-cyan-300 hover:text-cyan-300">
+      {skill}
+    </span>
+  );
+}
+
+function ProjectCard({
+  title,
+  label,
+  description,
+  stack,
+  href,
+}: {
+  title: string;
+  label: string;
+  description: string;
+  stack: string[];
+  href: string;
+}) {
+  return (
+    <article className="group rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-[0_0_35px_rgba(34,211,238,0.05)] transition hover:border-cyan-300/50 hover:bg-zinc-900/70 hover:shadow-[0_0_45px_rgba(34,211,238,0.12)]">
+      <p className="text-xs font-semibold uppercase tracking-widest text-cyan-300">
+        {label}
+      </p>
+
+      <h3 className="mt-3 text-2xl font-bold text-white">{title}</h3>
+
+      <p className="mt-4 text-sm leading-7 text-zinc-400">{description}</p>
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        {stack.map((item) => (
+          <span
+            key={item}
+            className="rounded-full border border-zinc-700 bg-black/40 px-3 py-1 text-xs text-zinc-300"
+          >
+            {item}
+          </span>
+        ))}
+      </div>
+
+      <a
+        href={href}
+        className="mt-6 inline-flex text-sm font-semibold text-cyan-300 transition group-hover:text-cyan-200"
+      >
+        View project →
+      </a>
+    </article>
+  );
+}
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-black px-6 py-8 text-white">
-      <section className="mx-auto max-w-6xl">
-        {/* Navbar */}
+      <section className="mx-auto max-w-7xl">
         <nav className="mb-10 flex flex-col gap-4 rounded-2xl border border-zinc-800 bg-zinc-950/80 px-5 py-4 shadow-[0_0_30px_rgba(34,211,238,0.08)] md:flex-row md:items-center md:justify-between">
           <a href="/" className="text-lg font-bold tracking-tight text-white">
             Brian Dacell Cabrera<span className="text-cyan-300">.</span>
           </a>
 
           <div className="flex flex-wrap gap-4 text-sm font-medium text-zinc-300">
-            <a className="transition hover:text-cyan-300" href="#projects">
-              Projects
+            <a className="text-cyan-300 transition" href="/">
+              Home
             </a>
-            <a className="transition hover:text-cyan-300" href="#game-work">
-              Game Work
+            <a className="transition hover:text-cyan-300" href="/projects">
+              Projects
             </a>
             <a className="transition hover:text-cyan-300" href="/playground">
               Playground
             </a>
+            <a className="transition hover:text-cyan-300" href="/travel">
+              Travel
+            </a>
             <a className="transition hover:text-cyan-300" href="#skills">
               Skills
-            </a>
-            <a className="transition hover:text-cyan-300" href="#about">
-              About
             </a>
             <a className="transition hover:text-cyan-300" href="#contact">
               Contact
             </a>
-            <a className="transition hover:text-cyan-300" href="/travel">
-              Travel
-            </a>
           </div>
         </nav>
 
-        {/* Hero */}
         <section className="rounded-3xl border border-cyan-400/30 bg-zinc-950 p-8 shadow-[0_0_45px_rgba(34,211,238,0.12)] md:p-12">
           <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
             Data Analyst • Programmer • Automation Builder
           </p>
 
-          <h1 className="mt-6 text-5xl font-bold tracking-tight text-white md:text-7xl">
+          <h1 className="mt-6 max-w-5xl text-5xl font-bold tracking-tight text-white md:text-7xl">
             Brian Dacell Cabrera
           </h1>
 
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-200">
-            I build data tools, reports, and automation workflows that turn
-            messy business data into clear insights, cleaner processes, and
-            better decisions.
+          <p className="mt-6 max-w-3xl text-lg leading-8 text-zinc-300">
+            I build data tools, reports, dashboards, and automation workflows
+            that turn messy business data into clear insights, cleaner
+            processes, and better decisions.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-4">
             <a
-              href="#projects"
+              href="/projects"
               className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-black shadow-[0_0_25px_rgba(103,232,249,0.35)] transition hover:bg-cyan-200"
             >
               View Projects
             </a>
 
             <a
-              href="/resume"
-              className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
+              href="/playground"
+              className="rounded-xl border border-zinc-700 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10 hover:text-cyan-300"
             >
-              Resume
+              Open Playground
             </a>
 
             <a
               href="https://github.com/BrianDCab"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
+              className="rounded-xl border border-zinc-700 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10 hover:text-cyan-300"
             >
               GitHub
             </a>
           </div>
         </section>
 
-        {/* Main strengths */}
         <section className="mt-10 grid gap-6 md:grid-cols-3">
-          <div className="rounded-2xl border border-zinc-700 bg-zinc-950 p-6 transition hover:border-cyan-300 hover:shadow-[0_0_25px_rgba(34,211,238,0.12)]">
-            <h2 className="text-xl font-semibold text-white">
-              SQL & Reporting
-            </h2>
-            <p className="mt-3 text-sm leading-6 text-zinc-300">
-              Querying, cleaning, validating, and preparing business data for
-              reports, dashboards, and campaign workflows.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-zinc-700 bg-zinc-950 p-6 transition hover:border-cyan-300 hover:shadow-[0_0_25px_rgba(34,211,238,0.12)]">
-            <h2 className="text-xl font-semibold text-white">
-              Python Automation
-            </h2>
-            <p className="mt-3 text-sm leading-6 text-zinc-300">
-              Automating repetitive data tasks, file exports, quality checks,
-              and business processes.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-zinc-700 bg-zinc-950 p-6 transition hover:border-cyan-300 hover:shadow-[0_0_25px_rgba(34,211,238,0.12)]">
-            <h2 className="text-xl font-semibold text-white">
-              Business Analytics
-            </h2>
-            <p className="mt-3 text-sm leading-6 text-zinc-300">
-              Turning customer, marketing, and operational data into useful
-              insights and decisions.
-            </p>
-          </div>
+          {strengths.map((item) => (
+            <div
+              key={item.title}
+              className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 transition hover:border-cyan-300/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.12)]"
+            >
+              <h2 className="text-xl font-semibold text-white">
+                {item.title}
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-zinc-400">
+                {item.description}
+              </p>
+            </div>
+          ))}
         </section>
 
-        {/* Featured Projects */}
-        <section id="projects" className="mt-20 scroll-mt-10">
+        <section className="mt-20">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
               <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-                Portfolio
+                Featured Work
               </p>
-              <h2 className="mt-3 text-3xl font-bold md:text-4xl">
-                Featured Data Projects
+              <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">
+                Projects that show how I think.
               </h2>
             </div>
 
             <p className="max-w-xl text-sm leading-6 text-zinc-400">
-              Projects focused on data cleaning, business reporting, campaign
-              analytics, automation, and practical decision-making.
+              My strongest work combines data quality, automation, reporting,
+              practical programming, and business decision support.
             </p>
           </div>
 
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
+          <div className="mt-8 grid gap-6 lg:grid-cols-3">
             {featuredProjects.map((project) => (
-              <article
-                key={project.title}
-                className="group rounded-2xl border border-zinc-800 bg-zinc-950 p-6 transition hover:border-cyan-300 hover:shadow-[0_0_30px_rgba(34,211,238,0.14)]"
-              >
-                <div className="mb-4 inline-flex rounded-full border border-cyan-300/40 px-3 py-1 text-xs font-semibold text-cyan-300">
-                  {project.status}
-                </div>
-
-                <h3 className="text-xl font-semibold text-white">
-                  {project.title}
-                </h3>
-
-                <p className="mt-2 text-sm font-medium text-zinc-400">
-                  {project.tools}
-                </p>
-
-                <p className="mt-4 text-sm leading-6 text-zinc-300">
-                  {project.description}
-                </p>
-
-                <a
-                  href="/projects"
-                  className="mt-5 inline-block text-sm font-semibold text-cyan-300 transition group-hover:text-cyan-200"
-                >
-                  View case study →
-                </a>
-              </article>
+              <ProjectCard key={project.title} {...project} />
             ))}
           </div>
         </section>
 
-        {/* Game Programming Work */}
-        <section id="game-work" className="mt-20 scroll-mt-10">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-                Past Work
+        <section className="mt-20 grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+          <div className="rounded-3xl border border-cyan-300/30 bg-cyan-300/10 p-8">
+            <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
+              Interactive Demo
+            </p>
+
+            <h2 className="mt-3 text-3xl font-bold text-white">
+              Analytics Playground
+            </h2>
+
+            <p className="mt-4 text-sm leading-7 text-zinc-300">
+              I built a live playground to demonstrate browser-based analytics,
+              simulations, CSV parsing, histograms, game logic, local storage,
+              and export workflows.
+            </p>
+
+            <a
+              href="/playground"
+              className="mt-6 inline-flex rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-black shadow-[0_0_25px_rgba(103,232,249,0.35)] transition hover:bg-cyan-200"
+            >
+              Try the Playground
+            </a>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
+              <p className="text-sm font-semibold text-cyan-300">
+                CSV Analyzer
               </p>
-              <h2 className="mt-3 text-3xl font-bold md:text-4xl">
-                Game Programming Work
-              </h2>
+              <p className="mt-3 text-sm leading-6 text-zinc-400">
+                Uploads data, detects quality issues, identifies numeric
+                columns, and visualizes distributions.
+              </p>
             </div>
 
-            <p className="max-w-xl text-sm leading-6 text-zinc-400">
-              Programming work focused on gameplay systems, debugging,
-              interactive features, and creative technical problem-solving.
-            </p>
-          </div>
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
+              <p className="text-sm font-semibold text-cyan-300">
+                Blackjack Simulator
+              </p>
+              <p className="mt-3 text-sm leading-6 text-zinc-400">
+                Tracks live session stats, win rates, busts, blackjacks,
+                simulated hands, and exports CSV files.
+              </p>
+            </div>
 
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
-            {gameProjects.map((project) => (
-              <article
-                key={project.title}
-                className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 transition hover:border-cyan-300 hover:shadow-[0_0_30px_rgba(34,211,238,0.14)]"
-              >
-                <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-                  {project.role}
-                </p>
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
+              <p className="text-sm font-semibold text-cyan-300">
+                Snake Analytics
+              </p>
+              <p className="mt-3 text-sm leading-6 text-zinc-400">
+                Tracks high score, survival time, movement, turns, final length,
+                and session history.
+              </p>
+            </div>
 
-                <h3 className="mt-3 text-xl font-semibold text-white">
-                  {project.title}
-                </h3>
-
-                <p className="mt-2 text-sm font-medium text-zinc-400">
-                  {project.tools}
-                </p>
-
-                <p className="mt-4 text-sm leading-6 text-zinc-300">
-                  {project.description}
-                </p>
-              </article>
-            ))}
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
+              <p className="text-sm font-semibold text-cyan-300">
+                Weather Scoring
+              </p>
+              <p className="mt-3 text-sm leading-6 text-zinc-400">
+                Turns weather inputs into outdoor, running, comfort, and travel
+                decision scores.
+              </p>
+            </div>
           </div>
         </section>
 
-        {/* Playground Preview */}
-        <section className="mt-20 rounded-3xl border border-cyan-400/30 bg-zinc-950 p-8 shadow-[0_0_45px_rgba(34,211,238,0.10)] md:p-10">
-          <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-            Interactive Playground
-          </p>
-
-          <h2 className="mt-3 text-3xl font-bold md:text-4xl">
-            Browser-based experiments in logic, UI, and simulation.
-          </h2>
-
-          <p className="mt-5 max-w-3xl text-base leading-8 text-zinc-300">
-            I use the playground to build small interactive projects that
-            demonstrate frontend state management, game logic, simulations, and
-            practical programming concepts.
-          </p>
-
-          <a
-            href="/playground"
-            className="mt-8 inline-block rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-black shadow-[0_0_25px_rgba(103,232,249,0.35)] transition hover:bg-cyan-200"
-          >
-            Visit Playground
-          </a>
-        </section>
-
-        {/* Skills */}
         <section id="skills" className="mt-20 scroll-mt-10">
           <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
             Technical Toolkit
           </p>
 
-          <h2 className="mt-3 text-3xl font-bold md:text-4xl">Skills</h2>
+          <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">
+            Skills
+          </h2>
 
           <div className="mt-8 flex flex-wrap gap-3">
             {skills.map((skill) => (
-              <span
-                key={skill}
-                className="rounded-full border border-zinc-700 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-cyan-300 hover:text-cyan-300"
-              >
-                {skill}
-              </span>
+              <SkillBadge key={skill} skill={skill} />
             ))}
           </div>
         </section>
 
-        {/* About */}
-        <section
-          id="about"
-          className="mt-20 scroll-mt-10 rounded-3xl border border-zinc-800 bg-zinc-950 p-8 md:p-10"
-        >
+        <section className="mt-20 rounded-3xl border border-zinc-800 bg-zinc-950 p-8 md:p-10">
           <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-            About Me
+            About
           </p>
 
-          <h2 className="mt-3 text-3xl font-bold md:text-4xl">
+          <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">
             I like building practical systems.
           </h2>
 
@@ -329,12 +328,11 @@ export default function Home() {
           </p>
 
           <p className="mt-4 max-w-3xl text-base leading-8 text-zinc-300">
-            Outside of work, I enjoy travel, games, and learning how different
+            Outside of work, I enjoy games, travel, and learning how different
             systems — technical, cultural, and creative — fit together.
           </p>
         </section>
 
-        {/* Contact */}
         <section
           id="contact"
           className="mt-20 scroll-mt-10 rounded-3xl border border-cyan-400/30 bg-zinc-950 p-8 text-center shadow-[0_0_45px_rgba(34,211,238,0.10)] md:p-10"
@@ -343,7 +341,7 @@ export default function Home() {
             Contact
           </p>
 
-          <h2 className="mt-3 text-3xl font-bold md:text-4xl">
+          <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">
             Let’s connect.
           </h2>
 
@@ -365,7 +363,7 @@ export default function Home() {
               href="https://github.com/BrianDCab"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
+              className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10 hover:text-cyan-300"
             >
               GitHub
             </a>
