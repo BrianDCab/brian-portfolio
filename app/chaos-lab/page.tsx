@@ -1,6 +1,11 @@
 "use client";
 
-import { useMemo, useState, type ChangeEvent, type MouseEvent } from "react";
+import {
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type SyntheticEvent,
+} from "react";
 
 type Position = {
   x: number;
@@ -123,7 +128,9 @@ export default function ChaosLabPage() {
     const annoyingValue = 100 - rawValue;
 
     setVolume(annoyingValue);
-    setVolumeMessage(`You selected ${rawValue}. So naturally I set it to ${annoyingValue}.`);
+    setVolumeMessage(
+      `You selected ${rawValue}. So naturally I set it to ${annoyingValue}.`
+    );
     addChaos();
   }
 
@@ -167,7 +174,9 @@ export default function ChaosLabPage() {
       if (progress >= 99) {
         progress = 99;
         setLoading(99);
-        setLoadingMessage("Almost done. Please enjoy being emotionally trapped at 99%.");
+        setLoadingMessage(
+          "Almost done. Please enjoy being emotionally trapped at 99%."
+        );
         window.clearInterval(interval);
         return;
       }
@@ -201,7 +210,7 @@ export default function ChaosLabPage() {
     }, 900);
   }
 
-  function moveCheckbox(event: MouseEvent<HTMLLabelElement>) {
+  function moveCheckbox(event: SyntheticEvent<HTMLLabelElement>) {
     event.preventDefault();
 
     setCheckboxPosition(randomPosition());
@@ -266,7 +275,8 @@ export default function ChaosLabPage() {
           <p className="mt-6 max-w-3xl text-lg leading-8 text-zinc-300">
             A collection of cursed buttons, disrespectful sliders, fake loading
             bars, and questionable interface decisions built with React,
-            TypeScript, state, events, timers, and terrible judgment.
+            TypeScript, state, events, timers, mobile touch events, and terrible
+            judgment.
           </p>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -286,10 +296,11 @@ export default function ChaosLabPage() {
         <section className="mt-10 grid gap-6 xl:grid-cols-2">
           <ChaosCard
             title="The Disrespectful Volume Slider"
-            description="A volume slider that refuses to respect your actual input."
+            description="A volume slider that refuses to respect your actual input. On mobile, touching it also makes it act stupid."
           >
             <div
               onMouseEnter={annoyVolume}
+              onTouchStart={annoyVolume}
               style={{
                 transform: `translate(${volumePosition.x}px, ${volumePosition.y}px)`,
               }}
@@ -317,11 +328,12 @@ export default function ChaosLabPage() {
 
           <ChaosCard
             title="The Button That Runs Away"
-            description="A button that knows you want to click it and takes that personally."
+            description="A button that knows you want to click it and takes that personally. It dodges hover, focus, and mobile touch."
           >
             <div className="relative h-72 overflow-hidden rounded-2xl border border-zinc-800 bg-black/40">
               <button
                 onMouseEnter={dodgeButton}
+                onTouchStart={dodgeButton}
                 onFocus={dodgeButton}
                 onClick={catchButton}
                 style={{
@@ -357,7 +369,7 @@ export default function ChaosLabPage() {
               />
             </div>
 
-            <div className="mt-3 flex justify-between text-sm text-zinc-400">
+            <div className="mt-3 flex justify-between gap-4 text-sm text-zinc-400">
               <span>{loadingMessage}</span>
               <span>{loading}%</span>
             </div>
@@ -386,11 +398,12 @@ export default function ChaosLabPage() {
 
           <ChaosCard
             title="The Checkbox That Refuses Consent"
-            description="A checkbox that simply does not want to be part of your form."
+            description="A checkbox that simply does not want to be part of your form. It now runs away on mobile too."
           >
             <div className="relative h-64 overflow-hidden rounded-2xl border border-zinc-800 bg-black/40">
               <label
                 onMouseEnter={moveCheckbox}
+                onTouchStart={moveCheckbox}
                 onClick={moveCheckbox}
                 style={{
                   left: `${checkboxPosition.x}%`,
@@ -471,9 +484,10 @@ export default function ChaosLabPage() {
 
           <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-400">
             This page uses React state, controlled inputs, mouse events, focus
-            events, timers, conditional rendering, dynamic inline positioning,
-            reusable components, and responsive Tailwind styling. It is also
-            annoying on purpose, which technically makes the bugs features.
+            events, mobile touch events, timers, conditional rendering, dynamic
+            inline positioning, reusable components, and responsive Tailwind
+            styling. It is also annoying on purpose, which technically makes the
+            bugs features.
           </p>
         </section>
 
