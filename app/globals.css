@@ -1,26 +1,47 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: black;
+  color: white;
+}
+
+@keyframes cyberFloatOne {
+  0%,
+  100% {
+    opacity: 0.45;
+    scale: 1;
+  }
+  50% {
+    opacity: 0.75;
+    scale: 1.08;
+  }
+}
+
+@keyframes cyberFloatTwo {
+  0%,
+  100% {
+    opacity: 0.35;
+    scale: 1;
+  }
+  50% {
+    opacity: 0.62;
+    scale: 1.12;
+  }
+}
+
+.cyber-glow-one {
+  animation: cyberFloatOne 16s ease-in-out infinite;
+}
+
+.cyber-glow-two {
+  animation: cyberFloatTwo 22s ease-in-out infinite;
+}
+
+main.bg-black {
+  background-color: transparent !important;
 }
