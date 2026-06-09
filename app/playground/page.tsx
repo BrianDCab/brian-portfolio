@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type TouchEvent,
+} from "react";
 
 type Card = {
   suit: string;
@@ -56,6 +63,11 @@ type WeatherInputs = {
 };
 
 type WeatherNumberField = Exclude<keyof WeatherInputs, "city">;
+
+type HistogramBin = {
+  label: string;
+  count: number;
+};
 
 const suits = ["♠", "♥", "♦", "♣"];
 
@@ -364,6 +376,9 @@ export default function PlaygroundPage() {
   const snakeStartedAtRef = useRef<number | null>(null);
   const snakeGameRecordedRef = useRef(false);
 
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
+
   const sessionStats = useMemo(() => {
     const hands = handHistory.length;
     const wins = handHistory.filter((hand) => hand.result === "win").length;
@@ -575,9 +590,9 @@ export default function PlaygroundPage() {
   const csvVisualization = useMemo(() => {
     if (csvRows.length < 2) {
       return {
-        numericColumns: [],
+        numericColumns: [] as string[],
         selectedColumn: "",
-        bins: [],
+        bins: [] as HistogramBin[],
       };
     }
 
@@ -616,13 +631,16 @@ export default function PlaygroundPage() {
       return {
         numericColumns,
         selectedColumn,
-        bins: [],
+        bins: [] as HistogramBin[],
       };
     }
 
     const min = Math.min(...values);
     const max = Math.max(...values);
-    const binCount = Math.min(8, Math.max(4, Math.ceil(Math.sqrt(values.length))));
+    const binCount = Math.min(
+      8,
+      Math.max(4, Math.ceil(Math.sqrt(values.length)))
+    );
     const range = max - min || 1;
     const binSize = range / binCount;
 
@@ -711,8 +729,7 @@ export default function PlaygroundPage() {
       recommendation,
     };
   }, [weather]);
-
-  useEffect(() => {
+    useEffect(() => {
     const savedHighScore = window.localStorage.getItem("snakeHighScore");
 
     if (savedHighScore) {
@@ -773,30 +790,7 @@ export default function PlaygroundPage() {
       if (!newDirection) return;
 
       event.preventDefault();
-
-      setNextDirection((previousDirection) => {
-        if (
-          isOppositeDirection(previousDirection, newDirection) ||
-          previousDirection === newDirection
-        ) {
-          return previousDirection;
-        }
-
-        snakeTurnsRef.current += 1;
-        setSnakeTurns(snakeTurnsRef.current);
-
-        return newDirection;
-      });
-
-      if (!snakeStartedAtRef.current && !snakeGameOver) {
-        const startTime = Date.now();
-        snakeStartedAtRef.current = startTime;
-        setSnakeStartedAt(startTime);
-      }
-
-      if (!snakeGameOver) {
-        setSnakeRunning(true);
-      }
+      changeSnakeDirection(newDirection);
     }
 
     window.addEventListener("keydown", handleKeyDown);
@@ -879,6 +873,74 @@ export default function PlaygroundPage() {
       window.clearInterval(intervalId);
     };
   }, [snakeRunning, snakeGameOver, nextDirection, food]);
+
+  function changeSnakeDirection(newDirection: Direction) {
+    if (snakeGameOver) return;
+
+    setNextDirection((previousDirection) => {
+      if (
+        isOppositeDirection(previousDirection, newDirection) ||
+        previousDirection === newDirection
+      ) {
+        return previousDirection;
+      }
+
+      snakeTurnsRef.current += 1;
+      setSnakeTurns(snakeTurnsRef.current);
+
+      return newDirection;
+    });
+
+    if (!snakeStartedAtRef.current) {
+      const startTime = Date.now();
+      snakeStartedAtRef.current = startTime;
+      setSnakeStartedAt(startTime);
+    }
+
+    setSnakeRunning(true);
+  }
+
+  function handleSnakeTouchStart(event: TouchEvent<HTMLDivElement>) {
+    const touch = event.touches[0];
+
+    if (!touch) return;
+
+    touchStartXRef.current = touch.clientX;
+    touchStartYRef.current = touch.clientY;
+  }
+
+  function handleSnakeTouchEnd(event: TouchEvent<HTMLDivElement>) {
+    const touch = event.changedTouches[0];
+
+    if (
+      !touch ||
+      touchStartXRef.current === null ||
+      touchStartYRef.current === null
+    ) {
+      return;
+    }
+
+    const deltaX = touch.clientX - touchStartXRef.current;
+    const deltaY = touch.clientY - touchStartYRef.current;
+
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+
+    const minSwipeDistance = 30;
+
+    if (
+      Math.abs(deltaX) < minSwipeDistance &&
+      Math.abs(deltaY) < minSwipeDistance
+    ) {
+      return;
+    }
+
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      changeSnakeDirection(deltaX > 0 ? "right" : "left");
+    } else {
+      changeSnakeDirection(deltaY > 0 ? "down" : "up");
+    }
+  }
 
   function recordHand(
     result: GameResult,
@@ -1114,8 +1176,7 @@ export default function PlaygroundPage() {
       pushes,
     });
   }
-
-  function exportSessionCsv() {
+    function exportSessionCsv() {
     if (handHistory.length === 0) {
       setMessage("Play at least one hand before exporting a CSV.");
       return;
@@ -1316,6 +1377,8 @@ export default function PlaygroundPage() {
     snakeTurnsRef.current = 0;
     snakeStartedAtRef.current = null;
     snakeGameRecordedRef.current = false;
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
   }
 
   function toggleSnakeRunning() {
@@ -1392,8 +1455,8 @@ export default function PlaygroundPage() {
 
           <p className="mt-6 max-w-3xl text-lg leading-8 text-zinc-300">
             This playground tests game logic, CSV analytics, histograms, weather
-            decision scoring, keyboard input, local storage, and CSV export
-            workflows.
+            decision scoring, keyboard input, mobile touch controls, local
+            storage, and CSV export workflows.
           </p>
         </section>
 
@@ -1592,45 +1655,91 @@ export default function PlaygroundPage() {
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
             <div>
               <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-                Keyboard Input Demo
+                Keyboard + Touch Input Demo
               </p>
 
               <h2 className="mt-3 text-3xl font-bold">Snake Game</h2>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">
-                A browser game using keyboard input, timed movement, collision
-                detection, scoring, persistent local high score, survival timer,
-                movement analytics, and CSV export.
+                Play with WASD, arrow keys, mobile buttons, or swipe directly on
+                the board. The game tracks high score, survival time, movement,
+                turns, and CSV export.
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={toggleSnakeRunning}
-                disabled={snakeGameOver}
-                className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-black shadow-[0_0_25px_rgba(103,232,249,0.35)] transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {snakeRunning ? "Pause" : "Start"}
-              </button>
+            <div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={toggleSnakeRunning}
+                  disabled={snakeGameOver}
+                  className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-black shadow-[0_0_25px_rgba(103,232,249,0.35)] transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {snakeRunning ? "Pause" : "Start"}
+                </button>
 
-              <button
-                onClick={restartSnake}
-                className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
-              >
-                Restart
-              </button>
+                <button
+                  onClick={restartSnake}
+                  className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
+                >
+                  Restart
+                </button>
 
-              <button
-                onClick={exportSnakeCsv}
-                className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
-              >
-                Export Snake CSV
-              </button>
+                <button
+                  onClick={exportSnakeCsv}
+                  className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
+                >
+                  Export Snake CSV
+                </button>
+              </div>
+
+              <div className="mt-6 flex flex-col items-center gap-2 md:hidden">
+                <button
+                  onClick={() => changeSnakeDirection("up")}
+                  disabled={snakeGameOver}
+                  className="h-14 w-20 rounded-xl border border-cyan-300/40 bg-cyan-300/10 text-xl font-bold text-cyan-300 transition hover:bg-cyan-300/20 disabled:opacity-40"
+                >
+                  ↑
+                </button>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => changeSnakeDirection("left")}
+                    disabled={snakeGameOver}
+                    className="h-14 w-20 rounded-xl border border-cyan-300/40 bg-cyan-300/10 text-xl font-bold text-cyan-300 transition hover:bg-cyan-300/20 disabled:opacity-40"
+                  >
+                    ←
+                  </button>
+
+                  <button
+                    onClick={() => changeSnakeDirection("down")}
+                    disabled={snakeGameOver}
+                    className="h-14 w-20 rounded-xl border border-cyan-300/40 bg-cyan-300/10 text-xl font-bold text-cyan-300 transition hover:bg-cyan-300/20 disabled:opacity-40"
+                  >
+                    ↓
+                  </button>
+
+                  <button
+                    onClick={() => changeSnakeDirection("right")}
+                    disabled={snakeGameOver}
+                    className="h-14 w-20 rounded-xl border border-cyan-300/40 bg-cyan-300/10 text-xl font-bold text-cyan-300 transition hover:bg-cyan-300/20 disabled:opacity-40"
+                  >
+                    →
+                  </button>
+                </div>
+
+                <p className="mt-2 text-center text-xs text-zinc-500">
+                  Swipe the board or use mobile controls.
+                </p>
+              </div>
             </div>
           </div>
 
           <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_420px]">
-            <div className="rounded-2xl border border-zinc-800 bg-black/40 p-4">
+            <div
+              onTouchStart={handleSnakeTouchStart}
+              onTouchEnd={handleSnakeTouchEnd}
+              className="touch-none select-none rounded-2xl border border-zinc-800 bg-black/40 p-4"
+            >
               <div
                 className="grid gap-1"
                 style={{
@@ -1738,14 +1847,13 @@ export default function PlaygroundPage() {
                     label="Export Ready"
                     value={snakeGameHistory.length === 0 ? "No" : "Yes"}
                   />
-                  <StatBox label="Storage" value="Local" />
+                  <StatBox label="Controls" value="Keys + Touch" />
                 </div>
               </div>
             </div>
           </div>
         </section>
-
-        <section className="mt-20 grid gap-6 xl:grid-cols-2">
+                <section className="mt-20 grid gap-6 xl:grid-cols-2">
           <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 md:p-8">
             <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
               Real-World Data Demo
