@@ -1,894 +1,1588 @@
 "use client";
 
+import { useMemo, useState, type ReactNode } from "react";
+import Link from "next/link";
 import {
-  useMemo,
-  useRef,
-  useState,
-  type ChangeEvent,
-  type SyntheticEvent,
-} from "react";
+  Bell,
+  CheckCircle2,
+  Copy,
+  Gamepad2,
+  Keyboard,
+  MousePointerClick,
+  RefreshCcw,
+  Sparkles,
+  ToggleLeft,
+  Volume2,
+  VolumeX,
+  X,
+  Zap,
+} from "lucide-react";
 
-type Position = {
+type AppKey =
+  | "runaway"
+  | "autocorrect"
+  | "notifications"
+  | "fidget"
+  | "bubble"
+  | "perfect";
+
+type ChaosNote = {
+  id: string;
+  text: string;
+  kind: "info" | "chaos" | "calm" | "perfect";
+};
+
+type BubbleCelebrationPiece = {
+  id: string;
   x: number;
   y: number;
+  rotate: number;
+  delay: number;
 };
 
-type Particle = {
-  id: number;
-  x: number;
-  y: number;
-  label: string;
-};
+const glassPanel =
+  "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
 
-const bubbleCount = 32;
+const glassCard =
+  "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-cyan-300/[0.07]";
 
-const roastMessages = [
-  "You thought that would work?",
-  "Legally, this button does nothing.",
-  "Task failed successfully.",
-  "Please wait while we waste your time.",
-  "Feature shipped. User happiness reduced.",
-  "This UI was designed by a raccoon with Jira access.",
-  "Excellent click. Unfortunately, no.",
+const appCards = [
+  {
+    key: "runaway" as const,
+    title: "Runaway Button",
+    label: "Annoying",
+    text: "A button that dodges taps, raises a rage meter, and talks trash without relying on hover.",
+    button: "Open Runaway",
+    icon: MousePointerClick,
+  },
+  {
+    key: "autocorrect" as const,
+    title: "Bad Autocorrect",
+    label: "Live Typing",
+    text: "Type normal words and watch the lab autocorrect them into nonsense in real time.",
+    button: "Open Autocorrect",
+    icon: Keyboard,
+  },
+  {
+    key: "notifications" as const,
+    title: "Fake Notifications",
+    label: "Popups",
+    text: "Spawn silly Windows-style toast popups, tap to dismiss, or clear the full stack.",
+    button: "Open Notifications",
+    icon: Bell,
+  },
+  {
+    key: "fidget" as const,
+    title: "Fidget Board",
+    label: "Toggles",
+    text: "Big touch-friendly switches, sliders, pulse controls, glow, and calm mode.",
+    button: "Open Fidget Board",
+    icon: ToggleLeft,
+  },
+  {
+    key: "bubble" as const,
+    title: "Bubble Wrap",
+    label: "Satisfying",
+    text: "Tap bubbles to pop them. One random golden bubble triggers confetti.",
+    button: "Open Bubble Wrap",
+    icon: Gamepad2,
+  },
+  {
+    key: "perfect" as const,
+    title: "Perfect Button",
+    label: "Wholesome",
+    text: "The opposite of the runaway button. It wants to be clicked and rewards you for it.",
+    button: "Open Perfect Button",
+    icon: CheckCircle2,
+  },
 ];
 
-const fidgetMessages = [
-  "That was unnecessarily satisfying.",
-  "Tiny dopamine acquired.",
-  "Clean click. Clean soul.",
-  "A small win, but emotionally important.",
-  "The UI has apologized for earlier behavior.",
-  "Perfect little interaction.",
-  "Order has been temporarily restored.",
-];
+function clamp(value: number, min = 0, max = 100) {
+  return Math.max(min, Math.min(max, value));
+}
 
-const badCorrections: Record<string, string> = {
-  hello: "hell no",
-  portfolio: "portabello",
-  react: "regret",
-  typescript: "type suffering",
-  data: "drama",
-  button: "buttton",
-  professional: "professionally annoying",
-  brian: "Brian the Bug Tamer",
-  casino: "chaosino",
-  project: "procrastination",
-};
+function getId() {
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
 
-function randomPosition(): Position {
-  return {
-    x: Math.floor(Math.random() * 58) + 5,
-    y: Math.floor(Math.random() * 58) + 10,
+type SoundName =
+  | "pop"
+  | "golden"
+  | "annoy"
+  | "toggle"
+  | "ding"
+  | "copy"
+  | "perfect"
+  | "error";
+
+type WebAudioWindow = Window &
+  typeof globalThis & {
+    webkitAudioContext?: typeof AudioContext;
   };
+
+function playTone(
+  context: AudioContext,
+  frequency: number,
+  start: number,
+  duration: number,
+  type: OscillatorType,
+  volume: number
+) {
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, start);
+
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(volume, start + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+
+  oscillator.start(start);
+  oscillator.stop(start + duration + 0.02);
 }
 
-function randomMessage() {
-  return roastMessages[Math.floor(Math.random() * roastMessages.length)]!;
+function playSound(enabled: boolean, sound: SoundName) {
+  if (!enabled) return;
+  if (typeof window === "undefined") return;
+
+  const AudioContextConstructor =
+    window.AudioContext ?? (window as WebAudioWindow).webkitAudioContext;
+
+  if (!AudioContextConstructor) return;
+
+  const context = new AudioContextConstructor();
+  const now = context.currentTime;
+
+  if (sound === "pop") {
+    playTone(context, 520, now, 0.045, "sine", 0.055);
+    playTone(context, 180, now + 0.015, 0.035, "triangle", 0.035);
+  }
+
+  if (sound === "golden") {
+    playTone(context, 523, now, 0.08, "sine", 0.06);
+    playTone(context, 659, now + 0.08, 0.08, "sine", 0.06);
+    playTone(context, 784, now + 0.16, 0.12, "sine", 0.06);
+  }
+
+  if (sound === "annoy") {
+    playTone(context, 180, now, 0.06, "square", 0.035);
+    playTone(context, 120, now + 0.065, 0.08, "square", 0.028);
+  }
+
+  if (sound === "toggle") {
+    playTone(context, 360, now, 0.05, "triangle", 0.045);
+    playTone(context, 540, now + 0.04, 0.06, "triangle", 0.04);
+  }
+
+  if (sound === "ding") {
+    playTone(context, 720, now, 0.08, "sine", 0.05);
+    playTone(context, 960, now + 0.07, 0.1, "sine", 0.035);
+  }
+
+  if (sound === "copy") {
+    playTone(context, 600, now, 0.07, "triangle", 0.04);
+  }
+
+  if (sound === "perfect") {
+    playTone(context, 440, now, 0.08, "sine", 0.045);
+    playTone(context, 554, now + 0.07, 0.08, "sine", 0.045);
+    playTone(context, 659, now + 0.14, 0.12, "sine", 0.045);
+  }
+
+  if (sound === "error") {
+    playTone(context, 110, now, 0.12, "sawtooth", 0.04);
+  }
+
+  window.setTimeout(() => {
+    void context.close();
+  }, 450);
 }
 
-function randomFidgetMessage() {
-  return fidgetMessages[Math.floor(Math.random() * fidgetMessages.length)]!;
+function PageButton({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300"
+    >
+      {children}
+    </Link>
+  );
 }
 
-function ChaosCard({
-  title,
-  description,
+function AppButton({
   children,
+  onClick,
+  active = false,
 }: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
+  children: ReactNode;
+  onClick: () => void;
+  active?: boolean;
 }) {
   return (
-    <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-[0_0_35px_rgba(34,211,238,0.06)]">
-      <h2 className="text-2xl font-bold text-white">{title}</h2>
-      <p className="mt-3 text-sm leading-6 text-zinc-400">{description}</p>
-      <div className="mt-6">{children}</div>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition ${
+        active
+          ? "bg-cyan-400 text-black shadow-[0_0_20px_rgba(34,211,238,0.28)]"
+          : "border border-cyan-300/25 bg-black/25 text-cyan-200 hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function StatBox({
+  label,
+  value,
+  accent = false,
+}: {
+  label: string;
+  value: string | number;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border p-4 ${
+        accent
+          ? "border-cyan-300/40 bg-cyan-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
+          : "border-cyan-300/15 bg-black/25"
+      }`}
+    >
+      <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300/80">
+        {label}
+      </p>
+      <p
+        className={
+          accent
+            ? "mt-2 text-3xl font-black text-cyan-200"
+            : "mt-2 text-2xl font-black text-white"
+        }
+      >
+        {value}
+      </p>
     </div>
   );
 }
 
-function StatBox({ label, value }: { label: string; value: string | number }) {
+function SoundToggle({
+  soundOn,
+  setSoundOn,
+}: {
+  soundOn: boolean;
+  setSoundOn: (value: boolean) => void;
+}) {
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-black/40 p-4">
-      <p className="text-xs uppercase tracking-widest text-zinc-500">{label}</p>
-      <p className="mt-2 text-2xl font-black text-cyan-300">{value}</p>
+    <button
+      type="button"
+      onClick={() => {
+        setSoundOn(!soundOn);
+        playSound(true, soundOn ? "error" : "ding");
+      }}
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-black transition ${
+        soundOn
+          ? "border-green-300/35 bg-green-400/15 text-green-200"
+          : "border-zinc-600 bg-black/25 text-zinc-300"
+      }`}
+    >
+      {soundOn ? <Volume2 size={16} /> : <VolumeX size={16} />}
+      Sound {soundOn ? "On" : "Off"}
+    </button>
+  );
+}
+
+function AppHeader({
+  kicker,
+  title,
+  text,
+  soundOn,
+  setSoundOn,
+  children,
+}: {
+  kicker: string;
+  title: string;
+  text: string;
+  soundOn: boolean;
+  setSoundOn: (value: boolean) => void;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div>
+        <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+          {kicker}
+        </p>
+        <h2 className="mt-3 text-3xl font-black text-white md:text-5xl">
+          {title}
+        </h2>
+        <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-300 md:text-base">
+          {text}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        <SoundToggle soundOn={soundOn} setSoundOn={setSoundOn} />
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ModalShell({
+  activeApp,
+  setActiveApp,
+  onClose,
+  children,
+}: {
+  activeApp: AppKey;
+  setActiveApp: (app: AppKey) => void;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  const activeCard = appCards.find((app) => app.key === activeApp) ?? appCards[0];
+
+  return (
+    <section
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/70 px-3 py-5 backdrop-blur-md sm:px-4 md:py-10"
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="fixed inset-0 cursor-default"
+        aria-label="Close app"
+      />
+
+      <div className="relative z-10 w-full max-w-6xl overflow-hidden rounded-[1.6rem] border border-cyan-300/25 bg-[#061018]/95 text-white shadow-[0_0_70px_rgba(34,211,238,0.25)]">
+        <div className="sticky top-0 z-20 border-b border-cyan-300/15 bg-[#07131d]/95 backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-3 px-4 py-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-black text-cyan-200">
+                Chaos Lab.exe
+              </p>
+              <p className="truncate text-xs text-zinc-500">
+                {activeCard.title} — modern Windows-style mini app
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="hidden h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-300 sm:flex"
+                aria-label="Minimize visual only"
+              >
+                —
+              </button>
+              <button
+                type="button"
+                className="hidden h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-300 sm:flex"
+                aria-label="Maximize visual only"
+              >
+                □
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-red-300/30 bg-red-400/10 text-red-200 transition hover:bg-red-400/20"
+                aria-label="Close app"
+              >
+                <X size={19} />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto border-t border-cyan-300/10 px-4 py-3 lg:hidden">
+            {appCards.map((app) => (
+              <button
+                key={app.key}
+                type="button"
+                onClick={() => setActiveApp(app.key)}
+                className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] ${
+                  activeApp === app.key
+                    ? "bg-cyan-300 text-black"
+                    : "border border-cyan-300/20 bg-black/25 text-cyan-200"
+                }`}
+              >
+                {app.title}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-[250px_1fr]">
+          <aside className="hidden border-r border-cyan-300/15 bg-black/20 p-4 lg:block">
+            <p className="mb-4 text-xs font-black uppercase tracking-[0.24em] text-cyan-300">
+              Mini Apps
+            </p>
+
+            <div className="space-y-2">
+              {appCards.map((app) => {
+                const Icon = app.icon;
+
+                return (
+                  <button
+                    key={app.key}
+                    type="button"
+                    onClick={() => setActiveApp(app.key)}
+                    className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${
+                      activeApp === app.key
+                        ? "border-cyan-300/50 bg-cyan-300/12 text-white"
+                        : "border-white/5 bg-black/20 text-zinc-400 hover:border-cyan-300/25 hover:text-cyan-100"
+                    }`}
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-300/15 bg-black/30 text-cyan-300">
+                      <Icon size={18} />
+                    </span>
+
+                    <span>
+                      <span className="block text-sm font-black">
+                        {app.title}
+                      </span>
+                      <span className="block text-xs text-zinc-500">
+                        {app.label}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-black/25 p-4">
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">
+                Rule
+              </p>
+              <p className="mt-3 text-sm leading-6 text-zinc-400">
+                Every mini-app has its own sound toggle and works with touch.
+              </p>
+            </div>
+          </aside>
+
+          <div className="min-h-[620px] p-4 sm:p-6 md:p-8">{children}</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+function RunawayButtonApp() {
+  const [soundOn, setSoundOn] = useState(false);
+  const [rage, setRage] = useState(0);
+  const [attempts, setAttempts] = useState(0);
+  const [buttonPosition, setButtonPosition] = useState({ x: 50, y: 48 });
+  const [messages, setMessages] = useState<ChaosNote[]>([
+    {
+      id: getId(),
+      text: "The button is calm. For now.",
+      kind: "info",
+    },
+  ]);
+
+  const annoyingLines = [
+    "The button dodged you. Rude.",
+    "Almost. Emotionally devastating.",
+    "It moved because it sensed confidence.",
+    "This button has commitment issues.",
+    "Try again. It will definitely behave this time.",
+    "The button filed a complaint.",
+    "The button has chosen violence.",
+  ];
+
+  function pokeButton() {
+    const line = annoyingLines[Math.floor(Math.random() * annoyingLines.length)];
+
+    playSound(soundOn, "annoy");
+
+    setAttempts((value) => value + 1);
+    setRage((value) => clamp(value + 11));
+    setButtonPosition({
+      x: Math.round(14 + Math.random() * 72),
+      y: Math.round(16 + Math.random() * 64),
+    });
+
+    setMessages((previous) => [
+      {
+        id: getId(),
+        text: line ?? "The button dodged you.",
+        kind: "chaos",
+      },
+      ...previous.slice(0, 4),
+    ]);
+  }
+
+  function mercyReset() {
+    playSound(soundOn, "ding");
+    setRage(0);
+    setAttempts(0);
+    setButtonPosition({ x: 50, y: 48 });
+    setMessages([
+      {
+        id: getId(),
+        text: "Mercy granted. The button is pretending to be normal.",
+        kind: "calm",
+      },
+    ]);
+  }
+
+  return (
+    <div>
+      <AppHeader
+        kicker="Runaway Button"
+        title="Tap it. It runs away."
+        text="No hover tricks. The button moves on tap, so it works on phones and touch screens."
+        soundOn={soundOn}
+        setSoundOn={setSoundOn}
+      >
+        <AppButton onClick={mercyReset}>
+          <RefreshCcw size={15} />
+          Mercy Reset
+        </AppButton>
+      </AppHeader>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <StatBox label="Attempts" value={attempts} />
+        <StatBox label="Rage Meter" value={`${rage}%`} accent />
+        <StatBox
+          label="Status"
+          value={rage >= 80 ? "Cursed" : rage >= 40 ? "Irritated" : "Stable"}
+        />
+      </div>
+
+      <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_320px]">
+        <div className="relative min-h-[390px] overflow-hidden rounded-[2rem] border border-red-300/20 bg-gradient-to-br from-red-950/20 via-black/25 to-cyan-950/20 p-4">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(239,68,68,0.13),transparent_45%)]" />
+
+          <button
+            type="button"
+            onClick={pokeButton}
+            style={{
+              left: `${buttonPosition.x}%`,
+              top: `${buttonPosition.y}%`,
+              transform: "translate(-50%, -50%)",
+            }}
+            className="absolute z-10 min-h-14 rounded-2xl bg-red-400 px-6 py-4 text-base font-black text-black shadow-[0_0_24px_rgba(248,113,113,0.35)] transition active:scale-90"
+          >
+            Press Me {"(Don't)"}
+          </button>
+        </div>
+
+        <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+            Complaint Log
+          </p>
+
+          <div className="mt-4 space-y-3">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`rounded-2xl border p-4 text-sm leading-6 ${
+                  message.kind === "chaos"
+                    ? "border-red-300/20 bg-red-400/10 text-red-100"
+                    : message.kind === "calm"
+                      ? "border-green-300/20 bg-green-400/10 text-green-100"
+                      : "border-cyan-300/15 bg-cyan-300/10 text-cyan-100"
+                }`}
+              >
+                {message.text}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function applyBadAutocorrect(text: string, intensity: number) {
+  const replacements: Array<[RegExp, string]> = [
+    [/\bthe\b/gi, "teh"],
+    [/\byou\b/gi, "yuo"],
+    [/\bbutton\b/gi, "butter"],
+    [/\bclick\b/gi, "clonk"],
+    [/\bclicked\b/gi, "clonked"],
+    [/\bportfolio\b/gi, "portfoolio"],
+    [/\bproject\b/gi, "projeck"],
+    [/\bdata\b/gi, "dada"],
+    [/\bdashboard\b/gi, "dashbored"],
+    [/\bReact\b/g, "Reaccident"],
+    [/\bchaos\b/gi, "cheese"],
+    [/\bperfect\b/gi, "perfrct"],
+    [/\bannoying\b/gi, "emotionally loud"],
+    [/\bcomputer\b/gi, "compooter"],
+    [/\bimportant\b/gi, "import ant"],
+    [/\bmobile\b/gi, "moblile"],
+    [/\bsound\b/gi, "bloop"],
+    [/\btyping\b/gi, "typoing"],
+  ];
+
+  let corrected = text;
+
+  const replacementCount = Math.max(4, Math.round(intensity / 7));
+  replacements.slice(0, replacementCount).forEach(([pattern, replacement]) => {
+    corrected = corrected.replace(pattern, replacement);
+  });
+
+  if (intensity >= 45) {
+    corrected = corrected.replace(/\./g, " somehow.");
+    corrected = corrected.replace(/!/g, "!!??");
+  }
+
+  if (intensity >= 70) {
+    corrected = corrected
+      .split(" ")
+      .map((word, index) => {
+        if (word.length > 5 && index % 5 === 0) return `${word}???`;
+        if (word.length > 4 && index % 7 === 0) return `${word.slice(0, -1)}™`;
+        return word;
+      })
+      .join(" ");
+  }
+
+  if (intensity >= 88) {
+    corrected = corrected.replace(/\bI\b/g, "me, allegedly,");
+  }
+
+  return corrected;
+}
+
+function BadAutocorrectApp() {
+  const [soundOn, setSoundOn] = useState(false);
+  const [input, setInput] = useState(
+    "I am building a portfolio project with chaos buttons, bubble wrap, sound, and a perfect button."
+  );
+  const [intensity, setIntensity] = useState(42);
+  const [copied, setCopied] = useState(false);
+  const [manualGlitch, setManualGlitch] = useState(false);
+
+  const output = useMemo(() => {
+    const baseText = applyBadAutocorrect(input, intensity);
+
+    if (!manualGlitch) return baseText;
+
+    return baseText
+      .split("")
+      .map((char, index) => {
+        if (char === " ") return " ";
+        if (index % 13 === 0) return "░";
+        if (index % 17 === 0) return `${char}̷`;
+        return char;
+      })
+      .join("");
+  }, [input, intensity, manualGlitch]);
+
+  function updateInput(value: string) {
+    setInput(value);
+
+    if (soundOn && value.length % 8 === 0) {
+      playSound(true, "pop");
+    }
+  }
+
+  function copyOutput() {
+    navigator.clipboard.writeText(output);
+    setCopied(true);
+    playSound(soundOn, "copy");
+    window.setTimeout(() => setCopied(false), 1200);
+  }
+
+  function resetText() {
+    playSound(soundOn, "ding");
+    setInput(
+      "I am building a portfolio project with chaos buttons, bubble wrap, sound, and a perfect button."
+    );
+    setIntensity(42);
+    setManualGlitch(false);
+  }
+
+  return (
+    <div>
+      <AppHeader
+        kicker="Bad Autocorrect"
+        title="Live cursed typing"
+        text="Type normal words and the lab quietly ruins them in real time. You can keep it as autocorrect or add a little glitch flavor."
+        soundOn={soundOn}
+        setSoundOn={setSoundOn}
+      >
+        <AppButton onClick={copyOutput}>
+          <Copy size={15} />
+          {copied ? "Copied" : "Copy"}
+        </AppButton>
+
+        <AppButton onClick={resetText}>
+          <RefreshCcw size={15} />
+          Reset
+        </AppButton>
+      </AppHeader>
+
+      <div className="mt-8 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
+          <label className="block">
+            <span className="text-sm font-black text-zinc-300">
+              Type Here
+            </span>
+            <textarea
+              value={input}
+              onChange={(event) => updateInput(event.target.value)}
+              rows={9}
+              className="mt-3 w-full rounded-2xl border border-cyan-300/20 bg-black/35 p-4 text-sm leading-6 text-white outline-none transition focus:border-cyan-300/50"
+            />
+          </label>
+
+          <label className="mt-5 block">
+            <span className="text-sm font-black text-zinc-300">
+              Autocorrect Badness: {intensity}
+            </span>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={intensity}
+              onChange={(event) => {
+                setIntensity(Number(event.target.value));
+                playSound(soundOn, "toggle");
+              }}
+              className="mt-3 w-full"
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={() => {
+              setManualGlitch(!manualGlitch);
+              playSound(soundOn, "toggle");
+            }}
+            className={`mt-5 flex min-h-14 w-full items-center justify-between rounded-2xl border p-4 text-left transition ${
+              manualGlitch
+                ? "border-fuchsia-300/45 bg-fuchsia-400/15"
+                : "border-cyan-300/15 bg-black/25"
+            }`}
+          >
+            <span>
+              <span className="block font-black text-white">
+                Add Glitch Flavor
+              </span>
+              <span className="block text-sm text-zinc-400">
+                Optional visual corruption on top of autocorrect.
+              </span>
+            </span>
+
+            <span
+              className={`flex h-8 w-14 items-center rounded-full p-1 ${
+                manualGlitch ? "bg-fuchsia-300" : "bg-zinc-800"
+              }`}
+            >
+              <span
+                className={`h-6 w-6 rounded-full bg-black transition ${
+                  manualGlitch ? "translate-x-6" : "translate-x-0"
+                }`}
+              />
+            </span>
+          </button>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            <StatBox label="Characters" value={input.length} />
+            <StatBox label="Badness" value={intensity} accent />
+            <StatBox label="Mode" value={manualGlitch ? "Glitch" : "Text"} />
+          </div>
+        </div>
+
+        <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+            Live Output
+          </p>
+
+          <div className="mt-4 min-h-[360px] whitespace-pre-wrap rounded-2xl border border-cyan-300/10 bg-black/45 p-5 font-mono text-lg leading-8 text-cyan-200 shadow-inner">
+            {output || "Start typing and the lab will make it worse."}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NotificationsApp() {
+  const [soundOn, setSoundOn] = useState(false);
+
+  const notificationTexts = [
+    "Bubble wrap refill complete.",
+    "The runaway button escaped containment.",
+    "Your chaos settings look emotionally unstable.",
+    "Fake update installed successfully. Probably.",
+    "A tiny goblin approved this interaction.",
+    "System detected unnecessary silliness.",
+    "Pleasant fidget mode is now available.",
+    "The interface is being dramatic again.",
+    "Perfect button says thank you.",
+  ];
+
+  const [notifications, setNotifications] = useState<ChaosNote[]>([
+    {
+      id: getId(),
+      text: "Welcome to fake notifications. Tap a toast to dismiss it.",
+      kind: "info",
+    },
+  ]);
+
+  const chaosCount = notifications.filter((note) => note.kind === "chaos").length;
+  const calmCount = notifications.filter((note) => note.kind === "calm").length;
+
+  function spawnNotification(kind: ChaosNote["kind"] = "info") {
+    const text =
+      notificationTexts[Math.floor(Math.random() * notificationTexts.length)] ??
+      "Something happened. Probably.";
+
+    playSound(soundOn, kind === "chaos" ? "annoy" : "ding");
+
+    setNotifications((previous) => [
+      {
+        id: getId(),
+        text,
+        kind,
+      },
+      ...previous,
+    ]);
+  }
+
+  function dismissNotification(id: string) {
+    playSound(soundOn, "pop");
+    setNotifications((previous) => previous.filter((note) => note.id !== id));
+  }
+
+  function clearNotifications() {
+    playSound(soundOn, "error");
+    setNotifications([]);
+  }
+
+  function spawnStack() {
+    playSound(soundOn, "golden");
+
+    const stack: ChaosNote[] = Array.from({ length: 4 }, (_, index) => ({
+      id: getId(),
+      text:
+        notificationTexts[
+          Math.floor(Math.random() * notificationTexts.length)
+        ] ?? `Popup ${index + 1}`,
+      kind: index % 2 === 0 ? "chaos" : "info",
+    }));
+
+    setNotifications((previous) => [...stack, ...previous]);
+  }
+
+  return (
+    <div>
+      <AppHeader
+        kicker="Fake Notifications"
+        title="Silly toast popup stack"
+        text="Spawn modern Windows-style notifications. Tap any notification to dismiss it. Big tap targets, no weird hover behavior."
+        soundOn={soundOn}
+        setSoundOn={setSoundOn}
+      >
+        <AppButton onClick={() => spawnNotification("info")}>
+          <Bell size={15} />
+          Spawn
+        </AppButton>
+
+        <AppButton onClick={() => spawnNotification("chaos")}>
+          <Zap size={15} />
+          Chaos
+        </AppButton>
+
+        <AppButton onClick={spawnStack}>
+          <Bell size={15} />
+          Stack
+        </AppButton>
+
+        <AppButton onClick={clearNotifications}>
+          <RefreshCcw size={15} />
+          Clear
+        </AppButton>
+      </AppHeader>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-4">
+        <StatBox label="Visible" value={notifications.length} accent />
+        <StatBox label="Chaos" value={chaosCount} />
+        <StatBox label="Calm" value={calmCount} />
+        <StatBox
+          label="Status"
+          value={notifications.length >= 8 ? "Crowded" : "Clean"}
+        />
+      </div>
+
+      <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_360px]">
+        <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+            Desktop Preview
+          </p>
+
+          <div className="relative mt-4 min-h-[420px] overflow-hidden rounded-3xl border border-cyan-300/10 bg-gradient-to-br from-slate-950 via-black to-cyan-950/30 p-5">
+            <div className="absolute bottom-4 left-4 right-4 rounded-2xl border border-cyan-300/10 bg-black/35 p-4 text-xs text-zinc-500">
+              Fake taskbar • Chaos Lab.exe • Notifications enabled
+            </div>
+
+            <div className="absolute right-4 top-4 flex w-[min(310px,calc(100%-2rem))] flex-col gap-3">
+              {notifications.length === 0 ? (
+                <div className="rounded-2xl border border-cyan-300/15 bg-black/50 p-4 text-sm text-zinc-400">
+                  No notifications. Suspiciously peaceful.
+                </div>
+              ) : (
+                notifications.map((note) => (
+                  <button
+                    key={note.id}
+                    type="button"
+                    onClick={() => dismissNotification(note.id)}
+                    className={`rounded-2xl border p-4 text-left text-sm leading-6 shadow-xl transition active:scale-[0.98] ${
+                      note.kind === "chaos"
+                        ? "border-red-300/25 bg-red-950/80 text-red-100"
+                        : note.kind === "calm"
+                          ? "border-teal-300/25 bg-teal-950/80 text-teal-100"
+                          : note.kind === "perfect"
+                            ? "border-yellow-300/25 bg-yellow-950/80 text-yellow-100"
+                            : "border-cyan-300/25 bg-slate-950/90 text-cyan-100"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-black">
+                          {note.kind === "chaos"
+                            ? "Chaos Alert"
+                            : note.kind === "calm"
+                              ? "Calm Notice"
+                              : note.kind === "perfect"
+                                ? "Perfect Notice"
+                                : "Chaos Lab"}
+                        </p>
+                        <p className="mt-1 text-xs opacity-80">{note.text}</p>
+                      </div>
+
+                      <X size={16} />
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+            Why this works
+          </p>
+
+          <div className="mt-4 space-y-4 text-sm leading-6 text-zinc-300">
+            <p>
+              It keeps the nuisance energy without breaking mobile. Every toast
+              is a big button.
+            </p>
+
+            <p>
+              Sound is optional per app, so the page stays quiet unless someone
+              turns it on.
+            </p>
+
+            <p>
+              It shows React list state, dynamic rendering, deletion, and
+              interaction design.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+function FidgetBoardApp() {
+  const [soundOn, setSoundOn] = useState(false);
+  const [pulse, setPulse] = useState(true);
+  const [wiggle, setWiggle] = useState(false);
+  const [calm, setCalm] = useState(false);
+  const [softness, setSoftness] = useState(72);
+  const [speed, setSpeed] = useState(42);
+  const [glow, setGlow] = useState(68);
+
+  const mood = calm ? "Calm" : wiggle ? "Wiggly" : pulse ? "Pulsing" : "Idle";
+
+  function flipToggle(setter: (value: boolean) => void, value: boolean) {
+    playSound(soundOn, "toggle");
+    setter(!value);
+  }
+
+  return (
+    <div>
+      <AppHeader
+        kicker="Fidget Board"
+        title="Big switches and soft chaos"
+        text="A touch-safe toggle board with satisfying controls, sliders, glow, pulse, wiggle, and calm mode."
+        soundOn={soundOn}
+        setSoundOn={setSoundOn}
+      />
+
+      <div className="mt-8 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="space-y-4">
+          {[
+            {
+              label: "Pulse Mode",
+              value: pulse,
+              setter: setPulse,
+              text: "Adds gentle breathing motion.",
+            },
+            {
+              label: "Wiggle Mode",
+              value: wiggle,
+              setter: setWiggle,
+              text: "Adds a tiny chaos wobble.",
+            },
+            {
+              label: "Calm Mode",
+              value: calm,
+              setter: setCalm,
+              text: "Softens the whole board.",
+            },
+          ].map((toggle) => (
+            <button
+              key={toggle.label}
+              type="button"
+              onClick={() => flipToggle(toggle.setter, toggle.value)}
+              className={`w-full rounded-3xl border p-5 text-left transition active:scale-[0.99] ${
+                toggle.value
+                  ? "border-cyan-300/45 bg-cyan-300/12"
+                  : "border-cyan-300/15 bg-black/25"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-lg font-black text-white">
+                    {toggle.label}
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-400">{toggle.text}</p>
+                </div>
+
+                <span
+                  className={`flex h-9 w-16 items-center rounded-full p-1 ${
+                    toggle.value ? "bg-cyan-300" : "bg-zinc-800"
+                  }`}
+                >
+                  <span
+                    className={`h-7 w-7 rounded-full bg-black transition ${
+                      toggle.value ? "translate-x-7" : "translate-x-0"
+                    }`}
+                  />
+                </span>
+              </div>
+            </button>
+          ))}
+
+          <div className="rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
+            <label className="block">
+              <span className="text-sm font-black text-zinc-300">
+                Softness: {softness}
+              </span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={softness}
+                onChange={(event) => {
+                  setSoftness(Number(event.target.value));
+                  playSound(soundOn, "toggle");
+                }}
+                className="mt-3 w-full"
+              />
+            </label>
+
+            <label className="mt-5 block">
+              <span className="text-sm font-black text-zinc-300">
+                Motion Speed: {speed}
+              </span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={speed}
+                onChange={(event) => {
+                  setSpeed(Number(event.target.value));
+                  playSound(soundOn, "toggle");
+                }}
+                className="mt-3 w-full"
+              />
+            </label>
+
+            <label className="mt-5 block">
+              <span className="text-sm font-black text-zinc-300">
+                Glow: {glow}
+              </span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={glow}
+                onChange={(event) => {
+                  setGlow(Number(event.target.value));
+                  playSound(soundOn, "toggle");
+                }}
+                className="mt-3 w-full"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-6">
+          <div
+            className={`flex min-h-[380px] items-center justify-center rounded-[2rem] border transition ${
+              calm
+                ? "border-teal-200/25 bg-teal-300/10"
+                : "border-fuchsia-300/25 bg-fuchsia-400/10"
+            } ${pulse ? "animate-pulse" : ""}`}
+            style={{
+              boxShadow: `0 0 ${Math.round(glow / 2)}px rgba(34,211,238,0.35)`,
+              transform: wiggle ? `rotate(${(speed % 6) - 3}deg)` : "none",
+            }}
+          >
+            <div
+              className="flex h-48 w-48 items-center justify-center rounded-full border text-center"
+              style={{
+                borderColor: `rgba(34,211,238,${0.25 + glow / 160})`,
+                backgroundColor: calm
+                  ? `rgba(45,212,191,${0.08 + softness / 600})`
+                  : `rgba(217,70,239,${0.08 + softness / 700})`,
+              }}
+            >
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+                  Mood
+                </p>
+                <p className="mt-2 text-4xl font-black text-white">{mood}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            <StatBox label="Soft" value={softness} />
+            <StatBox label="Speed" value={speed} />
+            <StatBox label="Glow" value={glow} accent />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BubbleWrapApp() {
+  const bubbleCount = 60;
+  const [soundOn, setSoundOn] = useState(false);
+  const [goldenIndex, setGoldenIndex] = useState(() =>
+    Math.floor(Math.random() * bubbleCount)
+  );
+  const [popped, setPopped] = useState<boolean[]>(
+    Array.from({ length: bubbleCount }, () => false)
+  );
+  const [confetti, setConfetti] = useState<BubbleCelebrationPiece[]>([]);
+  const [goldenPopped, setGoldenPopped] = useState(false);
+
+  const poppedCount = popped.filter(Boolean).length;
+  const remaining = bubbleCount - poppedCount;
+
+  function createConfetti() {
+    const pieces = Array.from({ length: 24 }, () => ({
+      id: getId(),
+      x: Math.round(Math.random() * 100),
+      y: Math.round(Math.random() * 100),
+      rotate: Math.round(Math.random() * 360),
+      delay: Math.round(Math.random() * 300),
+    }));
+
+    setConfetti(pieces);
+
+    window.setTimeout(() => {
+      setConfetti([]);
+    }, 1300);
+  }
+
+  function popBubble(index: number) {
+    if (popped[index]) return;
+
+    const isGolden = index === goldenIndex;
+
+    playSound(soundOn, isGolden ? "golden" : "pop");
+
+    setPopped((previous) =>
+      previous.map((isPopped, bubbleIndex) =>
+        bubbleIndex === index ? true : isPopped
+      )
+    );
+
+    if (isGolden) {
+      setGoldenPopped(true);
+      createConfetti();
+    }
+  }
+
+  function refill() {
+    playSound(soundOn, "ding");
+    setPopped(Array.from({ length: bubbleCount }, () => false));
+    setGoldenIndex(Math.floor(Math.random() * bubbleCount));
+    setGoldenPopped(false);
+    setConfetti([]);
+  }
+
+  function popRandom() {
+    const available = popped
+      .map((isPopped, index) => ({ isPopped, index }))
+      .filter((bubble) => !bubble.isPopped);
+
+    if (available.length === 0) return;
+
+    const selected = available[Math.floor(Math.random() * available.length)];
+
+    if (!selected) return;
+
+    popBubble(selected.index);
+  }
+
+  return (
+    <div>
+      <AppHeader
+        kicker="Bubble Wrap"
+        title="Pleasant little pop grid"
+        text="Tap bubbles to pop them. One random golden bubble celebrates with confetti when you find it."
+        soundOn={soundOn}
+        setSoundOn={setSoundOn}
+      >
+        <AppButton onClick={popRandom}>
+          <Zap size={15} />
+          Pop One
+        </AppButton>
+
+        <AppButton onClick={refill}>
+          <RefreshCcw size={15} />
+          Refill
+        </AppButton>
+      </AppHeader>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-4">
+        <StatBox label="Popped" value={poppedCount} accent />
+        <StatBox label="Remaining" value={remaining} />
+        <StatBox
+          label="Completion"
+          value={`${Math.round((poppedCount / bubbleCount) * 100)}%`}
+        />
+        <StatBox label="Golden" value={goldenPopped ? "Found" : "Hidden"} />
+      </div>
+
+      <div className="relative mt-8 overflow-hidden rounded-[2rem] border border-cyan-300/15 bg-black/25 p-4 sm:p-6">
+        {confetti.length > 0 && (
+          <div className="pointer-events-none absolute inset-0 z-20">
+            {confetti.map((piece) => (
+              <span
+                key={piece.id}
+                className="absolute h-3 w-2 animate-bounce rounded-sm bg-yellow-300 shadow-[0_0_12px_rgba(250,204,21,0.65)]"
+                style={{
+                  left: `${piece.x}%`,
+                  top: `${piece.y}%`,
+                  rotate: `${piece.rotate}deg`,
+                  animationDelay: `${piece.delay}ms`,
+                }}
+              />
+            ))}
+
+            <div className="absolute inset-x-4 top-8 mx-auto max-w-sm rounded-3xl border border-yellow-300/40 bg-yellow-300/15 p-5 text-center shadow-[0_0_35px_rgba(250,204,21,0.25)] backdrop-blur-md">
+              <p className="text-3xl font-black text-yellow-200">Golden Pop!</p>
+              <p className="mt-2 text-sm text-yellow-100">
+                You found the celebration bubble.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10">
+          {popped.map((isPopped, index) => {
+            const isGolden = index === goldenIndex && !isPopped;
+
+            return (
+              <button
+                key={`bubble-${index}`}
+                type="button"
+                onClick={() => popBubble(index)}
+                aria-label={`Bubble ${index + 1}`}
+                className={`aspect-square min-h-11 rounded-full border transition active:scale-90 ${
+                  isPopped
+                    ? "border-zinc-700 bg-zinc-900/70 shadow-inner"
+                    : isGolden
+                      ? "border-yellow-200/70 bg-yellow-300/25 shadow-[inset_0_6px_14px_rgba(255,255,255,0.35),0_0_22px_rgba(250,204,21,0.35)]"
+                      : "border-cyan-200/50 bg-cyan-300/20 shadow-[inset_0_6px_14px_rgba(255,255,255,0.28),0_0_16px_rgba(34,211,238,0.16)] hover:bg-cyan-300/30"
+                }`}
+              >
+                <span
+                  className={`mx-auto block h-1/2 w-1/2 rounded-full ${
+                    isPopped
+                      ? "bg-zinc-800"
+                      : isGolden
+                        ? "bg-yellow-100/70"
+                        : "bg-white/35"
+                  }`}
+                />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PerfectButtonApp() {
+  const [soundOn, setSoundOn] = useState(false);
+  const [clicks, setClicks] = useState(0);
+  const [happiness, setHappiness] = useState(50);
+  const [message, setMessage] = useState("The perfect button is ready.");
+  const [sparkles, setSparkles] = useState<BubbleCelebrationPiece[]>([]);
+
+  const buttonMood =
+    happiness >= 95 ? "Thriving" : happiness >= 75 ? "Happy" : "Hopeful";
+
+  function celebrate() {
+    const pieces = Array.from({ length: 18 }, () => ({
+      id: getId(),
+      x: Math.round(Math.random() * 100),
+      y: Math.round(Math.random() * 100),
+      rotate: Math.round(Math.random() * 360),
+      delay: Math.round(Math.random() * 250),
+    }));
+
+    setSparkles(pieces);
+
+    window.setTimeout(() => {
+      setSparkles([]);
+    }, 1000);
+  }
+
+  function clickPerfectButton() {
+    const nextClicks = clicks + 1;
+    const nextHappiness = clamp(happiness + 8);
+
+    setClicks(nextClicks);
+    setHappiness(nextHappiness);
+    playSound(soundOn, nextClicks % 5 === 0 ? "golden" : "perfect");
+
+    if (nextClicks % 10 === 0) {
+      setMessage("The perfect button says: you are literally elite.");
+      celebrate();
+      return;
+    }
+
+    if (nextClicks % 5 === 0) {
+      setMessage("Perfect streak. The button feels appreciated.");
+      celebrate();
+      return;
+    }
+
+    const lines = [
+      "Thank you. That was a very good click.",
+      "The button wanted that.",
+      "Perfect click. No notes.",
+      "The button is proud of you.",
+      "That click had excellent form.",
+      "The button feels seen.",
+    ];
+
+    setMessage(lines[Math.floor(Math.random() * lines.length)] ?? "Perfect.");
+  }
+
+  function resetPerfect() {
+    playSound(soundOn, "ding");
+    setClicks(0);
+    setHappiness(50);
+    setMessage("The perfect button is ready.");
+    setSparkles([]);
+  }
+
+  return (
+    <div>
+      <AppHeader
+        kicker="Perfect Button"
+        title="It wants to be clicked"
+        text="The opposite of the runaway button. It stays still, rewards you, celebrates streaks, and is emotionally supportive."
+        soundOn={soundOn}
+        setSoundOn={setSoundOn}
+      >
+        <AppButton onClick={resetPerfect}>
+          <RefreshCcw size={15} />
+          Reset
+        </AppButton>
+      </AppHeader>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <StatBox label="Clicks" value={clicks} accent />
+        <StatBox label="Happiness" value={`${happiness}%`} />
+        <StatBox label="Mood" value={buttonMood} />
+      </div>
+
+      <div className="relative mt-8 overflow-hidden rounded-[2rem] border border-green-300/20 bg-gradient-to-br from-green-950/25 via-black/25 to-cyan-950/25 p-6">
+        {sparkles.length > 0 && (
+          <div className="pointer-events-none absolute inset-0 z-20">
+            {sparkles.map((sparkle) => (
+              <span
+                key={sparkle.id}
+                className="absolute h-3 w-3 animate-bounce rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.75)]"
+                style={{
+                  left: `${sparkle.x}%`,
+                  top: `${sparkle.y}%`,
+                  rotate: `${sparkle.rotate}deg`,
+                  animationDelay: `${sparkle.delay}ms`,
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        <div className="flex min-h-[430px] flex-col items-center justify-center text-center">
+          <button
+            type="button"
+            onClick={clickPerfectButton}
+            className="min-h-24 rounded-[2rem] border border-green-200/50 bg-green-300 px-10 py-7 text-2xl font-black text-black shadow-[0_0_45px_rgba(134,239,172,0.35)] transition hover:-translate-y-1 hover:bg-green-200 active:scale-95"
+          >
+            Click Me Please
+          </button>
+
+          <div className="mt-8 max-w-xl rounded-3xl border border-green-300/20 bg-black/30 p-6">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-green-300">
+              Button Feedback
+            </p>
+            <p className="mt-3 text-2xl font-black text-white">{message}</p>
+          </div>
+
+          <div className="mt-6 h-4 w-full max-w-md overflow-hidden rounded-full border border-green-300/20 bg-black/40">
+            <div
+              className="h-full rounded-full bg-green-300 transition-all"
+              style={{ width: `${happiness}%` }}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
 export default function ChaosLabPage() {
-  const [chaosScore, setChaosScore] = useState(0);
+  const [activeApp, setActiveApp] = useState<AppKey | null>(null);
 
-  const [volume, setVolume] = useState(37);
-  const [volumePosition, setVolumePosition] = useState<Position>({
-    x: 0,
-    y: 0,
-  });
-  const [volumeMessage, setVolumeMessage] = useState(
-    "Try setting the volume normally. I dare you."
-  );
-
-  const [buttonPosition, setButtonPosition] = useState<Position>({
-    x: 38,
-    y: 45,
-  });
-  const [buttonDodges, setButtonDodges] = useState(0);
-  const [buttonMessage, setButtonMessage] = useState(
-    "This button has commitment issues."
-  );
-
-  const [loading, setLoading] = useState(0);
-  const [loadingMessage, setLoadingMessage] = useState(
-    "Start the perfectly legitimate loading bar."
-  );
-
-  const [text, setText] = useState("");
-  const [corruptedText, setCorruptedText] = useState("");
-
-  const [cookieVisible, setCookieVisible] = useState(true);
-  const [cookieAccepts, setCookieAccepts] = useState(0);
-
-  const [checkboxPosition, setCheckboxPosition] = useState<Position>({
-    x: 20,
-    y: 45,
-  });
-  const [checkboxChecked, setCheckboxChecked] = useState(false);
-
-  const [soundEnabled, setSoundEnabled] = useState(false);
-  const [poppedBubbles, setPoppedBubbles] = useState<number[]>([]);
-  const [switches, setSwitches] = useState([
-    false,
-    false,
-    true,
-    false,
-    true,
-    false,
-    false,
-    true,
-  ]);
-  const [pressCount, setPressCount] = useState(0);
-  const [particles, setParticles] = useState<Particle[]>([]);
-  const [calmSlider, setCalmSlider] = useState(50);
-  const [fidgetMessage, setFidgetMessage] = useState(
-    "After the nonsense above, decompress here."
-  );
-
-  const audioContextRef = useRef<AudioContext | null>(null);
-
-  const chaosRating = useMemo(() => {
-    if (chaosScore < 5) return "Mildly cursed";
-    if (chaosScore < 12) return "Annoying";
-    if (chaosScore < 22) return "HR complaint";
-    if (chaosScore < 35) return "Villain UI";
-    return "Unemployable genius";
-  }, [chaosScore]);
-
-  const poppedBubbleSet = useMemo(
-    () => new Set(poppedBubbles),
-    [poppedBubbles]
-  );
-
-  const switchesOn = switches.filter(Boolean).length;
-
-  const fidgetRating = useMemo(() => {
-    const score = poppedBubbles.length + pressCount + switchesOn;
-
-    if (score < 8) return "Warming up";
-    if (score < 20) return "Satisfying";
-    if (score < 40) return "Oddly peaceful";
-    return "Fully decompressed";
-  }, [poppedBubbles.length, pressCount, switchesOn]);
-
-  function addChaos(amount = 1) {
-    setChaosScore((current) => current + amount);
-  }
-
-  function playTone(
-    frequency: number,
-    duration = 0.08,
-    type: OscillatorType = "sine"
-  ) {
-    if (!soundEnabled || typeof window === "undefined") return;
-
-    const audioContextConstructor =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext?: typeof AudioContext })
-        .webkitAudioContext;
-
-    if (!audioContextConstructor) return;
-
-    if (!audioContextRef.current) {
-      audioContextRef.current = new audioContextConstructor();
-    }
-
-    const context = audioContextRef.current;
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-
-    oscillator.type = type;
-    oscillator.frequency.value = frequency;
-
-    gain.gain.setValueAtTime(0.08, context.currentTime);
-    gain.gain.exponentialRampToValueAtTime(
-      0.001,
-      context.currentTime + duration
-    );
-
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-
-    oscillator.start();
-    oscillator.stop(context.currentTime + duration);
-  }
-
-  function toggleSound() {
-    setSoundEnabled((current) => !current);
-
-    setFidgetMessage(
-      soundEnabled
-        ? "Sound disabled. Silent chaos restored."
-        : "Sound enabled. Browser approved tiny beeps after your click."
-    );
-  }
-
-  function handleVolumeChange(event: ChangeEvent<HTMLInputElement>) {
-    const rawValue = Number(event.target.value);
-    const annoyingValue = 100 - rawValue;
-
-    setVolume(annoyingValue);
-    setVolumeMessage(
-      `You selected ${rawValue}. So naturally I set it to ${annoyingValue}.`
-    );
-    addChaos();
-  }
-
-  function annoyVolume() {
-    setVolumePosition({
-      x: Math.floor(Math.random() * 28) - 14,
-      y: Math.floor(Math.random() * 20) - 10,
-    });
-
-    setVolume((current) => {
-      const newValue = current > 50 ? current - 17 : current + 23;
-      return Math.max(0, Math.min(100, newValue));
-    });
-
-    setVolumeMessage(randomMessage());
-    addChaos();
-  }
-
-  function dodgeButton() {
-    setButtonPosition(randomPosition());
-    setButtonDodges((current) => current + 1);
-    setButtonMessage(randomMessage());
-    addChaos();
-  }
-
-  function catchButton() {
-    setButtonMessage("Wait. You actually clicked it? Fine. You win nothing.");
-    addChaos(5);
-  }
-
-  function startLoading() {
-    setLoadingMessage("Loading...");
-    setLoading(0);
-    addChaos();
-
-    let progress = 0;
-
-    const interval = window.setInterval(() => {
-      progress += Math.floor(Math.random() * 16) + 5;
-
-      if (progress >= 99) {
-        progress = 99;
-        setLoading(99);
-        setLoadingMessage(
-          "Almost done. Please enjoy being emotionally trapped at 99%."
-        );
-        window.clearInterval(interval);
-        return;
-      }
-
-      setLoading(progress);
-    }, 250);
-  }
-
-  function handleBadTyping(value: string) {
-    setText(value);
-
-    const changed = value
-      .split(" ")
-      .map((word) => {
-        const cleanWord = word.toLowerCase().replace(/[^a-z]/g, "");
-        return badCorrections[cleanWord] ?? word;
-      })
-      .join(" ");
-
-    setCorruptedText(changed);
-    addChaos();
-  }
-
-  function acceptCookies() {
-    setCookieAccepts((current) => current + 1);
-    setCookieVisible(false);
-    addChaos(2);
-
-    window.setTimeout(() => {
-      setCookieVisible(true);
-    }, 900);
-  }
-
-  function moveCheckbox(event: SyntheticEvent<HTMLLabelElement>) {
-    event.preventDefault();
-
-    setCheckboxPosition(randomPosition());
-    setCheckboxChecked(false);
-    addChaos();
-  }
-
-  function popBubble(index: number) {
-    if (poppedBubbleSet.has(index)) return;
-
-    const newPopped = [...poppedBubbles, index];
-
-    setPoppedBubbles(newPopped);
-    setFidgetMessage(
-      newPopped.length === bubbleCount
-        ? "Full sheet cleared. That was spiritually necessary."
-        : randomFidgetMessage()
-    );
-
-    playTone(520 + Math.random() * 240, 0.055, "sine");
-  }
-
-  function resetBubbles() {
-    setPoppedBubbles([]);
-    setFidgetMessage("Fresh bubble sheet loaded.");
-    playTone(260, 0.12, "triangle");
-  }
-
-  function toggleSwitch(index: number) {
-    setSwitches((current) =>
-      current.map((switchValue, switchIndex) =>
-        switchIndex === index ? !switchValue : switchValue
-      )
-    );
-
-    setFidgetMessage(randomFidgetMessage());
-    playTone(420 + index * 40, 0.08, "triangle");
-  }
-
-  function satisfyingPress() {
-    const newCount = pressCount + 1;
-    const newParticles = Array.from({ length: 8 }, (_, index) => ({
-      id: Date.now() + index + Math.random(),
-      x: Math.floor(Math.random() * 80) + 10,
-      y: Math.floor(Math.random() * 55) + 15,
-      label: ["+", "✨", "pop", "nice", "✓"][index % 5]!,
-    }));
-
-    const newIds = newParticles.map((particle) => particle.id);
-
-    setPressCount(newCount);
-    setParticles((current) => [...current, ...newParticles].slice(-24));
-    setFidgetMessage(
-      newCount % 10 === 0
-        ? `Perfect. ${newCount} clean presses.`
-        : randomFidgetMessage()
-    );
-
-    playTone(330 + (newCount % 8) * 55, 0.075, "sine");
-
-    window.setTimeout(() => {
-      setParticles((current) =>
-        current.filter((particle) => !newIds.includes(particle.id))
-      );
-    }, 900);
-  }
-
-  function handleCalmSlider(value: string) {
-    const numericValue = Number(value);
-
-    setCalmSlider(numericValue);
-
-    if (numericValue === 50) {
-      setFidgetMessage("Perfectly balanced. Extremely correct.");
-      playTone(440, 0.08, "sine");
-    } else if (Math.abs(numericValue - 50) <= 5) {
-      setFidgetMessage("Almost centered. Very respectable.");
-    } else {
-      setFidgetMessage("Slide it toward the middle. The UI demands balance.");
-    }
-  }
-
-  function cleanEverything() {
-    setPoppedBubbles(Array.from({ length: bubbleCount }, (_, index) => index));
-    setSwitches([true, true, true, true, true, true, true, true]);
-    setCalmSlider(50);
-    setFidgetMessage("Everything is clean, aligned, popped, and peaceful.");
-
-    playTone(330, 0.07, "triangle");
-    window.setTimeout(() => playTone(440, 0.07, "triangle"), 90);
-    window.setTimeout(() => playTone(660, 0.09, "triangle"), 180);
-  }
-
-  function resetChaos() {
-    setChaosScore(0);
-    setVolume(37);
-    setVolumePosition({ x: 0, y: 0 });
-    setVolumeMessage("Try setting the volume normally. I dare you.");
-    setButtonPosition({ x: 38, y: 45 });
-    setButtonDodges(0);
-    setButtonMessage("This button has commitment issues.");
-    setLoading(0);
-    setLoadingMessage("Start the perfectly legitimate loading bar.");
-    setText("");
-    setCorruptedText("");
-    setCookieVisible(true);
-    setCookieAccepts(0);
-    setCheckboxPosition({ x: 20, y: 45 });
-    setCheckboxChecked(false);
-    setPoppedBubbles([]);
-    setSwitches([false, false, true, false, true, false, false, true]);
-    setPressCount(0);
-    setParticles([]);
-    setCalmSlider(50);
-    setFidgetMessage("After the nonsense above, decompress here.");
+  function renderActiveApp() {
+    if (activeApp === "runaway") return <RunawayButtonApp />;
+    if (activeApp === "autocorrect") return <BadAutocorrectApp />;
+    if (activeApp === "notifications") return <NotificationsApp />;
+    if (activeApp === "fidget") return <FidgetBoardApp />;
+    if (activeApp === "bubble") return <BubbleWrapApp />;
+    if (activeApp === "perfect") return <PerfectButtonApp />;
+    return null;
   }
 
   return (
-    <main className="min-h-screen bg-black px-6 py-8 text-white">
-      <section className="mx-auto max-w-7xl">
-        <nav className="mb-10 flex flex-col gap-4 rounded-2xl border border-zinc-800 bg-zinc-950/80 px-5 py-4 shadow-[0_0_30px_rgba(34,211,238,0.08)] md:flex-row md:items-center md:justify-between">
-          <a href="/" className="text-lg font-bold tracking-tight text-white">
-            Brian Dacell Cabrera<span className="text-cyan-300">.</span>
-          </a>
-
-          <div className="flex flex-wrap gap-4 text-sm font-medium text-zinc-300">
-            <a className="transition hover:text-cyan-300" href="/">
-              Home
-            </a>
-            <a className="transition hover:text-cyan-300" href="/projects">
-              Projects
-            </a>
-            <a className="transition hover:text-cyan-300" href="/data-lab">
-              Data Lab
-            </a>
-            <a className="transition hover:text-cyan-300" href="/playground">
-              Playground
-            </a>
-            <a className="text-cyan-300 transition hover:text-cyan-200" href="/chaos-lab">
-              Chaos Lab
-            </a>
-            <a className="transition hover:text-cyan-300" href="/travel">
-              Travel
-            </a>
-            <a className="transition hover:text-cyan-300" href="/#contact">
-              Contact
-            </a>
-          </div>
-        </nav>
-
-        <section className="rounded-3xl border border-cyan-400/30 bg-zinc-950 p-8 shadow-[0_0_45px_rgba(34,211,238,0.12)] md:p-12">
-          <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-            Intentionally Annoying UI Experiments
-          </p>
-
-          <h1 className="mt-6 text-5xl font-black tracking-tight text-white md:text-7xl">
+    <main className="min-h-screen">
+      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16 lg:py-24">
+        <div className={`${glassPanel} p-6 md:p-10`}>
+          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">
+            <Sparkles size={15} />
             Chaos Lab
+          </div>
+
+          <h1 className="mt-6 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
+            WIP - Windows Style Fidget Lab - Note: Must add images
           </h1>
 
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-zinc-300">
-            A collection of cursed buttons, disrespectful sliders, fake loading
-            bars, questionable interface decisions, and a satisfying recovery
-            zone built with React, TypeScript, state, events, timers, touch
-            interactions, and terrible judgment.
+          <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-300 md:text-lg">
+            Touch-friendly chaos toys with optional sound: a runaway button, bad
+            autocorrect, fake notifications, toggle board, bubble wrap with a
+            golden confetti bubble, and the perfect button.
           </p>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            <StatBox label="Chaos Score" value={chaosScore} />
-            <StatBox label="Current Rating" value={chaosRating} />
-            <StatBox label="Button Dodges" value={buttonDodges} />
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <PageButton href="/playground">Back to Playground</PageButton>
+            <PageButton href="/gravity-lab">Next: Gravity Lab</PageButton>
           </div>
+        </div>
 
-          <div className="mt-8 flex flex-wrap gap-4">
-            <button
-              onClick={resetChaos}
-              className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
-            >
-              Reset the nonsense
-            </button>
+        <section className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {appCards.map((app) => {
+            const Icon = app.icon;
 
-            <button
-              onClick={toggleSound}
-              className="rounded-xl border border-cyan-300/50 px-5 py-3 font-semibold text-cyan-300 transition hover:bg-cyan-300 hover:text-black"
-            >
-              Sound: {soundEnabled ? "On" : "Off"}
-            </button>
-          </div>
-        </section>
+            return (
+              <div key={app.key} className={`${glassCard} p-6`}>
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-black/25 text-cyan-300">
+                  <Icon size={22} />
+                </div>
 
-        <section className="mt-10 grid gap-6 xl:grid-cols-2">
-          <ChaosCard
-            title="The Disrespectful Volume Slider"
-            description="A volume slider that refuses to respect your actual input. On mobile, touching it also makes it act stupid."
-          >
-            <div
-              onMouseEnter={annoyVolume}
-              onTouchStart={annoyVolume}
-              style={{
-                transform: `translate(${volumePosition.x}px, ${volumePosition.y}px)`,
-              }}
-              className="transition-transform duration-200"
-            >
-              <div className="flex items-center justify-between text-sm text-zinc-400">
-                <span>Volume</span>
-                <span>{volume}%</span>
-              </div>
-
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={volume}
-                onChange={handleVolumeChange}
-                className="mt-4 w-full accent-cyan-300"
-              />
-
-              <p className="mt-4 rounded-2xl border border-zinc-800 bg-black/40 p-4 text-sm text-zinc-300">
-                {volumeMessage}
-              </p>
-            </div>
-          </ChaosCard>
-
-          <ChaosCard
-            title="The Button That Runs Away"
-            description="A button that knows you want to click it and takes that personally. It dodges hover, focus, and mobile touch."
-          >
-            <div className="relative h-72 overflow-hidden rounded-2xl border border-zinc-800 bg-black/40">
-              <button
-                onMouseEnter={dodgeButton}
-                onTouchStart={dodgeButton}
-                onFocus={dodgeButton}
-                onClick={catchButton}
-                style={{
-                  left: `${buttonPosition.x}%`,
-                  top: `${buttonPosition.y}%`,
-                }}
-                className="absolute rounded-xl bg-cyan-300 px-5 py-3 font-black text-black shadow-[0_0_25px_rgba(103,232,249,0.35)] transition-all duration-200 hover:bg-cyan-200"
-              >
-                Click me
-              </button>
-
-              <p className="absolute bottom-4 left-4 right-4 rounded-2xl border border-zinc-800 bg-zinc-950/90 p-4 text-sm text-zinc-300">
-                {buttonMessage}
-              </p>
-            </div>
-          </ChaosCard>
-
-          <ChaosCard
-            title="The 99% Loading Bar"
-            description="A progress bar that makes strong promises and weak deliveries."
-          >
-            <button
-              onClick={startLoading}
-              className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-black transition hover:bg-cyan-200"
-            >
-              Start loading
-            </button>
-
-            <div className="mt-6 h-5 overflow-hidden rounded-full bg-zinc-900">
-              <div
-                style={{ width: `${loading}%` }}
-                className="h-full rounded-full bg-cyan-300 transition-all duration-300"
-              />
-            </div>
-
-            <div className="mt-3 flex justify-between gap-4 text-sm text-zinc-400">
-              <span>{loadingMessage}</span>
-              <span>{loading}%</span>
-            </div>
-          </ChaosCard>
-
-          <ChaosCard
-            title="Bad Autocorrect"
-            description="A text box that edits your writing like it has beef with you."
-          >
-            <textarea
-              value={text}
-              onChange={(event) => handleBadTyping(event.target.value)}
-              placeholder="Try typing: hello brian this react portfolio project is professional"
-              className="min-h-32 w-full rounded-2xl border border-zinc-700 bg-black px-4 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-cyan-300"
-            />
-
-            <div className="mt-4 rounded-2xl border border-zinc-800 bg-black/40 p-4">
-              <p className="text-xs uppercase tracking-widest text-zinc-500">
-                Corrected Output
-              </p>
-              <p className="mt-2 min-h-8 text-zinc-300">
-                {corruptedText || "Your ruined sentence will appear here."}
-              </p>
-            </div>
-          </ChaosCard>
-
-          <ChaosCard
-            title="The Checkbox That Refuses Consent"
-            description="A checkbox that simply does not want to be part of your form. It now runs away on mobile too."
-          >
-            <div className="relative h-64 overflow-hidden rounded-2xl border border-zinc-800 bg-black/40">
-              <label
-                onMouseEnter={moveCheckbox}
-                onTouchStart={moveCheckbox}
-                onClick={moveCheckbox}
-                style={{
-                  left: `${checkboxPosition.x}%`,
-                  top: `${checkboxPosition.y}%`,
-                }}
-                className="absolute flex cursor-pointer items-center gap-3 rounded-xl border border-cyan-300/40 bg-zinc-950 px-4 py-3 text-sm text-zinc-200 transition-all duration-200"
-              >
-                <input
-                  type="checkbox"
-                  checked={checkboxChecked}
-                  onChange={(event) => setCheckboxChecked(event.target.checked)}
-                  className="accent-cyan-300"
-                />
-                I agree to be annoyed
-              </label>
-
-              <p className="absolute bottom-4 left-4 right-4 text-sm text-zinc-500">
-                Spoiler: it will not agree.
-              </p>
-            </div>
-          </ChaosCard>
-
-          <ChaosCard
-            title="Cookies That Come Back"
-            description="A cookie banner that accepts your answer and then completely ignores it."
-          >
-            <div className="min-h-64 rounded-2xl border border-zinc-800 bg-black/40 p-5">
-              <p className="text-sm text-zinc-400">
-                Accept count:{" "}
-                <span className="font-bold text-cyan-300">{cookieAccepts}</span>
-              </p>
-
-              {!cookieVisible && (
-                <p className="mt-10 text-center text-zinc-500">
-                  Finally. Peace and quiet.
+                <p className="mt-5 text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                  {app.label}
                 </p>
-              )}
 
-              {cookieVisible && (
-                <div className="mt-8 rounded-2xl border border-cyan-300/30 bg-zinc-950 p-5 shadow-[0_0_25px_rgba(34,211,238,0.08)]">
-                  <p className="font-bold text-white">We value your privacy.</p>
-                  <p className="mt-2 text-sm leading-6 text-zinc-400">
-                    That is why this banner will return immediately after you
-                    accept it.
-                  </p>
+                <h2 className="mt-4 text-2xl font-black text-white">
+                  {app.title}
+                </h2>
 
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    <button
-                      onClick={acceptCookies}
-                      className="rounded-xl bg-cyan-300 px-4 py-2 font-semibold text-black transition hover:bg-cyan-200"
-                    >
-                      Accept
-                    </button>
+                <p className="mt-3 text-sm leading-6 text-zinc-300">
+                  {app.text}
+                </p>
 
-                    <button
-                      onClick={acceptCookies}
-                      className="rounded-xl border border-zinc-600 px-4 py-2 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
-                    >
-                      Also Accept
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </ChaosCard>
-        </section>
-
-        <section className="mt-10 rounded-3xl border border-cyan-400/30 bg-zinc-950 p-6 shadow-[0_0_45px_rgba(34,211,238,0.10)] md:p-8">
-          <div className="flex flex-col justify-between gap-6 md:flex-row md:items-start">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-                Satisfying Recovery Zone
-              </p>
-
-              <h2 className="mt-3 text-4xl font-black text-white">
-                Tiny fidget interactions after the UI trauma.
-              </h2>
-
-              <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-400">
-                Pop bubbles, flip clean switches, press a nice button, center a
-                slider, and optionally turn on tiny browser-generated sound
-                bites.
-              </p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3 md:min-w-[420px]">
-              <StatBox label="Bubbles Popped" value={`${poppedBubbles.length}/${bubbleCount}`} />
-              <StatBox label="Clean Presses" value={pressCount} />
-              <StatBox label="Fidget Rating" value={fidgetRating} />
-            </div>
-          </div>
-
-          <div className="mt-8 rounded-2xl border border-zinc-800 bg-black/40 p-5">
-            <p className="text-sm font-semibold text-cyan-300">Current Mood</p>
-            <p className="mt-2 text-zinc-300">{fidgetMessage}</p>
-          </div>
-
-          <div className="mt-8 grid gap-6 xl:grid-cols-2">
-            <div className="rounded-3xl border border-zinc-800 bg-black/30 p-6">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-2xl font-bold">Bubble Wrap Grid</h3>
-                  <p className="mt-2 text-sm text-zinc-400">
-                    Tap bubbles. They stay popped until reset.
-                  </p>
-                </div>
-
-                <button
-                  onClick={resetBubbles}
-                  className="rounded-xl border border-zinc-600 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
-                >
-                  Reset bubbles
-                </button>
-              </div>
-
-              <div className="mt-6 grid grid-cols-8 gap-2">
-                {Array.from({ length: bubbleCount }, (_, index) => {
-                  const popped = poppedBubbleSet.has(index);
-
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => popBubble(index)}
-                      className={`aspect-square rounded-full border transition active:scale-90 ${
-                        popped
-                          ? "border-zinc-800 bg-zinc-900 shadow-inner"
-                          : "border-cyan-300/40 bg-cyan-300/20 shadow-[0_0_18px_rgba(34,211,238,0.16)] hover:bg-cyan-300/30"
-                      }`}
-                      aria-label={`Bubble ${index + 1}`}
-                    >
-                      <span className="sr-only">
-                        {popped ? "Popped" : "Unpopped"}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-zinc-800 bg-black/30 p-6">
-              <h3 className="text-2xl font-bold">The Perfect Button</h3>
-              <p className="mt-2 text-sm text-zinc-400">
-                This one actually wants to be clicked.
-              </p>
-
-              <div className="relative mt-6 flex h-72 items-center justify-center overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950">
-                {particles.map((particle) => (
-                  <span
-                    key={particle.id}
-                    style={{
-                      left: `${particle.x}%`,
-                      top: `${particle.y}%`,
-                    }}
-                    className="pointer-events-none absolute animate-pulse text-sm font-bold text-cyan-300"
+                <div className="mt-6">
+                  <AppButton
+                    active={activeApp === app.key}
+                    onClick={() => setActiveApp(app.key)}
                   >
-                    {particle.label}
-                  </span>
-                ))}
-
-                <button
-                  onClick={satisfyingPress}
-                  className="rounded-2xl bg-cyan-300 px-8 py-5 text-xl font-black text-black shadow-[0_0_35px_rgba(103,232,249,0.35)] transition active:scale-90 hover:bg-cyan-200"
-                >
-                  Press me
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-zinc-800 bg-black/30 p-6">
-              <h3 className="text-2xl font-bold">Clean Toggle Board</h3>
-              <p className="mt-2 text-sm text-zinc-400">
-                Flip the switches. Make the board glow.
-              </p>
-
-              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {switches.map((isOn, index) => (
-                  <button
-                    key={index}
-                    onClick={() => toggleSwitch(index)}
-                    className={`rounded-2xl border p-4 transition active:scale-95 ${
-                      isOn
-                        ? "border-cyan-300/50 bg-cyan-300/20 shadow-[0_0_25px_rgba(34,211,238,0.14)]"
-                        : "border-zinc-800 bg-zinc-950"
-                    }`}
-                  >
-                    <div
-                      className={`mx-auto h-10 w-16 rounded-full p-1 transition ${
-                        isOn ? "bg-cyan-300" : "bg-zinc-800"
-                      }`}
-                    >
-                      <div
-                        className={`h-8 w-8 rounded-full bg-white transition ${
-                          isOn ? "translate-x-6" : "translate-x-0"
-                        }`}
-                      />
-                    </div>
-
-                    <p className="mt-3 text-xs font-semibold text-zinc-400">
-                      Switch {index + 1}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-zinc-800 bg-black/30 p-6">
-              <h3 className="text-2xl font-bold">Balance Slider</h3>
-              <p className="mt-2 text-sm text-zinc-400">
-                Center it at 50. The UI will be pleased.
-              </p>
-
-              <div className="mt-8">
-                <div className="flex justify-between text-sm text-zinc-400">
-                  <span>Chaotic</span>
-                  <span className="font-bold text-cyan-300">{calmSlider}</span>
-                  <span>Balanced</span>
+                    {app.button}
+                  </AppButton>
                 </div>
-
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={calmSlider}
-                  onChange={(event) => handleCalmSlider(event.target.value)}
-                  className="mt-5 w-full accent-cyan-300"
-                />
-
-                <div className="mt-6 h-4 overflow-hidden rounded-full bg-zinc-900">
-                  <div
-                    style={{
-                      width: `${Math.max(5, 100 - Math.abs(calmSlider - 50) * 2)}%`,
-                    }}
-                    className="h-full rounded-full bg-cyan-300 transition-all"
-                  />
-                </div>
-
-                <button
-                  onClick={cleanEverything}
-                  className="mt-8 w-full rounded-xl bg-cyan-300 px-5 py-4 font-black text-black shadow-[0_0_25px_rgba(103,232,249,0.30)] transition hover:bg-cyan-200"
-                >
-                  Make Everything Satisfying
-                </button>
               </div>
-            </div>
+            );
+          })}
+        </section>
+
+        <section className="mt-12 grid gap-5 md:grid-cols-3">
+          <div className={`${glassCard} p-6`}>
+            <Gamepad2 className="text-cyan-300" size={24} />
+            <h3 className="mt-4 text-xl font-black text-white">
+              Satisfying side
+            </h3>
+            <p className="mt-3 text-sm leading-6 text-zinc-300">
+              Bubble wrap, perfect button, and fidget toggles make the page feel
+              pleasant, not just annoying.
+            </p>
+          </div>
+
+          <div className={`${glassCard} p-6`}>
+            <Zap className="text-cyan-300" size={24} />
+            <h3 className="mt-4 text-xl font-black text-white">
+              Nuisance side
+            </h3>
+            <p className="mt-3 text-sm leading-6 text-zinc-300">
+              Runaway button, bad autocorrect, and fake notifications keep the
+              chaotic toy-box personality.
+            </p>
+          </div>
+
+          <div className={`${glassCard} p-6`}>
+            <Volume2 className="text-cyan-300" size={24} />
+            <h3 className="mt-4 text-xl font-black text-white">
+              Optional sound
+            </h3>
+            <p className="mt-3 text-sm leading-6 text-zinc-300">
+              Every app has its own sound toggle. The page stays quiet until the
+              user turns sound on.
+            </p>
           </div>
         </section>
-
-        <section className="mt-10 rounded-3xl border border-zinc-800 bg-zinc-950 p-6 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-            Why this is still portfolio-worthy
-          </p>
-
-          <h2 className="mt-3 text-3xl font-bold">
-            It is dumb, but it shows real frontend skills.
-          </h2>
-
-          <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-400">
-            This page uses React state, controlled inputs, mouse events, focus
-            events, mobile touch events, timers, conditional rendering, dynamic
-            inline positioning, reusable components, Web Audio API sound, and
-            responsive Tailwind styling. It is also annoying on purpose, which
-            technically makes the bugs features.
-          </p>
-        </section>
-
-        <footer className="mt-12 pb-6 text-center text-sm text-zinc-500">
-          Built by Brian Dacell Cabrera. Chaos responsibly.
-        </footer>
       </section>
+
+      {activeApp && (
+        <ModalShell
+          activeApp={activeApp}
+          setActiveApp={setActiveApp}
+          onClose={() => setActiveApp(null)}
+        >
+          {renderActiveApp()}
+        </ModalShell>
+      )}
     </main>
   );
 }

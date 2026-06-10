@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import CyberpunkBackground from "../components/CyberpunkBackground";
+import SiteNav from "../components/SiteNav";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -53,7 +54,11 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-black text-white">
         <CyberpunkBackground />
-        <div className="relative z-10">{children}</div>
+
+        <div className="relative z-10">
+          <SiteNav />
+          {children}
+        </div>
       </body>
     </html>
   );

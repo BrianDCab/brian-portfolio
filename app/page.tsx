@@ -1,378 +1,327 @@
-const featuredProjects = [
-  {
-    title: "Interactive Analytics Playground",
-    label: "Live Demo",
-    description:
-      "A browser-based lab with blackjack simulation, snake game analytics, CSV quality checks, histogram generation, weather scoring, local storage, and CSV export workflows.",
-    stack: ["Next.js", "React", "TypeScript", "Tailwind", "CSV"],
-    href: "/playground",
-  },
-  {
-    title: "CSV Data Quality Analyzer",
-    label: "Data Tool",
-    description:
-      "Uploads CSV files, detects missing cells, duplicate rows, numeric columns, quality score, and renders a histogram/distribution for selected numeric data.",
-    stack: ["TypeScript", "CSV Parsing", "Data Profiling", "Visualization"],
-    href: "/playground",
-  },
-  {
-    title: "Casino Marketing Data Automation",
-    label: "Professional Systems",
-    description:
-      "Workflow-focused data work involving campaign exports, player lists, offer validation, reporting, audit checks, and cleaner operational outputs.",
-    stack: ["SQL", "Excel", "VBA", "Python", "Reporting"],
-    href: "/projects",
-  },
-];
+import Link from "next/link";
+import type { ReactNode } from "react";
+import {
+  BarChart3,
+  BriefcaseBusiness,
+  Code2,
+  ExternalLink,
+  Gamepad2,
+  Mail,
+} from "lucide-react";
 
 const strengths = [
   {
     title: "SQL & Reporting",
-    description:
-      "Querying, cleaning, validating, and preparing business data for reports, dashboards, campaign workflows, and decision-making.",
+    text: "Clean queries, exports, audits, and reporting workflows.",
   },
   {
     title: "Python & Automation",
-    description:
-      "Automating repetitive data tasks, file exports, quality checks, reporting steps, and business processes.",
+    text: "Scripts that reduce manual work and catch mistakes earlier.",
   },
   {
     title: "Business Analytics",
-    description:
-      "Turning customer, marketing, operational, and campaign data into useful insights, cleaner processes, and better decisions.",
+    text: "Dashboards and summaries that turn messy data into decisions.",
+  },
+];
+
+const featuredProjects = [
+  {
+    title: "Data Lab",
+    href: "/data-lab",
+    label: "Analytics Playground",
+    text: "Upload data, inspect quality, chart patterns, and test scoring ideas.",
+  },
+  {
+    title: "Security Lab",
+    href: "/security-lab",
+    label: "Auth & Safe Keys",
+    text: "Planned demo for login, protected routes, server-side secrets, and safe handling patterns.",
+  },
+  {
+    title: "Projects",
+    href: "/projects",
+    label: "Portfolio Work",
+    text: "A focused view of my technical, data, programming, and automation projects.",
+  },
+  {
+    title: "Playground",
+    href: "/playground",
+    label: "Interactive Builds",
+    text: "Small browser experiments built with React state, game logic, and UI behavior.",
   },
 ];
 
 const skills = [
   "Python",
-  "SQL",
   "JavaScript",
   "TypeScript",
+  "Java",
+  "C++",
+  "C#",
+  "SQL",
+  "HTML",
+  "CSS",
   "React",
   "Next.js",
-  "Tailwind CSS",
+  "Tailwind",
   "Excel",
   "VBA",
-  "Pandas",
-  "Power BI",
+  "Git",
   "GitHub",
-  "Unity",
-  "C#",
-  "Data Cleaning",
-  "Reporting",
+  "Dashboards",
   "Automation",
+  "Data Cleaning",
+  "QA Checks",
+  "Reporting",
   "CSV Workflows",
+  "Web Interfaces",
+  "Desktop App Concepts",
+  "Mobile-Responsive UI",
 ];
 
-function SkillBadge({ skill }: { skill: string }) {
+const glassPanel =
+  "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
+
+const glassCard =
+  "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-cyan-300/[0.07]";
+
+function PrimaryButton({
+  href,
+  children,
+  icon,
+}: {
+  href: string;
+  children: ReactNode;
+  icon?: ReactNode;
+}) {
+  const isInternal = href.startsWith("/");
+  const isEmail = href.startsWith("mailto:");
+
+  const className =
+    "inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300";
+
+  if (isInternal) {
+    return (
+      <Link href={href} className={className}>
+        {icon}
+        {children}
+      </Link>
+    );
+  }
+
   return (
-    <span className="rounded-full border border-zinc-700 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-cyan-300 hover:text-cyan-300">
-      {skill}
-    </span>
+    <a
+      href={href}
+      className={className}
+      target={isEmail ? undefined : "_blank"}
+      rel={isEmail ? undefined : "noreferrer"}
+    >
+      {icon}
+      {children}
+    </a>
   );
 }
 
-function ProjectCard({
-  title,
-  label,
-  description,
-  stack,
-  href,
-}: {
-  title: string;
-  label: string;
-  description: string;
-  stack: string[];
-  href: string;
-}) {
+function SoftCard({ title, text }: { title: string; text: string }) {
   return (
-    <article className="group rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-[0_0_35px_rgba(34,211,238,0.05)] transition hover:border-cyan-300/50 hover:bg-zinc-900/70 hover:shadow-[0_0_45px_rgba(34,211,238,0.12)]">
-      <p className="text-xs font-semibold uppercase tracking-widest text-cyan-300">
-        {label}
-      </p>
-
-      <h3 className="mt-3 text-2xl font-bold text-white">{title}</h3>
-
-      <p className="mt-4 text-sm leading-7 text-zinc-400">{description}</p>
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        {stack.map((item) => (
-          <span
-            key={item}
-            className="rounded-full border border-zinc-700 bg-black/40 px-3 py-1 text-xs text-zinc-300"
-          >
-            {item}
-          </span>
-        ))}
-      </div>
-
-      <a
-        href={href}
-        className="mt-6 inline-flex text-sm font-semibold text-cyan-300 transition group-hover:text-cyan-200"
-      >
-        View project →
-      </a>
-    </article>
+    <div className={`${glassCard} p-5 md:p-6`}>
+      <h3 className="text-lg font-bold text-white">{title}</h3>
+      <p className="mt-3 text-sm leading-6 text-zinc-300">{text}</p>
+    </div>
   );
 }
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-black px-6 py-8 text-white">
-      <section className="mx-auto max-w-7xl">
-        <nav className="mb-10 flex flex-col gap-4 rounded-2xl border border-zinc-800 bg-zinc-950/80 px-5 py-4 shadow-[0_0_30px_rgba(34,211,238,0.08)] md:flex-row md:items-center md:justify-between">
-          <a href="/" className="text-lg font-bold tracking-tight text-white">
-            Brian Dacell Cabrera<span className="text-cyan-300">.</span>
-          </a>
-
-          <div className="flex flex-wrap gap-4 text-sm font-medium text-zinc-300">
-            <a className="text-cyan-300 transition" href="/">
-              Home
-            </a>
-            <a className="transition hover:text-cyan-300" href="/projects">
-              Projects
-            </a>
-            <a className="transition hover:text-cyan-300" href="/playground">
-              Playground
-            </a>
-            <a className="transition hover:text-cyan-300" href="/travel">
-              Travel
-            </a>
-            <a className="transition hover:text-cyan-300" href="#skills">
-              Skills
-            </a>
-            <a className="transition hover:text-cyan-300" href="#contact">
-              Contact
-            </a>
-          </div>
-        </nav>
-
-        <section className="rounded-3xl border border-cyan-400/30 bg-zinc-950 p-8 shadow-[0_0_45px_rgba(34,211,238,0.12)] md:p-12">
-          <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-            Data Analyst • Programmer • Automation Builder
-          </p>
-
-          <h1 className="mt-6 max-w-5xl text-5xl font-bold tracking-tight text-white md:text-7xl">
-            Brian Dacell Cabrera
-          </h1>
-
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-zinc-300">
-            I build data tools, reports, dashboards, and automation workflows
-            that turn messy business data into clear insights, cleaner
-            processes, and better decisions.
-          </p>
-
-          <div className="mt-8 flex flex-wrap gap-4">
-            <a
-              href="/projects"
-              className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-black shadow-[0_0_25px_rgba(103,232,249,0.35)] transition hover:bg-cyan-200"
-            >
-              View Projects
-            </a>
-
-            <a
-              href="/playground"
-              className="rounded-xl border border-zinc-700 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10 hover:text-cyan-300"
-            >
-              Open Playground
-            </a>
-
-            <a
-              href="https://github.com/BrianDCab"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-xl border border-zinc-700 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10 hover:text-cyan-300"
-            >
-              GitHub
-            </a>
-          </div>
-        </section>
-
-        <section className="mt-10 grid gap-6 md:grid-cols-3">
-          {strengths.map((item) => (
-            <div
-              key={item.title}
-              className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 transition hover:border-cyan-300/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.12)]"
-            >
-              <h2 className="text-xl font-semibold text-white">
-                {item.title}
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-zinc-400">
-                {item.description}
-              </p>
-            </div>
-          ))}
-        </section>
-
-        <section className="mt-20">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-                Featured Work
-              </p>
-              <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">
-                Projects that show how I think.
-              </h2>
-            </div>
-
-            <p className="max-w-xl text-sm leading-6 text-zinc-400">
-              My strongest work combines data quality, automation, reporting,
-              practical programming, and business decision support.
-            </p>
-          </div>
-
-          <div className="mt-8 grid gap-6 lg:grid-cols-3">
-            {featuredProjects.map((project) => (
-              <ProjectCard key={project.title} {...project} />
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-20 grid gap-6 lg:grid-cols-[1fr_1.2fr]">
-          <div className="rounded-3xl border border-cyan-300/30 bg-cyan-300/10 p-8">
-            <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-              Interactive Demo
+    <main className="min-h-screen">
+      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16 lg:py-24">
+        <div className="grid items-center gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className={`${glassPanel} p-6 md:p-9 lg:p-10`}>
+            <p className="text-xs font-bold uppercase tracking-[0.32em] text-cyan-300">
+              Data Analyst • Programmer • Automation Builder
             </p>
 
-            <h2 className="mt-3 text-3xl font-bold text-white">
-              Analytics Playground
+            <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
+              Brian Dacell Cabrera
+            </h1>
+
+            <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-300 md:text-lg">
+              I build data tools, reports, dashboards, and automation workflows
+              that make business work cleaner and easier to trust.
+            </p>
+
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <PrimaryButton href="/projects" icon={<ExternalLink size={16} />}>
+                View Projects
+              </PrimaryButton>
+
+              <PrimaryButton href="/data-lab" icon={<BarChart3 size={16} />}>
+                Open Data Lab
+              </PrimaryButton>
+
+              <PrimaryButton
+                href="https://github.com/BrianDCab"
+                icon={<Code2 size={16} />}
+              >
+                GitHub
+              </PrimaryButton>
+            </div>
+          </div>
+
+          <div className={`${glassPanel} p-5 md:p-7`}>
+            <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">
+              Current Focus
+            </p>
+
+            <div className="mt-5 space-y-4">
+              {strengths.map((item) => (
+                <SoftCard
+                  key={item.title}
+                  title={item.title}
+                  text={item.text}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-12">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              Featured Work
+            </p>
+
+            <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+              Interactive portfolio projects
             </h2>
+          </div>
 
-            <p className="mt-4 text-sm leading-7 text-zinc-300">
-              I built a live playground to demonstrate browser-based analytics,
-              simulations, CSV parsing, histograms, game logic, local storage,
-              and export workflows.
-            </p>
+          <p className="max-w-xl text-sm leading-6 text-zinc-400 md:text-right">
+            Live, visual, and interactive pieces someone can test directly.
+          </p>
+        </div>
 
-            <a
-              href="/playground"
-              className="mt-6 inline-flex rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-black shadow-[0_0_25px_rgba(103,232,249,0.35)] transition hover:bg-cyan-200"
+        <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          {featuredProjects.map((project) => (
+            <Link
+              key={project.title}
+              href={project.href}
+              className={`${glassCard} group p-6`}
             >
-              Try the Playground
-            </a>
-          </div>
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                {project.label}
+              </p>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
-              <p className="text-sm font-semibold text-cyan-300">
-                CSV Analyzer
-              </p>
-              <p className="mt-3 text-sm leading-6 text-zinc-400">
-                Uploads data, detects quality issues, identifies numeric
-                columns, and visualizes distributions.
-              </p>
-            </div>
+              <h3 className="mt-4 text-2xl font-black text-white">
+                {project.title}
+              </h3>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
-              <p className="text-sm font-semibold text-cyan-300">
-                Blackjack Simulator
+              <p className="mt-3 text-sm leading-6 text-zinc-300">
+                {project.text}
               </p>
-              <p className="mt-3 text-sm leading-6 text-zinc-400">
-                Tracks live session stats, win rates, busts, blackjacks,
-                simulated hands, and exports CSV files.
-              </p>
-            </div>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
-              <p className="text-sm font-semibold text-cyan-300">
-                Snake Analytics
-              </p>
-              <p className="mt-3 text-sm leading-6 text-zinc-400">
-                Tracks high score, survival time, movement, turns, final length,
-                and session history.
-              </p>
-            </div>
+              <div className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-cyan-300 transition group-hover:text-cyan-200">
+                Open <ExternalLink size={14} />
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
-              <p className="text-sm font-semibold text-cyan-300">
-                Weather Scoring
-              </p>
-              <p className="mt-3 text-sm leading-6 text-zinc-400">
-                Turns weather inputs into outdoor, running, comfort, and travel
-                decision scores.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section id="skills" className="mt-20 scroll-mt-10">
-          <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-            Technical Toolkit
+      <section
+        id="skills"
+        className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-12"
+      >
+        <div className={`${glassPanel} p-6 md:p-8`}>
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+            Skills
           </p>
 
-          <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">
-            Skills
+          <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+            My Skills & Tools
           </h2>
 
-          <div className="mt-8 flex flex-wrap gap-3">
+          <p className="mt-4 max-w-3xl text-sm leading-6 text-zinc-400 md:text-base">
+            Programming, analytics, reporting, automation, and interface work
+            across data-focused and web-focused projects.
+          </p>
+
+          <div className="mt-7 flex flex-wrap gap-3">
             {skills.map((skill) => (
-              <SkillBadge key={skill} skill={skill} />
+              <span
+                key={skill}
+                className="rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-sm font-semibold text-zinc-200 backdrop-blur-sm"
+              >
+                {skill}
+              </span>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="mt-20 rounded-3xl border border-zinc-800 bg-zinc-950 p-8 md:p-10">
-          <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
+      <section className="mx-auto grid max-w-6xl gap-5 px-4 py-8 md:grid-cols-2 md:px-6 md:py-12">
+        <div className={`${glassPanel} p-6 md:p-8`}>
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
             About
           </p>
 
-          <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">
-            I like building practical systems.
+          <h2 className="mt-3 text-3xl font-black text-white">
+            Data, code, and systems
           </h2>
 
-          <p className="mt-6 max-w-3xl text-base leading-8 text-zinc-300">
-            I’m a Computer Science graduate with experience in database
-            analysis, reporting automation, marketing campaign data, gameplay
-            programming, and business analytics. I enjoy building tools that
-            make messy workflows cleaner, faster, and easier to understand.
+          <p className="mt-5 text-sm leading-7 text-zinc-300 md:text-base">
+            My work sits between business data and technical execution. I like
+            building tools that make reporting faster, reduce manual cleanup,
+            and make results easier to explain.
           </p>
+        </div>
 
-          <p className="mt-4 max-w-3xl text-base leading-8 text-zinc-300">
-            Outside of work, I enjoy games, travel, and learning how different
-            systems — technical, cultural, and creative — fit together.
-          </p>
-        </section>
-
-        <section
-          id="contact"
-          className="mt-20 scroll-mt-10 rounded-3xl border border-cyan-400/30 bg-zinc-950 p-8 text-center shadow-[0_0_45px_rgba(34,211,238,0.10)] md:p-10"
-        >
-          <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
+        <div id="contact" className={`${glassPanel} p-6 md:p-8`}>
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
             Contact
           </p>
 
-          <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">
-            Let’s connect.
+          <h2 className="mt-3 text-3xl font-black text-white">
+            Let’s connect
           </h2>
 
-          <p className="mx-auto mt-5 max-w-2xl text-zinc-300">
-            I’m interested in data analyst, BI analyst, reporting analyst,
-            automation, and programming roles where I can help teams work
-            smarter with data.
+          <p className="mt-5 text-sm leading-7 text-zinc-300 md:text-base">
+            Open to data analyst, programmer, automation, reporting, and
+            technical operations opportunities.
           </p>
 
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <a
+          <div className="mt-7 grid gap-3 sm:grid-cols-2">
+            <PrimaryButton
               href="mailto:briandacellcabrera@gmail.com"
-              className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-black shadow-[0_0_25px_rgba(103,232,249,0.35)] transition hover:bg-cyan-200"
+              icon={<Mail size={16} />}
             >
               Email Me
-            </a>
+            </PrimaryButton>
 
-            <a
+            <PrimaryButton
+              href="https://www.linkedin.com/in/briandacellcabrera/"
+              icon={<BriefcaseBusiness size={16} />}
+            >
+              LinkedIn
+            </PrimaryButton>
+
+            <PrimaryButton
               href="https://github.com/BrianDCab"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10 hover:text-cyan-300"
+              icon={<Code2 size={16} />}
             >
               GitHub
-            </a>
-          </div>
-        </section>
+            </PrimaryButton>
 
-        <footer className="mt-12 pb-6 text-center text-sm text-zinc-500">
-          Built by Brian Dacell Cabrera.
-        </footer>
+            <PrimaryButton
+              href="https://briancabrera.itch.io/"
+              icon={<Gamepad2 size={16} />}
+            >
+              itch.io
+            </PrimaryButton>
+          </div>
+        </div>
       </section>
     </main>
   );

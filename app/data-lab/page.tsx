@@ -1,514 +1,582 @@
 "use client";
 
-import { useMemo, useState, type ChangeEvent } from "react";
+import { useMemo, useState } from "react";
+import type { ChangeEvent, ReactNode } from "react";
+import Link from "next/link";
+import {
+  AlertTriangle,
+  BarChart3,
+  CheckCircle2,
+  CloudSun,
+  DollarSign,
+  ExternalLink,
+  FileText,
+  Gauge,
+  Upload,
+} from "lucide-react";
 
-type CsvData = {
-  headers: string[];
-  rows: string[][];
-  fileName: string;
-};
+type RowData = Record<string, string>;
 
-type HistogramBin = {
-  label: string;
-  count: number;
-};
+function createSampleRows(): RowData[] {
+  const tiers = ["Base", "Bronze", "Silver", "Gold", "Platinum", "VIP"];
 
-type CategoryCount = {
-  label: string;
-  count: number;
-};
+  return Array.from({ length: 130 }, (_, index) => {
+    const playerNumber = 1001 + index;
+    const tier = tiers[index % tiers.length];
 
-const demoCsv = `PlayerID,Tier,AgeGroup,CampaignName,OfferAmount,FreePlayAmount,TheoWin,ActualWin,Visits,Redeemed
-1001,Gold,35-44,June Free Play,50,25,340,280,7,Yes
-1002,Silver,25-34,June Free Play,25,10,115,90,3,No
-1003,Platinum,45-54,VIP Weekend,150,75,920,1100,12,Yes
-1004,Bronze,21-24,New Member Offer,15,5,45,20,1,No
-1005,Gold,55-64,Food Credit Push,60,20,410,360,8,Yes
-1006,Silver,35-44,June Free Play,30,15,180,140,4,Yes
-1007,Platinum,45-54,VIP Weekend,175,100,1200,980,15,Yes
-1008,Bronze,25-34,New Member Offer,20,5,70,55,2,No
-1009,Gold,35-44,Food Credit Push,75,25,500,610,9,Yes
-1010,Silver,55-64,June Free Play,35,10,210,160,5,No
-1011,Platinum,65+,VIP Weekend,200,100,1400,1500,18,Yes
-1012,Bronze,21-24,New Member Offer,10,5,30,25,1,No
-1013,Gold,45-54,June Free Play,80,30,560,490,10,Yes
-1014,Silver,35-44,Food Credit Push,40,15,240,210,6,Yes
-1015,Platinum,55-64,VIP Weekend,160,80,1000,870,13,Yes
-1016,Bronze,25-34,New Member Offer,20,10,85,100,3,Yes
-1017,Gold,65+,Food Credit Push,90,35,650,720,11,Yes
-1018,Silver,45-54,June Free Play,45,20,310,260,6,No
-1019,Platinum,35-44,VIP Weekend,140,70,880,940,12,Yes
-1020,Bronze,21-24,New Member Offer,15,5,50,35,2,No`;
+    const netADT = Math.min(
+      1000,
+      Math.round(((index * 47) % 1001) + (index % 7) * 13)
+    );
 
-function parseCsvText(text: string): string[][] {
-  const rows: string[][] = [];
-  let currentRow: string[] = [];
-  let currentCell = "";
-  let insideQuotes = false;
+    const trips = 1 + ((index * 3) % 28);
+    const theo = Math.round(netADT * (0.75 + (index % 5) * 0.08));
+    const offer = Math.max(5, Math.round(netADT * 0.12 + trips * 1.5));
 
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    const nextChar = text[i + 1];
-
-    if (char === '"' && insideQuotes && nextChar === '"') {
-      currentCell += '"';
-      i += 1;
-    } else if (char === '"') {
-      insideQuotes = !insideQuotes;
-    } else if (char === "," && !insideQuotes) {
-      currentRow.push(currentCell.trim());
-      currentCell = "";
-    } else if ((char === "\n" || char === "\r") && !insideQuotes) {
-      if (char === "\r" && nextChar === "\n") {
-        i += 1;
-      }
-
-      currentRow.push(currentCell.trim());
-      rows.push(currentRow);
-      currentRow = [];
-      currentCell = "";
-    } else {
-      currentCell += char;
-    }
-  }
-
-  currentRow.push(currentCell.trim());
-  rows.push(currentRow);
-
-  return rows.filter((row) => row.some((cell) => cell.length > 0));
-}
-
-function loadDemoData(): CsvData {
-  const parsed = parseCsvText(demoCsv);
-  const headers = parsed[0] ?? [];
-  const rows = parsed.slice(1);
-
-  return {
-    headers,
-    rows,
-    fileName: "demo-casino-campaign-data.csv",
-  };
-}
-
-function isNumeric(value: string) {
-  return value.trim() !== "" && !Number.isNaN(Number(value));
-}
-
-function getMedian(values: number[]) {
-  if (values.length === 0) return 0;
-
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-
-  if (sorted.length % 2 === 0) {
-    return ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
-  }
-
-  return sorted[middle] ?? 0;
-}
-
-function formatNumber(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function csvValue(value: string | number) {
-  const stringValue = String(value);
-  return `"${stringValue.replaceAll('"', '""')}"`;
-}
-
-function downloadCsv(fileName: string, rows: Array<Array<string | number>>) {
-  const csv = rows.map((row) => row.map(csvValue).join(",")).join("\n");
-
-  const blob = new Blob(["\uFEFF" + csv], {
-    type: "text/csv;charset=utf-8;",
+    return {
+      PlayerID: String(playerNumber),
+      Tier: tier,
+      "Net ADT": String(netADT),
+      "# Trips": String(trips),
+      Theo: String(theo),
+      Offer: String(offer),
+    };
   });
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = fileName;
-  link.click();
-
-  URL.revokeObjectURL(url);
 }
 
-function StatCard({
-  label,
-  value,
-  detail,
-  accent = false,
+const sampleRows: RowData[] = createSampleRows();
+
+const glassPanel =
+  "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
+
+const glassCard =
+  "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-cyan-300/[0.07]";
+
+function parseCSV(text: string): RowData[] {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length < 2) return [];
+
+  const headers = lines[0].split(",").map((header) => header.trim());
+
+  return lines.slice(1).map((line) => {
+    const values = line.split(",").map((value) => value.trim());
+    const row: RowData = {};
+
+    headers.forEach((header, index) => {
+      row[header || `Column ${index + 1}`] = values[index] ?? "";
+    });
+
+    return row;
+  });
+}
+
+function toNumber(value: string) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function isMetricColumn(column: string) {
+  const lower = column.toLowerCase();
+
+  return !(
+    lower === "id" ||
+    lower.includes("playerid") ||
+    lower.includes("player id") ||
+    lower.includes("universalid") ||
+    lower.includes("universal id") ||
+    lower.endsWith("id")
+  );
+}
+
+function isMoneyLikeMetric(metric: string) {
+  const lower = metric.toLowerCase();
+
+  return (
+    lower.includes("adt") ||
+    lower.includes("theo") ||
+    lower.includes("offer") ||
+    lower.includes("amount") ||
+    lower.includes("value")
+  );
+}
+
+function formatMetricValue(metric: string, value: number) {
+  if (isMoneyLikeMetric(metric)) {
+    return `$${Math.round(value).toLocaleString()}`;
+  }
+
+  return Math.round(value).toLocaleString();
+}
+
+function formatRangeLabel(metric: string, start: number, end: number) {
+  if (isMoneyLikeMetric(metric)) {
+    return `$${Math.round(start).toLocaleString()}–$${Math.round(
+      end
+    ).toLocaleString()}`;
+  }
+
+  return `${Math.round(start).toLocaleString()}–${Math.round(
+    end
+  ).toLocaleString()}`;
+}
+
+function DataButton({
+  href,
+  children,
 }: {
-  label: string;
-  value: string | number;
-  detail?: string;
-  accent?: boolean;
+  href: string;
+  children: ReactNode;
+}) {
+  const isInternal = href.startsWith("/");
+  const isEmail = href.startsWith("mailto:");
+
+  const className =
+    "inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-4 py-2 text-sm font-bold text-black shadow-[0_0_20px_rgba(34,211,238,0.22)] transition hover:-translate-y-0.5 hover:bg-cyan-300";
+
+  if (isInternal) {
+    return (
+      <Link href={href} className={className}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <a
+      href={href}
+      className={className}
+      target={isEmail ? undefined : "_blank"}
+      rel={isEmail ? undefined : "noreferrer"}
+    >
+      {children}
+    </a>
+  );
+}
+
+function GhostButton({
+  children,
+  onClick,
+}: {
+  children: ReactNode;
+  onClick: () => void;
 }) {
   return (
-    <div
-      className={`rounded-2xl border p-5 ${
-        accent
-          ? "border-cyan-300/40 bg-cyan-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
-          : "border-zinc-800 bg-black/40"
-      }`}
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center justify-center gap-2 rounded-full border border-cyan-300/25 bg-black/25 px-4 py-2 text-sm font-bold text-cyan-200 transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10"
     >
-      <p className="text-xs uppercase tracking-widest text-zinc-500">{label}</p>
-      <p
-        className={
-          accent
-            ? "mt-2 text-3xl font-black text-cyan-300"
-            : "mt-2 text-2xl font-bold text-white"
-        }
-      >
-        {value}
-      </p>
-      {detail && <p className="mt-2 text-xs text-zinc-500">{detail}</p>}
-    </div>
+      {children}
+    </button>
   );
 }
 
 export default function DataLabPage() {
-  const [csvData, setCsvData] = useState<CsvData>(() => loadDemoData());
-  const [selectedNumericColumn, setSelectedNumericColumn] =
-    useState("FreePlayAmount");
-  const [selectedCategoryColumn, setSelectedCategoryColumn] = useState("Tier");
-  const [error, setError] = useState("");
+  const [rows, setRows] = useState<RowData[]>(sampleRows);
+  const [selectedMetric, setSelectedMetric] = useState("Net ADT");
+  const [betAmount, setBetAmount] = useState(25);
+  const [winChance, setWinChance] = useState(42);
+  const [temperature, setTemperature] = useState(72);
+  const [rainChance, setRainChance] = useState(15);
+  const [windSpeed, setWindSpeed] = useState(8);
 
-  const analysis = useMemo(() => {
-    const { headers, rows } = csvData;
+  const columns = useMemo(() => {
+    const first = rows[0] ?? {};
+    return Object.keys(first);
+  }, [rows]);
 
-    const rowCount = rows.length;
-    const columnCount = headers.length;
+  const numericColumns = useMemo(() => {
+    return columns.filter(
+      (column) =>
+        isMetricColumn(column) &&
+        rows.some(
+          (row) => row[column] !== "" && !Number.isNaN(Number(row[column]))
+        )
+    );
+  }, [columns, rows]);
 
-    let missingCells = 0;
+  const activeMetric = numericColumns.includes(selectedMetric)
+    ? selectedMetric
+    : numericColumns[0] ?? "";
 
-    for (const row of rows) {
-      for (let i = 0; i < columnCount; i++) {
-        if (!row[i] || row[i].trim() === "") {
-          missingCells += 1;
-        }
-      }
+  const metricValues = useMemo(() => {
+    if (!activeMetric) return [];
+
+    return rows
+      .map((row) => Number(row[activeMetric]))
+      .filter((value) => Number.isFinite(value));
+  }, [activeMetric, rows]);
+
+  const metricStats = useMemo(() => {
+    if (metricValues.length === 0) {
+      return {
+        average: 0,
+        min: 0,
+        max: 0,
+      };
     }
 
-    const seenRows = new Set<string>();
-    let duplicateRows = 0;
+    const total = metricValues.reduce((sum, value) => sum + value, 0);
 
-    for (const row of rows) {
-      const key = row.join("|").toLowerCase();
+    return {
+      average: Math.round(total / metricValues.length),
+      min: Math.min(...metricValues),
+      max: Math.max(...metricValues),
+    };
+  }, [metricValues]);
 
-      if (seenRows.has(key)) {
-        duplicateRows += 1;
-      } else {
-        seenRows.add(key);
-      }
+  const chartData = useMemo(() => {
+    if (!activeMetric) return [];
+
+    return rows.slice(0, 12).map((row, index) => ({
+      label: `Player ${row.PlayerID || row.ID || index + 1}`,
+      value: toNumber(row[activeMetric]),
+    }));
+  }, [activeMetric, rows]);
+
+  const maxChartValue = Math.max(...chartData.map((item) => item.value), 1);
+
+  const histogramData = useMemo(() => {
+    if (!activeMetric) return [];
+
+    const values = rows
+      .map((row) => Number(row[activeMetric]))
+      .filter((value) => Number.isFinite(value));
+
+    if (values.length === 0) return [];
+
+    const min = Math.floor(Math.min(...values));
+    const max = Math.ceil(Math.max(...values));
+
+    if (min === max) {
+      return [
+        {
+          label: formatRangeLabel(activeMetric, min, max),
+          count: values.length,
+        },
+      ];
     }
 
-    const numericColumns = headers.filter((_, columnIndex) => {
-      const values = rows
-        .map((row) => row[columnIndex] ?? "")
-        .filter((value) => value.trim() !== "");
+    const bucketCount = Math.min(8, Math.max(5, Math.ceil(Math.sqrt(values.length))));
+    const bucketSize = Math.max(1, Math.ceil((max - min + 1) / bucketCount));
 
-      if (values.length === 0) return false;
-
-      const numericCount = values.filter(isNumeric).length;
-      return numericCount / values.length >= 0.8;
-    });
-
-    const categoryColumns = headers.filter(
-      (header) => !numericColumns.includes(header)
-    );
-
-    const totalCells = Math.max(rowCount * columnCount, 1);
-    const missingRate = missingCells / totalCells;
-    const duplicateRate = rowCount === 0 ? 0 : duplicateRows / rowCount;
-
-    const qualityScore = Math.round(
-      Math.max(0, Math.min(100, 100 - missingRate * 55 - duplicateRate * 35))
-    );
-
-    return {
-      rowCount,
-      columnCount,
-      missingCells,
-      duplicateRows,
-      numericColumns,
-      categoryColumns,
-      qualityScore,
-    };
-  }, [csvData]);
-
-  const numericColumn =
-    selectedNumericColumn &&
-    analysis.numericColumns.includes(selectedNumericColumn)
-      ? selectedNumericColumn
-      : analysis.numericColumns[0] ?? "";
-
-  const categoryColumn =
-    selectedCategoryColumn &&
-    csvData.headers.includes(selectedCategoryColumn)
-      ? selectedCategoryColumn
-      : analysis.categoryColumns[0] ?? csvData.headers[0] ?? "";
-
-  const numericStats = useMemo(() => {
-    const columnIndex = csvData.headers.indexOf(numericColumn);
-
-    const values =
-      columnIndex === -1
-        ? []
-        : csvData.rows
-            .map((row) => Number(row[columnIndex]))
-            .filter((value) => !Number.isNaN(value));
-
-    const min = values.length ? Math.min(...values) : 0;
-    const max = values.length ? Math.max(...values) : 0;
-    const average =
-      values.length > 0
-        ? values.reduce((sum, value) => sum + value, 0) / values.length
-        : 0;
-    const median = getMedian(values);
-
-    return {
-      values,
-      min,
-      max,
-      average,
-      median,
-    };
-  }, [csvData, numericColumn]);
-
-  const histogram = useMemo(() => {
-    const values = numericStats.values;
-
-    if (values.length === 0) return [] as HistogramBin[];
-
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const binCount = Math.min(8, Math.max(4, Math.ceil(Math.sqrt(values.length))));
-    const range = max - min || 1;
-    const binSize = range / binCount;
-
-    return Array.from({ length: binCount }, (_, index) => {
-      const start = min + index * binSize;
-      const end = index === binCount - 1 ? max : start + binSize;
-
-      const count = values.filter((value) => {
-        if (index === binCount - 1) {
-          return value >= start && value <= end;
-        }
-
-        return value >= start && value < end;
-      }).length;
+    const buckets = Array.from({ length: bucketCount }, (_, index) => {
+      const start = min + index * bucketSize;
+      const end = Math.min(max, start + bucketSize - 1);
 
       return {
-        label: `${formatNumber(start)} - ${formatNumber(end)}`,
-        count,
+        start,
+        end,
+        label: formatRangeLabel(activeMetric, start, end),
+        count: 0,
       };
+    }).filter((bucket) => bucket.start <= max);
+
+    values.forEach((value) => {
+      const index = Math.min(
+        buckets.length - 1,
+        Math.floor((value - min) / bucketSize)
+      );
+
+      buckets[index].count += 1;
     });
-  }, [numericStats.values]);
 
-  const categoryCounts = useMemo(() => {
-    const columnIndex = csvData.headers.indexOf(categoryColumn);
+    return buckets;
+  }, [activeMetric, rows]);
 
-    if (columnIndex === -1) return [] as CategoryCount[];
+  const maxHistogramCount = Math.max(
+    ...histogramData.map((bucket) => bucket.count),
+    1
+  );
 
-    const counts = new Map<string, number>();
+  const strongestBucket = useMemo(() => {
+    if (histogramData.length === 0) return null;
 
-    for (const row of csvData.rows) {
-      const value = row[columnIndex]?.trim() || "Missing";
-      counts.set(value, (counts.get(value) ?? 0) + 1);
-    }
+    return histogramData.reduce((best, bucket) =>
+      bucket.count > best.count ? bucket : best
+    );
+  }, [histogramData]);
 
-    return [...counts.entries()]
-      .map(([label, count]) => ({ label, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 8);
-  }, [csvData, categoryColumn]);
+  const qualityStats = useMemo(() => {
+    const totalCells = rows.length * Math.max(columns.length, 1);
 
-  const histogramMax = Math.max(...histogram.map((bin) => bin.count), 1);
-  const categoryMax = Math.max(...categoryCounts.map((item) => item.count), 1);
+    const emptyCells = rows.reduce((count, row) => {
+      return (
+        count +
+        columns.filter((column) => String(row[column] ?? "").trim() === "").length
+      );
+    }, 0);
 
-  function handleCsvUpload(event: ChangeEvent<HTMLInputElement>) {
+    const duplicateIds =
+      columns.includes("PlayerID") || columns.includes("ID")
+        ? rows.length -
+          new Set(rows.map((row) => row.PlayerID || row.ID).filter(Boolean)).size
+        : 0;
+
+    const completeness =
+      totalCells === 0
+        ? 100
+        : Math.round(((totalCells - emptyCells) / totalCells) * 100);
+
+    return {
+      players: rows.length,
+      columns: columns.length,
+      emptyCells,
+      duplicateIds: Math.max(duplicateIds, 0),
+      completeness,
+    };
+  }, [columns, rows]);
+
+  const scoring = useMemo(() => {
+    const expectedValue = betAmount * (winChance / 100);
+    const riskScore = Math.round((betAmount * (100 - winChance)) / 100);
+    const confidence =
+      winChance >= 65 ? "High" : winChance >= 40 ? "Medium" : "Low";
+
+    return {
+      expectedValue: expectedValue.toFixed(2),
+      riskScore,
+      confidence,
+    };
+  }, [betAmount, winChance]);
+
+  const weatherScore = useMemo(() => {
+    let score = 100;
+
+    if (temperature > 90) score -= 18;
+    if (temperature < 50) score -= 14;
+    score -= Math.round(rainChance * 0.35);
+    score -= Math.round(windSpeed * 0.8);
+
+    return Math.max(0, Math.min(100, score));
+  }, [temperature, rainChance, windSpeed]);
+
+  function handleCSVUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-
     if (!file) return;
-
-    setError("");
 
     const reader = new FileReader();
 
     reader.onload = () => {
-      try {
-        const text = String(reader.result ?? "");
-        const parsed = parseCsvText(text);
+      const text = String(reader.result ?? "");
+      const parsed = parseCSV(text);
 
-        if (parsed.length < 2) {
-          setError("This CSV needs at least one header row and one data row.");
-          return;
-        }
+      if (parsed.length > 0) {
+        setRows(parsed);
 
-        const headers = parsed[0] ?? [];
-        const rows = parsed.slice(1);
+        const firstNumericMetric = Object.keys(parsed[0]).find(
+          (column) =>
+            isMetricColumn(column) &&
+            parsed.some((row) => !Number.isNaN(Number(row[column])))
+        );
 
-        setCsvData({
-          headers,
-          rows,
-          fileName: file.name,
-        });
-
-        setSelectedNumericColumn("");
-        setSelectedCategoryColumn("");
-      } catch {
-        setError("Could not parse this CSV file.");
+        if (firstNumericMetric) setSelectedMetric(firstNumericMetric);
       }
     };
 
     reader.readAsText(file);
   }
 
-  function exportReport() {
-    downloadCsv("data-lab-report.csv", [
-      ["Metric", "Value"],
-      ["File Name", csvData.fileName],
-      ["Rows", analysis.rowCount],
-      ["Columns", analysis.columnCount],
-      ["Missing Cells", analysis.missingCells],
-      ["Duplicate Rows", analysis.duplicateRows],
-      ["Numeric Columns", analysis.numericColumns.length],
-      ["Quality Score", analysis.qualityScore],
-      ["Selected Numeric Column", numericColumn],
-      ["Minimum", numericStats.min],
-      ["Maximum", numericStats.max],
-      ["Average", numericStats.average],
-      ["Median", numericStats.median],
-      ["Selected Category Column", categoryColumn],
-    ]);
-  }
-
-  function resetDemoData() {
-    const demo = loadDemoData();
-    setCsvData(demo);
-    setSelectedNumericColumn("FreePlayAmount");
-    setSelectedCategoryColumn("Tier");
-    setError("");
+  function resetSampleData() {
+    setRows(sampleRows);
+    setSelectedMetric("Net ADT");
   }
 
   return (
-    <main className="min-h-screen bg-black px-6 py-8 text-white">
-      <section className="mx-auto max-w-7xl">
-        <nav className="mb-10 flex flex-col gap-4 rounded-2xl border border-zinc-800 bg-zinc-950/80 px-5 py-4 shadow-[0_0_30px_rgba(34,211,238,0.08)] md:flex-row md:items-center md:justify-between">
-          <a href="/" className="text-lg font-bold tracking-tight text-white">
-            Brian Dacell Cabrera<span className="text-cyan-300">.</span>
-          </a>
+    <main className="min-h-screen">
+      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16 lg:py-24">
+        <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className={`${glassPanel} p-6 md:p-10`}>
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">
+              <BarChart3 size={15} />
+              Data Lab
+            </div>
 
-          <div className="flex flex-wrap gap-4 text-sm font-medium text-zinc-300">
-            <a className="transition hover:text-cyan-300" href="/">
-              Home
-            </a>
-            <a className="transition hover:text-cyan-300" href="/projects">
-              Projects
-            </a>
-            <a className="transition hover:text-cyan-300" href="/playground">
-              Playground
-            </a>
-            <a className="transition hover:text-cyan-300" href="/chaos-lab">
-              Chaos Lab
-            </a>
-            <a className="transition hover:text-cyan-300" href="/travel">
-              Travel
-            </a>
-            <a className="transition hover:text-cyan-300" href="/#contact">
-              Contact
-            </a>
-          </div>
-        </nav>
+            <h1 className="mt-6 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
+              CSV, charts, scoring, and analyst tools
+            </h1>
 
-        <section className="rounded-3xl border border-cyan-400/30 bg-zinc-950 p-8 shadow-[0_0_45px_rgba(34,211,238,0.12)] md:p-12">
-          <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-            Data Visualization Lab
-          </p>
+            <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-300 md:text-lg">
+              A live data playground for uploading CSV files, checking data
+              quality, charting player metrics, and testing simple scoring
+              logic.
+            </p>
 
-          <h1 className="mt-6 text-5xl font-black tracking-tight text-white md:text-7xl">
-            Turn raw CSV data into readable charts.
-          </h1>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <DataButton href="/projects">
+                View Projects <ExternalLink size={15} />
+              </DataButton>
 
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-zinc-300">
-            Upload a CSV or use the fake demo campaign dataset. This page finds
-            numeric columns, builds a histogram, summarizes the data, counts
-            categories, checks data quality, and exports a simple report.
-          </p>
-
-          <div className="mt-8 flex flex-wrap gap-4">
-            <label className="cursor-pointer rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-black shadow-[0_0_25px_rgba(103,232,249,0.35)] transition hover:bg-cyan-200">
-              Upload CSV
-              <input
-                type="file"
-                accept=".csv,text/csv"
-                onChange={handleCsvUpload}
-                className="hidden"
-              />
-            </label>
-
-            <button
-              onClick={resetDemoData}
-              className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
-            >
-              Reset Demo Data
-            </button>
-
-            <button
-              onClick={exportReport}
-              className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
-            >
-              Export Report
-            </button>
+              <DataButton href="/security-lab">
+                Open Security Lab <ExternalLink size={15} />
+              </DataButton>
+            </div>
           </div>
 
-          <p className="mt-5 text-sm text-zinc-400">
-            Current file:{" "}
-            <span className="font-semibold text-cyan-300">
-              {csvData.fileName}
-            </span>
-          </p>
+          <div className={`${glassPanel} p-6 md:p-8`}>
+            <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">
+              Dataset
+            </p>
 
-          {error && <p className="mt-4 text-sm text-red-300">{error}</p>}
+            <h2 className="mt-4 text-3xl font-black text-white">
+              130 sample players
+            </h2>
+
+            <p className="mt-4 text-sm leading-7 text-zinc-300">
+              The sample data includes PlayerID, Tier, Net ADT, # Trips, Theo,
+              and Offer. Upload your own CSV or reset back to the demo data.
+            </p>
+
+            <div className="mt-6 flex flex-col gap-3">
+              <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300">
+                <Upload size={16} />
+                Upload CSV
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={handleCSVUpload}
+                  className="hidden"
+                />
+              </label>
+
+              <GhostButton onClick={resetSampleData}>
+                <FileText size={16} />
+                Reset Sample Data
+              </GhostButton>
+            </div>
+          </div>
+        </div>
+
+        <section className="mt-12 grid gap-5 md:grid-cols-4">
+          <div className={`${glassCard} p-6`}>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+              Players
+            </p>
+            <div className="mt-3 text-4xl font-black text-white">
+              {qualityStats.players}
+            </div>
+          </div>
+
+          <div className={`${glassCard} p-6`}>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+              Columns
+            </p>
+            <div className="mt-3 text-4xl font-black text-white">
+              {qualityStats.columns}
+            </div>
+          </div>
+
+          <div className={`${glassCard} p-6`}>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+              Complete
+            </p>
+            <div className="mt-3 text-4xl font-black text-white">
+              {qualityStats.completeness}%
+            </div>
+          </div>
+
+          <div className={`${glassCard} p-6`}>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+              Empty Cells
+            </p>
+            <div className="mt-3 text-4xl font-black text-white">
+              {qualityStats.emptyCells}
+            </div>
+          </div>
         </section>
 
-        <section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Rows" value={analysis.rowCount} />
-          <StatCard label="Columns" value={analysis.columnCount} />
-          <StatCard label="Missing Cells" value={analysis.missingCells} />
-          <StatCard
-            label="Quality Score"
-            value={`${analysis.qualityScore}/100`}
-            accent
-          />
-        </section>
+        <section className="mt-12 rounded-[2rem] border border-cyan-300/20 bg-cyan-950/[0.14] p-6 shadow-2xl shadow-black/20 backdrop-blur-md md:p-8">
+          <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                Current Story
+              </p>
 
-        <section className="mt-10 grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_420px]">
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 md:p-8">
-            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-                  Histogram
+              <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+                Reading {activeMetric}
+              </h2>
+
+              <p className="mt-4 text-sm leading-7 text-zinc-300 md:text-base">
+                The bar chart compares individual players. The histogram groups
+                all {qualityStats.players} players into ranges so you can see
+                where the group is concentrated.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl border border-cyan-300/20 bg-black/25 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
+                  Average
                 </p>
-                <h2 className="mt-3 text-3xl font-bold">
-                  Distribution of {numericColumn || "numeric values"}
+                <p className="mt-2 text-2xl font-black text-white">
+                  {formatMetricValue(activeMetric, metricStats.average)}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-cyan-300/20 bg-black/25 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
+                  Low
+                </p>
+                <p className="mt-2 text-2xl font-black text-white">
+                  {formatMetricValue(activeMetric, metricStats.min)}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-cyan-300/20 bg-black/25 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
+                  High
+                </p>
+                <p className="mt-2 text-2xl font-black text-white">
+                  {formatMetricValue(activeMetric, metricStats.max)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {strongestBucket && (
+            <p className="mt-6 rounded-2xl border border-cyan-300/15 bg-black/25 p-4 text-sm leading-6 text-zinc-300">
+              Most players are currently in the{" "}
+              <span className="font-bold text-cyan-200">
+                {strongestBucket.label}
+              </span>{" "}
+              range, with{" "}
+              <span className="font-bold text-cyan-200">
+                {strongestBucket.count} players
+              </span>{" "}
+              in that bucket.
+            </p>
+          )}
+        </section>
+
+        <section className="mt-12 grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
+          <div className={`${glassPanel} p-6 md:p-8`}>
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                  Bar Chart
+                </p>
+
+                <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+                  {activeMetric} by player
                 </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">
-                  A histogram groups numeric values into ranges so patterns,
-                  outliers, and common value bands are easier to see.
+
+                <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-300">
+                  Each row is one player. The number on the right is that
+                  player&apos;s selected metric value.
                 </p>
               </div>
 
               <select
-                value={numericColumn}
-                onChange={(event) => setSelectedNumericColumn(event.target.value)}
-                className="rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white outline-none transition focus:border-cyan-300"
+                value={activeMetric}
+                onChange={(event) => setSelectedMetric(event.target.value)}
+                className="rounded-full border border-cyan-300/25 bg-black/40 px-4 py-3 text-sm font-bold text-cyan-100 outline-none"
               >
-                {analysis.numericColumns.map((column) => (
-                  <option key={column} value={column}>
+                {numericColumns.map((column) => (
+                  <option key={column} value={column} className="bg-black">
                     {column}
                   </option>
                 ))}
@@ -516,138 +584,281 @@ export default function DataLabPage() {
             </div>
 
             <div className="mt-8 space-y-4">
-              {histogram.map((bin) => (
-                <div key={bin.label}>
-                  <div className="mb-2 flex justify-between text-sm text-zinc-400">
-                    <span>{bin.label}</span>
-                    <span>{bin.count}</span>
+              {chartData.map((item) => (
+                <div
+                  key={item.label}
+                  className="grid gap-2 md:grid-cols-[120px_1fr_90px] md:items-center"
+                >
+                  <div className="truncate text-sm font-bold text-zinc-300">
+                    {item.label}
                   </div>
 
-                  <div className="h-6 overflow-hidden rounded-full bg-zinc-900">
+                  <div className="h-4 overflow-hidden rounded-full border border-cyan-300/20 bg-black/30">
                     <div
+                      className="h-full rounded-full bg-cyan-400 shadow-[0_0_18px_rgba(34,211,238,0.35)]"
                       style={{
-                        width: `${(bin.count / histogramMax) * 100}%`,
+                        width: `${Math.max(
+                          (item.value / maxChartValue) * 100,
+                          4
+                        )}%`,
                       }}
-                      className="h-full rounded-full bg-cyan-300 transition-all"
                     />
+                  </div>
+
+                  <div className="text-sm font-black text-cyan-200 md:text-right">
+                    {formatMetricValue(activeMetric, item.value)}
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <aside className="rounded-3xl border border-cyan-400/20 bg-zinc-950 p-6 shadow-[0_0_35px_rgba(34,211,238,0.08)]">
-            <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-              Numeric Summary
-            </p>
+          <div className="grid gap-5">
+            <div className={`${glassPanel} p-6 md:p-8`}>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                Histogram
+              </p>
 
-            <div className="mt-5 grid gap-4">
-              <StatCard
-                label="Average"
-                value={formatNumber(numericStats.average)}
-              />
-              <StatCard label="Median" value={formatNumber(numericStats.median)} />
-              <StatCard label="Minimum" value={formatNumber(numericStats.min)} />
-              <StatCard label="Maximum" value={formatNumber(numericStats.max)} />
+              <h2 className="mt-3 text-3xl font-black text-white">
+                Player count by {activeMetric} range
+              </h2>
+
+              <p className="mt-4 text-sm leading-6 text-zinc-300">
+                Each bar shows how many players fall inside that non-overlapping
+                value range.
+              </p>
+
+              <div className="mt-8 overflow-x-auto">
+                <div className="flex h-72 min-w-[520px] items-end gap-3 rounded-3xl border border-cyan-300/15 bg-black/20 p-4">
+                  {histogramData.map((bucket) => (
+                    <div
+                      key={bucket.label}
+                      className="flex h-full flex-1 flex-col items-center justify-end gap-2"
+                    >
+                      <div className="text-center text-[11px] font-black leading-4 text-cyan-200">
+                        {bucket.count}
+                        <br />
+                        players
+                      </div>
+
+                      <div
+                        className="w-full rounded-t-2xl border border-cyan-300/30 bg-cyan-400 shadow-[0_0_18px_rgba(34,211,238,0.35)]"
+                        style={{
+                          height: `${Math.max(
+                            (bucket.count / maxHistogramCount) * 100,
+                            8
+                          )}%`,
+                        }}
+                      />
+
+                      <div className="h-12 text-center text-[10px] font-bold leading-4 text-zinc-400">
+                        {bucket.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <GhostButton onClick={resetSampleData}>
+                  <FileText size={16} />
+                  Reset Histogram Data
+                </GhostButton>
+              </div>
             </div>
-          </aside>
+
+            <div className={`${glassPanel} p-6 md:p-8`}>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                Quality Check
+              </p>
+
+              <h2 className="mt-3 text-3xl font-black text-white">
+                Quick audit
+              </h2>
+
+              <div className="mt-6 space-y-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-1 text-cyan-300" size={20} />
+                  <p className="text-sm leading-6 text-zinc-300">
+                    Dataset has {qualityStats.players} players and{" "}
+                    {qualityStats.columns} columns.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="mt-1 text-cyan-300" size={20} />
+                  <p className="text-sm leading-6 text-zinc-300">
+                    Found {qualityStats.emptyCells} empty cells and{" "}
+                    {qualityStats.duplicateIds} possible duplicate IDs.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-7">
+                <DataButton href="/projects">
+                  Add to Portfolio <ExternalLink size={15} />
+                </DataButton>
+              </div>
+            </div>
+          </div>
         </section>
 
-        <section className="mt-10 grid gap-6 xl:grid-cols-[420px_minmax(0,1.4fr)]">
-          <aside className="rounded-3xl border border-cyan-400/20 bg-zinc-950 p-6 shadow-[0_0_35px_rgba(34,211,238,0.08)]">
-            <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-              Data Health
-            </p>
-
-            <div className="mt-5 grid gap-4">
-              <StatCard label="Duplicate Rows" value={analysis.duplicateRows} />
-              <StatCard
-                label="Numeric Columns"
-                value={analysis.numericColumns.length}
-              />
-              <StatCard
-                label="Category Columns"
-                value={analysis.categoryColumns.length}
-              />
-              <StatCard
-                label="Selected Category"
-                value={categoryColumn || "--"}
-              />
+        <section className="mt-12 grid gap-5 lg:grid-cols-2">
+          <div className={`${glassPanel} p-6 md:p-8`}>
+            <div className="flex items-center gap-3">
+              <DollarSign className="text-cyan-300" size={24} />
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                Bet / Scoring Model
+              </p>
             </div>
-          </aside>
 
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 md:p-8">
-            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-                  Category Bar Chart
+            <h2 className="mt-4 text-3xl font-black text-white">
+              Simple risk score
+            </h2>
+
+            <div className="mt-7 grid gap-5 md:grid-cols-2">
+              <label className="space-y-2">
+                <span className="text-sm font-bold text-zinc-300">
+                  Bet Amount: ${betAmount}
+                </span>
+                <input
+                  type="range"
+                  min="5"
+                  max="250"
+                  value={betAmount}
+                  onChange={(event) => setBetAmount(Number(event.target.value))}
+                  className="w-full"
+                />
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-sm font-bold text-zinc-300">
+                  Win Chance: {winChance}%
+                </span>
+                <input
+                  type="range"
+                  min="1"
+                  max="99"
+                  value={winChance}
+                  onChange={(event) => setWinChance(Number(event.target.value))}
+                  className="w-full"
+                />
+              </label>
+            </div>
+
+            <div className="mt-7 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl border border-cyan-300/20 bg-black/25 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
+                  EV
                 </p>
-                <h2 className="mt-3 text-3xl font-bold">
-                  Counts by {categoryColumn || "category"}
-                </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">
-                  This bar chart makes categorical data readable by showing
-                  which groups appear the most often.
+                <p className="mt-2 text-2xl font-black text-white">
+                  ${scoring.expectedValue}
                 </p>
               </div>
 
-              <select
-                value={categoryColumn}
-                onChange={(event) =>
-                  setSelectedCategoryColumn(event.target.value)
-                }
-                className="rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white outline-none transition focus:border-cyan-300"
-              >
-                {csvData.headers.map((column) => (
-                  <option key={column} value={column}>
-                    {column}
-                  </option>
-                ))}
-              </select>
+              <div className="rounded-2xl border border-cyan-300/20 bg-black/25 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
+                  Risk
+                </p>
+                <p className="mt-2 text-2xl font-black text-white">
+                  {scoring.riskScore}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-cyan-300/20 bg-black/25 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
+                  Confidence
+                </p>
+                <p className="mt-2 text-2xl font-black text-white">
+                  {scoring.confidence}
+                </p>
+              </div>
             </div>
 
-            <div className="mt-8 space-y-4">
-              {categoryCounts.map((item) => (
-                <div key={item.label}>
-                  <div className="mb-2 flex justify-between text-sm text-zinc-400">
-                    <span>{item.label}</span>
-                    <span>{item.count}</span>
-                  </div>
+            <div className="mt-7">
+              <DataButton href="/security-lab">
+                Connect to Secure App Later <ExternalLink size={15} />
+              </DataButton>
+            </div>
+          </div>
 
-                  <div className="h-6 overflow-hidden rounded-full bg-zinc-900">
-                    <div
-                      style={{
-                        width: `${(item.count / categoryMax) * 100}%`,
-                      }}
-                      className="h-full rounded-full bg-cyan-300 transition-all"
-                    />
-                  </div>
+          <div className={`${glassPanel} p-6 md:p-8`}>
+            <div className="flex items-center gap-3">
+              <CloudSun className="text-cyan-300" size={24} />
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                Weather Analyzer
+              </p>
+            </div>
+
+            <h2 className="mt-4 text-3xl font-black text-white">
+              Event comfort score
+            </h2>
+
+            <div className="mt-7 space-y-5">
+              <label className="block space-y-2">
+                <span className="text-sm font-bold text-zinc-300">
+                  Temperature: {temperature}°F
+                </span>
+                <input
+                  type="range"
+                  min="30"
+                  max="110"
+                  value={temperature}
+                  onChange={(event) => setTemperature(Number(event.target.value))}
+                  className="w-full"
+                />
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-bold text-zinc-300">
+                  Rain Chance: {rainChance}%
+                </span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={rainChance}
+                  onChange={(event) => setRainChance(Number(event.target.value))}
+                  className="w-full"
+                />
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-bold text-zinc-300">
+                  Wind: {windSpeed} mph
+                </span>
+                <input
+                  type="range"
+                  min="0"
+                  max="45"
+                  value={windSpeed}
+                  onChange={(event) => setWindSpeed(Number(event.target.value))}
+                  className="w-full"
+                />
+              </label>
+            </div>
+
+            <div className="mt-7 rounded-2xl border border-cyan-300/20 bg-black/25 p-5">
+              <div className="flex items-center gap-3">
+                <Gauge className="text-cyan-300" size={22} />
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
+                    Comfort Score
+                  </p>
+                  <p className="mt-1 text-4xl font-black text-white">
+                    {weatherScore}
+                  </p>
                 </div>
-              ))}
+              </div>
+            </div>
+
+            <div className="mt-7">
+              <DataButton href="/travel">
+                Open Travel Page <ExternalLink size={15} />
+              </DataButton>
             </div>
           </div>
         </section>
-
-        <section className="mt-10 rounded-3xl border border-zinc-800 bg-zinc-950 p-6 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-            Portfolio Value
-          </p>
-
-          <h2 className="mt-3 text-3xl font-bold">
-            This shows data analytics and frontend skill at the same time.
-          </h2>
-
-          <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-400">
-            This project demonstrates CSV parsing, data cleaning checks, dynamic
-            chart generation, histograms, category aggregation, summary metrics,
-            report export, TypeScript data modeling, React state, and responsive
-            dashboard design.
-          </p>
-        </section>
-
-        <footer className="mt-12 pb-6 text-center text-sm text-zinc-500">
-          Built by Brian Dacell Cabrera.
-        </footer>
       </section>
     </main>
   );

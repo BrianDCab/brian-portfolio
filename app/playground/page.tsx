@@ -5,9 +5,26 @@ import {
   useMemo,
   useRef,
   useState,
-  type ChangeEvent,
+  type ReactNode,
   type TouchEvent,
 } from "react";
+import Link from "next/link";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  BarChart3,
+  Calculator,
+  Download,
+  ExternalLink,
+  Gamepad2,
+  Pause,
+  Play,
+  RefreshCcw,
+  Sparkles,
+  Trophy,
+} from "lucide-react";
 
 type Card = {
   suit: string;
@@ -52,21 +69,17 @@ type SnakeRecord = {
   cause: "wall" | "self";
 };
 
-type WeatherInputs = {
-  city: string;
-  tempF: number;
-  rainChance: number;
-  windMph: number;
-  humidity: number;
-  uvIndex: number;
-  visibilityMiles: number;
-};
+type DemoKey = "snake" | "blackjack" | "scoring";
 
-type WeatherNumberField = Exclude<keyof WeatherInputs, "city">;
-
-type HistogramBin = {
-  label: string;
-  count: number;
+type ScenarioRecord = {
+  scenarioNumber: number;
+  timestamp: string;
+  userValue: number;
+  businessImpact: number;
+  buildConfidence: number;
+  complexityRisk: number;
+  score: number;
+  decision: string;
 };
 
 const suits = ["♠", "♥", "♦", "♣"];
@@ -93,6 +106,39 @@ const startingSnake: Position[] = [
   { x: 7, y: 8 },
   { x: 6, y: 8 },
   { x: 5, y: 8 },
+];
+
+const glassPanel =
+  "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
+
+const glassCard =
+  "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-cyan-300/[0.07]";
+
+const demoCards = [
+  {
+    key: "snake" as const,
+    title: "Snake Game",
+    label: "Touch + Keyboard",
+    text: "A game loop with keyboard controls, swipe controls, visible buttons, high score storage, movement analytics, and CSV export.",
+    button: "Open Snake",
+    icon: Gamepad2,
+  },
+  {
+    key: "blackjack" as const,
+    title: "Blackjack Logic",
+    label: "Game Rules",
+    text: "A card simulation with real hand values, ace adjustment, dealer behavior, result tracking, live dashboards, and session export.",
+    button: "Open Blackjack",
+    icon: Trophy,
+  },
+  {
+    key: "scoring" as const,
+    title: "Project Readiness",
+    label: "Interactive Sliders",
+    text: "A project scoring model that explains whether an idea is ready to build, needs review, or should be reworked first.",
+    button: "Open Scoring",
+    icon: Calculator,
+  },
 ];
 
 function clamp(value: number, min = 0, max = 100) {
@@ -192,44 +238,6 @@ function downloadCsv(
   URL.revokeObjectURL(url);
 }
 
-function parseCsvText(text: string) {
-  const rows: string[][] = [];
-  let currentRow: string[] = [];
-  let currentCell = "";
-  let insideQuotes = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    const nextChar = text[i + 1];
-
-    if (char === '"' && insideQuotes && nextChar === '"') {
-      currentCell += '"';
-      i += 1;
-    } else if (char === '"') {
-      insideQuotes = !insideQuotes;
-    } else if (char === "," && !insideQuotes) {
-      currentRow.push(currentCell.trim());
-      currentCell = "";
-    } else if ((char === "\n" || char === "\r") && !insideQuotes) {
-      if (char === "\r" && nextChar === "\n") {
-        i += 1;
-      }
-
-      currentRow.push(currentCell.trim());
-      rows.push(currentRow);
-      currentRow = [];
-      currentCell = "";
-    } else {
-      currentCell += char;
-    }
-  }
-
-  currentRow.push(currentCell.trim());
-  rows.push(currentRow);
-
-  return rows.filter((row) => row.some((cell) => cell.length > 0));
-}
-
 function isSameCell(a: Position, b: Position) {
   return a.x === b.x && a.y === b.y;
 }
@@ -256,16 +264,73 @@ function getRandomFood(snake: Position[]) {
   }
 }
 
-function StatBox({ label, value }: { label: string; value: number | string }) {
+function PageButton({ href, children }: { href: string; children: ReactNode }) {
+  const isInternal = href.startsWith("/");
+
+  const className =
+    "inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300";
+
+  if (isInternal) {
+    return (
+      <Link href={href} className={className}>
+        {children}
+      </Link>
+    );
+  }
+
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-black/40 p-4">
-      <p className="text-xs uppercase tracking-widest text-zinc-500">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-white">{value}</p>
-    </div>
+    <a href={href} className={className} target="_blank" rel="noreferrer">
+      {children}
+    </a>
   );
 }
 
-function CompactStat({
+function DemoButton({
+  children,
+  onClick,
+  active = false,
+}: {
+  children: ReactNode;
+  onClick: () => void;
+  active?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition ${
+        active
+          ? "bg-cyan-400 text-black shadow-[0_0_20px_rgba(34,211,238,0.28)]"
+          : "border border-cyan-300/25 bg-black/25 text-cyan-200 hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function GhostButton({
+  children,
+  onClick,
+  disabled = false,
+}: {
+  children: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex items-center justify-center gap-2 rounded-full border border-cyan-300/25 bg-black/25 px-4 py-2 text-sm font-bold text-cyan-200 transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      {children}
+    </button>
+  );
+}
+
+function StatBox({
   label,
   value,
   accent = false,
@@ -279,15 +344,18 @@ function CompactStat({
       className={`rounded-2xl border p-4 ${
         accent
           ? "border-cyan-300/40 bg-cyan-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
-          : "border-zinc-800 bg-black/40"
+          : "border-cyan-300/15 bg-black/25"
       }`}
     >
-      <p className="text-xs uppercase tracking-widest text-zinc-500">{label}</p>
+      <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300/80">
+        {label}
+      </p>
+
       <p
         className={
           accent
-            ? "mt-2 text-3xl font-black text-cyan-300"
-            : "mt-2 text-2xl font-bold text-white"
+            ? "mt-2 text-3xl font-black text-cyan-200"
+            : "mt-2 text-2xl font-black text-white"
         }
       >
         {value}
@@ -299,7 +367,7 @@ function CompactStat({
 function CardView({ card, hidden = false }: { card?: Card; hidden?: boolean }) {
   if (hidden) {
     return (
-      <div className="flex h-28 w-20 items-center justify-center rounded-xl border border-cyan-300/40 bg-zinc-900 text-2xl font-bold text-cyan-300">
+      <div className="flex h-28 w-20 items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-950/40 text-2xl font-black text-cyan-300 shadow-lg">
         ?
       </div>
     );
@@ -311,7 +379,7 @@ function CardView({ card, hidden = false }: { card?: Card; hidden?: boolean }) {
 
   return (
     <div
-      className={`flex h-28 w-20 flex-col justify-between rounded-xl border border-zinc-700 bg-white p-3 text-lg font-bold shadow-lg ${
+      className={`flex h-28 w-20 flex-col justify-between rounded-xl border border-white/40 bg-white p-3 text-lg font-black shadow-lg ${
         isRed ? "text-red-500" : "text-black"
       }`}
     >
@@ -323,6 +391,8 @@ function CardView({ card, hidden = false }: { card?: Card; hidden?: boolean }) {
 }
 
 export default function PlaygroundPage() {
+  const [activeDemo, setActiveDemo] = useState<DemoKey>("snake");
+
   const [deck, setDeck] = useState<Card[]>([]);
   const [playerHand, setPlayerHand] = useState<Card[]>([]);
   const [dealerHand, setDealerHand] = useState<Card[]>([]);
@@ -354,20 +424,11 @@ export default function PlaygroundPage() {
   const [snakeTurns, setSnakeTurns] = useState(0);
   const [snakeGameHistory, setSnakeGameHistory] = useState<SnakeRecord[]>([]);
 
-  const [csvFileName, setCsvFileName] = useState("No file uploaded");
-  const [csvRows, setCsvRows] = useState<string[][]>([]);
-  const [csvError, setCsvError] = useState("");
-  const [selectedNumericColumn, setSelectedNumericColumn] = useState("");
-
-  const [weather, setWeather] = useState<WeatherInputs>({
-    city: "San Jacinto, CA",
-    tempF: 78,
-    rainChance: 5,
-    windMph: 8,
-    humidity: 42,
-    uvIndex: 6,
-    visibilityMiles: 10,
-  });
+  const [userValue, setUserValue] = useState(82);
+  const [businessImpact, setBusinessImpact] = useState(78);
+  const [buildConfidence, setBuildConfidence] = useState(70);
+  const [complexityRisk, setComplexityRisk] = useState(35);
+  const [scenarioHistory, setScenarioHistory] = useState<ScenarioRecord[]>([]);
 
   const snakeScoreRef = useRef(0);
   const snakeHighScoreRef = useRef(0);
@@ -378,8 +439,7 @@ export default function PlaygroundPage() {
 
   const touchStartXRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
-
-  const sessionStats = useMemo(() => {
+    const sessionStats = useMemo(() => {
     const hands = handHistory.length;
     const wins = handHistory.filter((hand) => hand.result === "win").length;
     const losses = handHistory.filter((hand) => hand.result === "loss").length;
@@ -513,223 +573,71 @@ export default function PlaygroundPage() {
     };
   }, [snakeGameHistory]);
 
-  const csvAnalysis = useMemo(() => {
-    if (csvRows.length === 0) {
-      return {
-        rowCount: 0,
-        columnCount: 0,
-        missingCells: 0,
-        duplicateRows: 0,
-        numericColumns: 0,
-        qualityScore: "--",
-      };
-    }
+  const lowRiskBonus = 100 - complexityRisk;
 
-    const headers = csvRows[0] ?? [];
-    const dataRows = csvRows.slice(1);
-    const columnCount = headers.length;
-
-    let missingCells = 0;
-
-    for (const row of dataRows) {
-      for (let i = 0; i < columnCount; i++) {
-        if (!row[i] || row[i].trim() === "") {
-          missingCells += 1;
-        }
-      }
-    }
-
-    const seenRows = new Set<string>();
-    let duplicateRows = 0;
-
-    for (const row of dataRows) {
-      const key = row.join("|").toLowerCase();
-
-      if (seenRows.has(key)) {
-        duplicateRows += 1;
-      } else {
-        seenRows.add(key);
-      }
-    }
-
-    let numericColumns = 0;
-
-    for (let colIndex = 0; colIndex < columnCount; colIndex++) {
-      const values = dataRows
-        .map((row) => row[colIndex])
-        .filter((value) => value && value.trim() !== "");
-
-      const numericValues = values.filter(
-        (value) => !Number.isNaN(Number(value))
-      );
-
-      if (values.length > 0 && numericValues.length / values.length >= 0.8) {
-        numericColumns += 1;
-      }
-    }
-
-    const totalCells = Math.max(dataRows.length * columnCount, 1);
-    const missingRate = missingCells / totalCells;
-    const duplicateRate =
-      dataRows.length === 0 ? 0 : duplicateRows / dataRows.length;
-
-    const qualityScore = Math.round(
-      clamp(100 - missingRate * 55 - duplicateRate * 35, 0, 100)
-    );
-
-    return {
-      rowCount: dataRows.length,
-      columnCount,
-      missingCells,
-      duplicateRows,
-      numericColumns,
-      qualityScore,
-    };
-  }, [csvRows]);
-
-  const csvVisualization = useMemo(() => {
-    if (csvRows.length < 2) {
-      return {
-        numericColumns: [] as string[],
-        selectedColumn: "",
-        bins: [] as HistogramBin[],
-      };
-    }
-
-    const headers = csvRows[0] ?? [];
-    const dataRows = csvRows.slice(1);
-
-    const numericColumns = headers.filter((_, columnIndex) => {
-      const values = dataRows
-        .map((row) => row[columnIndex])
-        .filter((value) => value && value.trim() !== "");
-
-      if (values.length === 0) return false;
-
-      const numericValues = values.filter(
-        (value) => !Number.isNaN(Number(value))
-      );
-
-      return numericValues.length / values.length >= 0.8;
-    });
-
-    const selectedColumn =
-      selectedNumericColumn && numericColumns.includes(selectedNumericColumn)
-        ? selectedNumericColumn
-        : numericColumns[0] ?? "";
-
-    const selectedIndex = headers.indexOf(selectedColumn);
-
-    const values =
-      selectedIndex === -1
-        ? []
-        : dataRows
-            .map((row) => Number(row[selectedIndex]))
-            .filter((value) => !Number.isNaN(value));
-
-    if (values.length === 0) {
-      return {
-        numericColumns,
-        selectedColumn,
-        bins: [] as HistogramBin[],
-      };
-    }
-
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const binCount = Math.min(
-      8,
-      Math.max(4, Math.ceil(Math.sqrt(values.length)))
-    );
-    const range = max - min || 1;
-    const binSize = range / binCount;
-
-    const bins = Array.from({ length: binCount }, (_, index) => {
-      const start = min + index * binSize;
-      const end = index === binCount - 1 ? max : start + binSize;
-
-      const count = values.filter((value) => {
-        if (index === binCount - 1) {
-          return value >= start && value <= end;
-        }
-
-        return value >= start && value < end;
-      }).length;
-
-      return {
-        label: `${start.toFixed(1)} - ${end.toFixed(1)}`,
-        count,
-      };
-    });
-
-    return {
-      numericColumns,
-      selectedColumn,
-      bins,
-    };
-  }, [csvRows, selectedNumericColumn]);
-
-  const weatherScores = useMemo(() => {
-    const tempComfort = clamp(100 - Math.abs(weather.tempF - 70) * 3);
-    const humidityPenalty =
-      weather.humidity > 55 ? (weather.humidity - 55) * 0.7 : 0;
-    const rainPenalty = weather.rainChance * 0.55;
-    const windPenalty = weather.windMph > 10 ? (weather.windMph - 10) * 2 : 0;
-    const uvPenalty = weather.uvIndex > 6 ? (weather.uvIndex - 6) * 7 : 0;
-
-    const comfortScore = Math.round(
-      clamp(tempComfort - humidityPenalty - rainPenalty - windPenalty)
-    );
-
-    const runningScore = Math.round(
+  const decisionScore = useMemo(() => {
+    return Math.round(
       clamp(
-        100 -
-          Math.abs(weather.tempF - 62) * 2.8 -
-          weather.rainChance * 0.65 -
-          Math.max(0, weather.windMph - 12) * 2.4 -
-          Math.max(0, weather.humidity - 60) * 0.8 -
-          uvPenalty
+        userValue * 0.35 +
+          businessImpact * 0.3 +
+          buildConfidence * 0.25 +
+          lowRiskBonus * 0.1
       )
     );
+  }, [userValue, businessImpact, buildConfidence, lowRiskBonus]);
 
-    const travelScore = Math.round(
-      clamp(
-        100 -
-          weather.rainChance * 0.45 -
-          Math.max(0, weather.windMph - 18) * 3 -
-          Math.max(0, 7 - weather.visibilityMiles) * 8
-      )
-    );
+  const decisionLabel = useMemo(() => {
+    if (decisionScore >= 80) return "Build Now";
+    if (decisionScore >= 65) return "Good Candidate";
+    if (decisionScore >= 50) return "Needs Review";
+    return "Rework First";
+  }, [decisionScore]);
 
-    const outdoorScore = Math.round(
-      clamp((comfortScore + runningScore + travelScore) / 3)
-    );
-
-    let recommendation = "Conditions look solid for general outdoor plans.";
-
-    if (outdoorScore >= 80) {
-      recommendation =
-        "Great outdoor window. Conditions look comfortable and low-risk.";
-    } else if (outdoorScore >= 60) {
-      recommendation =
-        "Usable outdoor conditions. A light run, walk, or errand trip should be fine.";
-    } else if (outdoorScore >= 40) {
-      recommendation =
-        "Mixed conditions. Plan shorter activities and check rain, wind, or heat before going out.";
-    } else {
-      recommendation =
-        "Rough outdoor conditions. Better for indoor plans unless you need to go out.";
+  const decisionRecommendation = useMemo(() => {
+    if (decisionScore >= 80) {
+      return "This is a strong project candidate. The value, impact, and confidence are high enough to justify building it now.";
     }
 
+    if (decisionScore >= 65) {
+      return "This is worth pursuing, but it should be scoped carefully before becoming a major build.";
+    }
+
+    if (decisionScore >= 50) {
+      return "This idea has potential, but the risk, value, or confidence needs to improve before it becomes a priority.";
+    }
+
+    return "This should be reworked first. The current score suggests the idea is either too risky, too unclear, or not valuable enough yet.";
+  }, [decisionScore]);
+
+  const scenarioAnalytics = useMemo(() => {
+    const total = scenarioHistory.length;
+
+    if (total === 0) {
+      return {
+        total,
+        averageScore: "--",
+        strongestScore: "--",
+        strongestDecision: "--",
+      };
+    }
+
+    const averageScore = Math.round(
+      scenarioHistory.reduce((sum, scenario) => sum + scenario.score, 0) / total
+    );
+
+    const strongest = scenarioHistory.reduce((best, scenario) =>
+      scenario.score > best.score ? scenario : best
+    );
+
     return {
-      comfortScore,
-      runningScore,
-      travelScore,
-      outdoorScore,
-      recommendation,
+      total,
+      averageScore,
+      strongestScore: strongest.score,
+      strongestDecision: strongest.decision,
     };
-  }, [weather]);
-    useEffect(() => {
+  }, [scenarioHistory]);
+
+  useEffect(() => {
     const savedHighScore = window.localStorage.getItem("snakeHighScore");
 
     if (savedHighScore) {
@@ -874,74 +782,6 @@ export default function PlaygroundPage() {
     };
   }, [snakeRunning, snakeGameOver, nextDirection, food]);
 
-  function changeSnakeDirection(newDirection: Direction) {
-    if (snakeGameOver) return;
-
-    setNextDirection((previousDirection) => {
-      if (
-        isOppositeDirection(previousDirection, newDirection) ||
-        previousDirection === newDirection
-      ) {
-        return previousDirection;
-      }
-
-      snakeTurnsRef.current += 1;
-      setSnakeTurns(snakeTurnsRef.current);
-
-      return newDirection;
-    });
-
-    if (!snakeStartedAtRef.current) {
-      const startTime = Date.now();
-      snakeStartedAtRef.current = startTime;
-      setSnakeStartedAt(startTime);
-    }
-
-    setSnakeRunning(true);
-  }
-
-  function handleSnakeTouchStart(event: TouchEvent<HTMLDivElement>) {
-    const touch = event.touches[0];
-
-    if (!touch) return;
-
-    touchStartXRef.current = touch.clientX;
-    touchStartYRef.current = touch.clientY;
-  }
-
-  function handleSnakeTouchEnd(event: TouchEvent<HTMLDivElement>) {
-    const touch = event.changedTouches[0];
-
-    if (
-      !touch ||
-      touchStartXRef.current === null ||
-      touchStartYRef.current === null
-    ) {
-      return;
-    }
-
-    const deltaX = touch.clientX - touchStartXRef.current;
-    const deltaY = touch.clientY - touchStartYRef.current;
-
-    touchStartXRef.current = null;
-    touchStartYRef.current = null;
-
-    const minSwipeDistance = 30;
-
-    if (
-      Math.abs(deltaX) < minSwipeDistance &&
-      Math.abs(deltaY) < minSwipeDistance
-    ) {
-      return;
-    }
-
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      changeSnakeDirection(deltaX > 0 ? "right" : "left");
-    } else {
-      changeSnakeDirection(deltaY > 0 ? "down" : "up");
-    }
-  }
-
   function recordHand(
     result: GameResult,
     finalPlayerHand: Card[],
@@ -1008,13 +848,7 @@ export default function PlaygroundPage() {
     }
 
     if (dealerBlackjack) {
-      settleGame(
-        "loss",
-        "Dealer has blackjack. Dealer wins.",
-        player,
-        dealer,
-        0
-      );
+      settleGame("loss", "Dealer has blackjack. Dealer wins.", player, dealer, 0);
       return;
     }
 
@@ -1176,7 +1010,8 @@ export default function PlaygroundPage() {
       pushes,
     });
   }
-    function exportSessionCsv() {
+
+  function exportSessionCsv() {
     if (handHistory.length === 0) {
       setMessage("Play at least one hand before exporting a CSV.");
       return;
@@ -1215,6 +1050,74 @@ export default function PlaygroundPage() {
     );
   }
 
+  function changeSnakeDirection(newDirection: Direction) {
+    if (snakeGameOver) return;
+
+    setNextDirection((previousDirection) => {
+      if (
+        isOppositeDirection(previousDirection, newDirection) ||
+        previousDirection === newDirection
+      ) {
+        return previousDirection;
+      }
+
+      snakeTurnsRef.current += 1;
+      setSnakeTurns(snakeTurnsRef.current);
+
+      return newDirection;
+    });
+
+    if (!snakeStartedAtRef.current) {
+      const startTime = Date.now();
+      snakeStartedAtRef.current = startTime;
+      setSnakeStartedAt(startTime);
+    }
+
+    setSnakeRunning(true);
+  }
+
+  function handleSnakeTouchStart(event: TouchEvent<HTMLDivElement>) {
+    const touch = event.touches[0];
+
+    if (!touch) return;
+
+    touchStartXRef.current = touch.clientX;
+    touchStartYRef.current = touch.clientY;
+  }
+
+  function handleSnakeTouchEnd(event: TouchEvent<HTMLDivElement>) {
+    const touch = event.changedTouches[0];
+
+    if (
+      !touch ||
+      touchStartXRef.current === null ||
+      touchStartYRef.current === null
+    ) {
+      return;
+    }
+
+    const deltaX = touch.clientX - touchStartXRef.current;
+    const deltaY = touch.clientY - touchStartYRef.current;
+
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+
+    const minSwipeDistance = 30;
+
+    if (
+      Math.abs(deltaX) < minSwipeDistance &&
+      Math.abs(deltaY) < minSwipeDistance
+    ) {
+      return;
+    }
+
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      changeSnakeDirection(deltaX > 0 ? "right" : "left");
+    } else {
+      changeSnakeDirection(deltaY > 0 ? "down" : "up");
+    }
+  }
+
   function recordSnakeGame(cause: "wall" | "self", finalSnake: Position[]) {
     if (snakeGameRecordedRef.current) return;
 
@@ -1244,8 +1147,7 @@ export default function PlaygroundPage() {
       },
     ]);
   }
-
-  function exportSnakeCsv() {
+    function exportSnakeCsv() {
     if (snakeGameHistory.length === 0) {
       window.alert("Play at least one Snake game before exporting a CSV.");
       return;
@@ -1275,87 +1177,6 @@ export default function PlaygroundPage() {
         game.finalLength,
         game.cause,
       ])
-    );
-  }
-
-  function handleCsvUpload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-
-    if (!file) return;
-
-    setCsvFileName(file.name);
-    setCsvError("");
-    setSelectedNumericColumn("");
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      try {
-        const text = String(reader.result ?? "");
-        const rows = parseCsvText(text);
-
-        if (rows.length < 2) {
-          setCsvError("This CSV needs at least one header row and one data row.");
-          setCsvRows([]);
-          return;
-        }
-
-        setCsvRows(rows);
-      } catch {
-        setCsvError("Could not parse this CSV file.");
-        setCsvRows([]);
-      }
-    };
-
-    reader.readAsText(file);
-  }
-
-  function exportCsvQualityReport() {
-    if (csvRows.length === 0) {
-      window.alert("Upload a CSV before exporting a quality report.");
-      return;
-    }
-
-    downloadCsv(
-      "csv-quality-report.csv",
-      ["Metric", "Value"],
-      [
-        ["File Name", csvFileName],
-        ["Rows", csvAnalysis.rowCount],
-        ["Columns", csvAnalysis.columnCount],
-        ["Missing Cells", csvAnalysis.missingCells],
-        ["Duplicate Rows", csvAnalysis.duplicateRows],
-        ["Numeric Columns", csvAnalysis.numericColumns],
-        ["Quality Score", csvAnalysis.qualityScore],
-      ]
-    );
-  }
-
-  function updateWeatherNumber(field: WeatherNumberField, value: string) {
-    setWeather((previous) => ({
-      ...previous,
-      [field]: value === "" ? 0 : Number(value),
-    }));
-  }
-
-  function exportWeatherReport() {
-    downloadCsv(
-      "weather-activity-report.csv",
-      ["Metric", "Value"],
-      [
-        ["City", weather.city],
-        ["Temperature F", weather.tempF],
-        ["Rain Chance Percent", weather.rainChance],
-        ["Wind MPH", weather.windMph],
-        ["Humidity Percent", weather.humidity],
-        ["UV Index", weather.uvIndex],
-        ["Visibility Miles", weather.visibilityMiles],
-        ["Comfort Score", weatherScores.comfortScore],
-        ["Running Score", weatherScores.runningScore],
-        ["Travel Score", weatherScores.travelScore],
-        ["Outdoor Score", weatherScores.outdoorScore],
-        ["Recommendation", weatherScores.recommendation],
-      ]
     );
   }
 
@@ -1393,6 +1214,53 @@ export default function PlaygroundPage() {
     }
   }
 
+  function saveScenario() {
+    setScenarioHistory((previous) => [
+      ...previous,
+      {
+        scenarioNumber: previous.length + 1,
+        timestamp: new Date().toLocaleString(),
+        userValue,
+        businessImpact,
+        buildConfidence,
+        complexityRisk,
+        score: decisionScore,
+        decision: decisionLabel,
+      },
+    ]);
+  }
+
+  function exportScenarioCsv() {
+    if (scenarioHistory.length === 0) {
+      window.alert("Save at least one scoring test before exporting a CSV.");
+      return;
+    }
+
+    downloadCsv(
+      "project-readiness-scenarios.csv",
+      [
+        "Scenario Number",
+        "Timestamp",
+        "User Value",
+        "Business Impact",
+        "Build Confidence",
+        "Complexity Risk",
+        "Score",
+        "Decision",
+      ],
+      scenarioHistory.map((scenario) => [
+        scenario.scenarioNumber,
+        scenario.timestamp,
+        scenario.userValue,
+        scenario.businessImpact,
+        scenario.buildConfidence,
+        scenario.complexityRisk,
+        scenario.score,
+        scenario.decision,
+      ])
+    );
+  }
+
   const playerScore = playerHand.length > 0 ? getHandValue(playerHand) : "--";
 
   const dealerScore =
@@ -1412,193 +1280,199 @@ export default function PlaygroundPage() {
     y: Math.floor(index / gridSize),
   }));
 
-  const histogramMaxCount = Math.max(
-    ...csvVisualization.bins.map((bin) => bin.count),
-    1
-  );
-
   return (
-    <main className="min-h-screen bg-black px-6 py-8 text-white">
-      <section className="mx-auto max-w-7xl">
-        <nav className="mb-10 flex flex-col gap-4 rounded-2xl border border-zinc-800 bg-zinc-950/80 px-5 py-4 shadow-[0_0_30px_rgba(34,211,238,0.08)] md:flex-row md:items-center md:justify-between">
-          <a href="/" className="text-lg font-bold tracking-tight text-white">
-            Brian Dacell Cabrera<span className="text-cyan-300">.</span>
-          </a>
-
-          <div className="flex flex-wrap gap-4 text-sm font-medium text-zinc-300">
-            <a className="transition hover:text-cyan-300" href="/">
-              Home
-            </a>
-            <a className="transition hover:text-cyan-300" href="/projects">
-              Projects
-            </a>
-            <a className="transition hover:text-cyan-300" href="/#skills">
-              Skills
-            </a>
-            <a className="transition hover:text-cyan-300" href="/travel">
-              Travel
-            </a>
-            <a className="transition hover:text-cyan-300" href="/#contact">
-              Contact
-            </a>
+    <main className="min-h-screen">
+      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16 lg:py-24">
+        <div className={`${glassPanel} p-6 md:p-10`}>
+          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">
+            <Gamepad2 size={15} />
+            Playground
           </div>
-        </nav>
 
-        <section className="rounded-3xl border border-cyan-400/30 bg-zinc-950 p-8 shadow-[0_0_45px_rgba(34,211,238,0.12)] md:p-12">
-          <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-            Interactive Playground
-          </p>
-
-          <h1 className="mt-6 text-5xl font-bold tracking-tight text-white md:text-7xl">
-            Browser experiments for logic, games, stats, and real-world data.
+          <h1 className="mt-6 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
+            Browser experiments for games, logic, and analytics
           </h1>
 
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-zinc-300">
-            This playground tests game logic, CSV analytics, histograms, weather
-            decision scoring, keyboard input, mobile touch controls, local
-            storage, and CSV export workflows.
+          <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-300 md:text-lg">
+            Interactive demos using React state, TypeScript, keyboard input,
+            mobile touch controls, local storage, session analytics, scoring
+            models, and CSV export workflows.
           </p>
+
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <PageButton href="/projects">
+              View Projects <ExternalLink size={15} />
+            </PageButton>
+
+            <PageButton href="/data-lab">
+              Open Data Lab <ExternalLink size={15} />
+            </PageButton>
+          </div>
+        </div>
+
+        <section className="mt-12 grid gap-5 md:grid-cols-3">
+          {demoCards.map((demo) => {
+            const Icon = demo.icon;
+
+            return (
+              <div key={demo.key} className={`${glassCard} p-6`}>
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-black/25 text-cyan-300">
+                  <Icon size={22} />
+                </div>
+
+                <p className="mt-5 text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                  {demo.label}
+                </p>
+
+                <h2 className="mt-4 text-2xl font-black text-white">
+                  {demo.title}
+                </h2>
+
+                <p className="mt-3 text-sm leading-6 text-zinc-300">
+                  {demo.text}
+                </p>
+
+                <div className="mt-6">
+                  <DemoButton
+                    active={activeDemo === demo.key}
+                    onClick={() => setActiveDemo(demo.key)}
+                  >
+                    {demo.button} <ExternalLink size={14} />
+                  </DemoButton>
+                </div>
+              </div>
+            );
+          })}
         </section>
 
-        <section className="mt-10 grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_420px]">
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 md:p-8">
-            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-                  Game Logic Demo
+        {activeDemo === "blackjack" && (
+          <section className="mt-12 grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_420px]">
+            <div className={`${glassPanel} p-6 md:p-8`}>
+              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                    Blackjack
+                  </p>
+
+                  <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+                    Game logic simulator
+                  </h2>
+
+                  <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-300">
+                    The dealer draws to 17, aces adjust between 1 and 11,
+                    results are tracked, and session data can export to CSV.
+                  </p>
+                </div>
+
+                <GhostButton onClick={startGame}>
+                  <Play size={16} />
+                  New Hand
+                </GhostButton>
+              </div>
+
+              <div className="mt-8 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
+                <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                  Status
                 </p>
-                <h2 className="mt-3 text-3xl font-bold">
-                  Blackjack Simulator
-                </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">
-                  Built with TypeScript and React state. The dealer draws to 17,
-                  aces adjust between 1 and 11, results are tracked, and session
-                  data can export to CSV.
+
+                <p className="mt-2 text-sm leading-6 text-zinc-300">
+                  {message}
                 </p>
               </div>
 
-              <button
-                onClick={startGame}
-                className="rounded-xl bg-cyan-300 px-6 py-4 font-semibold text-black shadow-[0_0_25px_rgba(103,232,249,0.35)] transition hover:bg-cyan-200"
-              >
-                New Hand
-              </button>
-            </div>
+              <div className="mt-8 grid gap-8">
+                <div>
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className="text-xl font-black text-white">Dealer</h3>
+                    <p className="text-sm font-bold text-zinc-400">
+                      Score: {dealerScore}
+                    </p>
+                  </div>
 
-            <div className="mt-8 rounded-2xl border border-zinc-800 bg-black/40 p-5">
-              <p className="text-sm font-semibold text-cyan-300">Status</p>
-              <p className="mt-2 text-zinc-200">{message}</p>
-            </div>
-
-            <div className="mt-8 grid gap-8">
-              <div>
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-xl font-semibold">Dealer</h3>
-                  <p className="text-sm text-zinc-400">Score: {dealerScore}</p>
+                  <div className="flex flex-wrap gap-4">
+                    {dealerHand.length > 0 ? (
+                      dealerHand.map((card, index) => (
+                        <CardView
+                          key={`${card.rank}${card.suit}${index}`}
+                          card={card}
+                          hidden={status === "playing" && index === 1}
+                        />
+                      ))
+                    ) : (
+                      <p className="text-sm text-zinc-500">
+                        Start a new hand to deal cards.
+                      </p>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap gap-4">
-                  {dealerHand.length > 0 ? (
-                    dealerHand.map((card, index) => (
-                      <CardView
-                        key={`${card.rank}${card.suit}${index}`}
-                        card={card}
-                        hidden={status === "playing" && index === 1}
-                      />
-                    ))
-                  ) : (
-                    <p className="text-sm text-zinc-500">
-                      Start a new hand to deal cards.
+                <div>
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className="text-xl font-black text-white">Player</h3>
+                    <p className="text-sm font-bold text-zinc-400">
+                      Score: {playerScore}
                     </p>
-                  )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-4">
+                    {playerHand.length > 0 ? (
+                      playerHand.map((card, index) => (
+                        <CardView
+                          key={`${card.rank}${card.suit}${index}`}
+                          card={card}
+                        />
+                      ))
+                    ) : (
+                      <p className="text-sm text-zinc-500">
+                        Your cards will show here.
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-xl font-semibold">Player</h3>
-                  <p className="text-sm text-zinc-400">Score: {playerScore}</p>
-                </div>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <GhostButton onClick={hit} disabled={status !== "playing"}>
+                  Hit <Gamepad2 size={15} />
+                </GhostButton>
 
-                <div className="flex flex-wrap gap-4">
-                  {playerHand.length > 0 ? (
-                    playerHand.map((card, index) => (
-                      <CardView
-                        key={`${card.rank}${card.suit}${index}`}
-                        card={card}
-                      />
-                    ))
-                  ) : (
-                    <p className="text-sm text-zinc-500">
-                      Your cards will show here.
-                    </p>
-                  )}
-                </div>
+                <GhostButton onClick={stand} disabled={status !== "playing"}>
+                  Stand <Trophy size={15} />
+                </GhostButton>
+
+                <GhostButton onClick={runSimulation}>
+                  <Sparkles size={15} />
+                  Run 1,000 Hands
+                </GhostButton>
+
+                <GhostButton onClick={exportSessionCsv}>
+                  <Download size={15} />
+                  Export CSV
+                </GhostButton>
               </div>
             </div>
 
-            <div className="mt-8 flex flex-wrap gap-4">
-              <button
-                onClick={hit}
-                disabled={status !== "playing"}
-                className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Hit
-              </button>
+            <aside className={`${glassPanel} p-6 md:p-8`}>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                Live Dashboard
+              </p>
 
-              <button
-                onClick={stand}
-                disabled={status !== "playing"}
-                className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Stand
-              </button>
+              <div className="mt-6 grid grid-cols-2 gap-4">
+                <StatBox label="Hands" value={sessionStats.hands} />
+                <StatBox label="Win Rate" value={sessionStats.winRate} accent />
+                <StatBox label="Wins" value={sessionStats.wins} />
+                <StatBox label="Losses" value={sessionStats.losses} />
+                <StatBox label="Pushes" value={sessionStats.pushes} />
+                <StatBox label="Best Streak" value={sessionStats.bestWinStreak} />
+              </div>
+            </aside>
 
-              <button
-                onClick={runSimulation}
-                className="rounded-xl border border-cyan-300/50 px-5 py-3 font-semibold text-cyan-300 transition hover:bg-cyan-300/10"
-              >
-                Run 1,000 Simulated Hands
-              </button>
-
-              <button
-                onClick={exportSessionCsv}
-                className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
-              >
-                Export Session CSV
-              </button>
-            </div>
-          </div>
-
-          <aside className="rounded-3xl border border-cyan-400/20 bg-zinc-950 p-6 shadow-[0_0_35px_rgba(34,211,238,0.08)]">
-            <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-              Live Session Dashboard
-            </p>
-
-            <div className="mt-5 grid grid-cols-2 gap-4">
-              <CompactStat label="Hands" value={sessionStats.hands} />
-              <CompactStat
-                label="Win Rate"
-                value={sessionStats.winRate}
-                accent
-              />
-              <CompactStat label="Wins" value={sessionStats.wins} />
-              <CompactStat label="Losses" value={sessionStats.losses} />
-              <CompactStat label="Pushes" value={sessionStats.pushes} />
-              <CompactStat
-                label="Best Streak"
-                value={sessionStats.bestWinStreak}
-              />
-            </div>
-          </aside>
-
-          <div className="xl:col-span-2">
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-              <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
+            <div className={`${glassPanel} p-6 md:p-8 xl:col-span-2`}>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
                 Session Analytics
               </p>
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
                 <StatBox
                   label="Player Blackjacks"
                   value={sessionStats.playerBlackjacks}
@@ -1615,18 +1489,19 @@ export default function PlaygroundPage() {
                   value={sessionStats.currentWinStreak}
                 />
                 <StatBox
-                  label="Avg Player Score"
+                  label="Avg Player"
                   value={sessionStats.averagePlayerScore}
                 />
                 <StatBox
-                  label="Avg Dealer Score"
+                  label="Avg Dealer"
                   value={sessionStats.averageDealerScore}
                 />
                 <StatBox label="Loss Rate" value={sessionStats.lossRate} />
                 <StatBox label="Push Rate" value={sessionStats.pushRate} />
                 <StatBox
-                  label="CSV Rows"
-                  value={handHistory.length === 0 ? "--" : handHistory.length}
+                  label="Sim Win Rate"
+                  value={simulatedWinRate}
+                  accent={simulationStats.hands > 0}
                 />
                 <StatBox
                   label="Export Ready"
@@ -1634,158 +1509,156 @@ export default function PlaygroundPage() {
                 />
               </div>
             </div>
+          </section>
+        )}
 
-            <div className="mt-6 rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-              <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-                Simulation Stats
-              </p>
+        {activeDemo === "snake" && (
+          <section className="mt-12 grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_420px]">
+            <div className={`${glassPanel} p-6 md:p-8`}>
+              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                    Snake
+                  </p>
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                <StatBox label="Simulated Hands" value={simulationStats.hands} />
-                <StatBox label="Player Wins" value={simulationStats.wins} />
-                <StatBox label="Dealer Wins" value={simulationStats.losses} />
-                <StatBox label="Pushes" value={simulationStats.pushes} />
-                <StatBox label="Simulated Win Rate" value={simulatedWinRate} />
-              </div>
-            </div>
-          </div>
-        </section>
+                  <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+                    Touch-friendly game controls
+                  </h2>
 
-        <section className="mt-20 rounded-3xl border border-zinc-800 bg-zinc-950 p-6 md:p-8">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-                Keyboard + Touch Input Demo
-              </p>
-
-              <h2 className="mt-3 text-3xl font-bold">Snake Game</h2>
-
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">
-                Play with WASD, arrow keys, mobile buttons, or swipe directly on
-                the board. The game tracks high score, survival time, movement,
-                turns, and CSV export.
-              </p>
-            </div>
-
-            <div>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={toggleSnakeRunning}
-                  disabled={snakeGameOver}
-                  className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-black shadow-[0_0_25px_rgba(103,232,249,0.35)] transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {snakeRunning ? "Pause" : "Start"}
-                </button>
-
-                <button
-                  onClick={restartSnake}
-                  className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
-                >
-                  Restart
-                </button>
-
-                <button
-                  onClick={exportSnakeCsv}
-                  className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
-                >
-                  Export Snake CSV
-                </button>
-              </div>
-
-              <div className="mt-6 flex flex-col items-center gap-2 md:hidden">
-                <button
-                  onClick={() => changeSnakeDirection("up")}
-                  disabled={snakeGameOver}
-                  className="h-14 w-20 rounded-xl border border-cyan-300/40 bg-cyan-300/10 text-xl font-bold text-cyan-300 transition hover:bg-cyan-300/20 disabled:opacity-40"
-                >
-                  ↑
-                </button>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => changeSnakeDirection("left")}
-                    disabled={snakeGameOver}
-                    className="h-14 w-20 rounded-xl border border-cyan-300/40 bg-cyan-300/10 text-xl font-bold text-cyan-300 transition hover:bg-cyan-300/20 disabled:opacity-40"
-                  >
-                    ←
-                  </button>
-
-                  <button
-                    onClick={() => changeSnakeDirection("down")}
-                    disabled={snakeGameOver}
-                    className="h-14 w-20 rounded-xl border border-cyan-300/40 bg-cyan-300/10 text-xl font-bold text-cyan-300 transition hover:bg-cyan-300/20 disabled:opacity-40"
-                  >
-                    ↓
-                  </button>
-
-                  <button
-                    onClick={() => changeSnakeDirection("right")}
-                    disabled={snakeGameOver}
-                    className="h-14 w-20 rounded-xl border border-cyan-300/40 bg-cyan-300/10 text-xl font-bold text-cyan-300 transition hover:bg-cyan-300/20 disabled:opacity-40"
-                  >
-                    →
-                  </button>
+                  <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-300">
+                    Play with WASD, arrow keys, swipe, or the visible control
+                    buttons. The game tracks high score, survival time, moves,
+                    turns, and CSV export.
+                  </p>
                 </div>
 
-                <p className="mt-2 text-center text-xs text-zinc-500">
-                  Swipe the board or use mobile controls.
-                </p>
-              </div>
-            </div>
-          </div>
+                <div className="flex flex-wrap gap-3">
+                  <GhostButton
+                    onClick={toggleSnakeRunning}
+                    disabled={snakeGameOver}
+                  >
+                    {snakeRunning ? <Pause size={16} /> : <Play size={16} />}
+                    {snakeRunning ? "Pause" : "Start"}
+                  </GhostButton>
 
-          <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_420px]">
-            <div
-              onTouchStart={handleSnakeTouchStart}
-              onTouchEnd={handleSnakeTouchEnd}
-              className="touch-none select-none rounded-2xl border border-zinc-800 bg-black/40 p-4"
-            >
+                  <GhostButton onClick={restartSnake}>
+                    <RefreshCcw size={16} />
+                    Restart
+                  </GhostButton>
+
+                  <GhostButton onClick={exportSnakeCsv}>
+                    <Download size={16} />
+                    Export CSV
+                  </GhostButton>
+                </div>
+              </div>
+
               <div
-                className="grid gap-1"
-                style={{
-                  gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
-                }}
+                onTouchStart={handleSnakeTouchStart}
+                onTouchEnd={handleSnakeTouchEnd}
+                className="mt-8 touch-none select-none rounded-3xl border border-cyan-300/15 bg-black/25 p-3 md:p-4"
               >
-                {snakeCells.map((cell) => {
-                  const isHead = isSameCell(cell, snake[0] ?? startingSnake[0]!);
-                  const isSnake = snake.some((snakeCell) =>
-                    isSameCell(snakeCell, cell)
-                  );
-                  const isFood = isSameCell(cell, food);
+                <div
+                  className="grid gap-1"
+                  style={{
+                    gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
+                  }}
+                >
+                  {snakeCells.map((cell) => {
+                    const isHead = isSameCell(
+                      cell,
+                      snake[0] ?? startingSnake[0]!
+                    );
+                    const isSnake = snake.some((snakeCell) =>
+                      isSameCell(snakeCell, cell)
+                    );
+                    const isFood = isSameCell(cell, food);
 
-                  return (
-                    <div
-                      key={`${cell.x}-${cell.y}`}
-                      className={`aspect-square rounded-sm border border-zinc-900 ${
-                        isHead
-                          ? "bg-cyan-200"
-                          : isSnake
-                            ? "bg-cyan-500"
-                            : isFood
-                              ? "bg-white"
-                              : "bg-zinc-950"
-                      }`}
-                    />
-                  );
-                })}
+                    return (
+                      <div
+                        key={`${cell.x}-${cell.y}`}
+                        className={`aspect-square rounded-sm border ${
+                          isHead
+                            ? "border-cyan-200 bg-cyan-200 shadow-[0_0_14px_rgba(34,211,238,0.55)]"
+                            : isSnake
+                              ? "border-cyan-300/30 bg-cyan-400/80"
+                              : isFood
+                                ? "border-fuchsia-300/50 bg-fuchsia-400 shadow-[0_0_14px_rgba(217,70,239,0.55)]"
+                                : "border-cyan-300/10 bg-cyan-950/20"
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="mx-auto mt-6 grid max-w-[280px] grid-cols-3 gap-3">
+                <div />
+                <button
+                  type="button"
+                  onClick={() => changeSnakeDirection("up")}
+                  disabled={snakeGameOver}
+                  className="flex h-14 items-center justify-center rounded-2xl bg-cyan-400 text-black shadow-[0_0_18px_rgba(34,211,238,0.25)] disabled:opacity-40"
+                >
+                  <ArrowUp size={24} />
+                </button>
+                <div />
+
+                <button
+                  type="button"
+                  onClick={() => changeSnakeDirection("left")}
+                  disabled={snakeGameOver}
+                  className="flex h-14 items-center justify-center rounded-2xl bg-cyan-400 text-black shadow-[0_0_18px_rgba(34,211,238,0.25)] disabled:opacity-40"
+                >
+                  <ArrowLeft size={24} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={toggleSnakeRunning}
+                  disabled={snakeGameOver}
+                  className="flex h-14 items-center justify-center rounded-2xl border border-cyan-300/25 bg-black/25 text-cyan-200 disabled:opacity-40"
+                >
+                  {snakeRunning ? <Pause size={22} /> : <Play size={22} />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => changeSnakeDirection("right")}
+                  disabled={snakeGameOver}
+                  className="flex h-14 items-center justify-center rounded-2xl bg-cyan-400 text-black shadow-[0_0_18px_rgba(34,211,238,0.25)] disabled:opacity-40"
+                >
+                  <ArrowRight size={24} />
+                </button>
+
+                <div />
+                <button
+                  type="button"
+                  onClick={() => changeSnakeDirection("down")}
+                  disabled={snakeGameOver}
+                  className="flex h-14 items-center justify-center rounded-2xl bg-cyan-400 text-black shadow-[0_0_18px_rgba(34,211,238,0.25)] disabled:opacity-40"
+                >
+                  <ArrowDown size={24} />
+                </button>
+                <div />
               </div>
             </div>
 
-            <aside className="rounded-3xl border border-cyan-400/20 bg-black/30 p-6 shadow-[0_0_35px_rgba(34,211,238,0.08)]">
-              <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
+            <aside className={`${glassPanel} p-6 md:p-8`}>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
                 Snake Dashboard
               </p>
 
-              <div className="mt-5 grid grid-cols-2 gap-4">
-                <CompactStat label="Score" value={snakeScore} accent />
-                <CompactStat label="High Score" value={snakeHighScore} />
-                <CompactStat
+              <div className="mt-6 grid grid-cols-2 gap-4">
+                <StatBox label="Score" value={snakeScore} accent />
+                <StatBox label="High Score" value={snakeHighScore} />
+                <StatBox
                   label="Time"
                   value={`${snakeElapsedSeconds.toFixed(1)}s`}
                 />
-                <CompactStat label="Moves" value={snakeMoves} />
-                <CompactStat label="Turns" value={snakeTurns} />
-                <CompactStat
+                <StatBox label="Moves" value={snakeMoves} />
+                <StatBox label="Turns" value={snakeTurns} />
+                <StatBox
                   label="Status"
                   value={
                     snakeGameOver
@@ -1798,305 +1671,245 @@ export default function PlaygroundPage() {
               </div>
             </aside>
 
-            <div className="xl:col-span-2">
-              <div className="rounded-3xl border border-zinc-800 bg-black/30 p-6">
-                <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-                  Snake Analytics
+            <div className={`${glassPanel} p-6 md:p-8 xl:col-span-2`}>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                Snake Analytics
+              </p>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+                <StatBox label="Direction" value={direction.toUpperCase()} />
+                <StatBox label="Games Played" value={snakeAnalytics.gamesPlayed} />
+                <StatBox
+                  label="Best Session"
+                  value={snakeAnalytics.bestScore}
+                  accent
+                />
+                <StatBox label="Best Time" value={snakeAnalytics.bestTime} />
+                <StatBox label="Avg Time" value={snakeAnalytics.averageTime} />
+                <StatBox label="Avg Turns" value={snakeAnalytics.averageTurns} />
+                <StatBox label="Total Moves" value={snakeAnalytics.totalMoves} />
+                <StatBox label="Total Turns" value={snakeAnalytics.totalTurns} />
+                <StatBox label="Final Length" value={snake.length} />
+                <StatBox
+                  label="CSV Games"
+                  value={
+                    snakeGameHistory.length === 0
+                      ? "--"
+                      : snakeGameHistory.length
+                  }
+                />
+                <StatBox
+                  label="Export Ready"
+                  value={snakeGameHistory.length === 0 ? "No" : "Yes"}
+                />
+                <StatBox label="Controls" value="Keys + Touch" />
+              </div>
+            </div>
+          </section>
+        )}
+
+        {activeDemo === "scoring" && (
+          <section className="mt-12 grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+            <div className={`${glassPanel} p-6 md:p-8`}>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                Project Readiness
+              </p>
+
+              <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+                Should this project be built?
+              </h2>
+
+              <p className="mt-4 text-sm leading-7 text-zinc-300">
+                This model scores whether an idea is ready to build. It rewards
+                user value, business impact, and build confidence while
+                penalizing complexity risk.
+              </p>
+
+              <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
+                <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                  Formula
                 </p>
 
-                <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
-                  <StatBox label="Direction" value={direction.toUpperCase()} />
-                  <StatBox
-                    label="Games Played"
-                    value={snakeAnalytics.gamesPlayed}
-                  />
-                  <StatBox
-                    label="Best Session Score"
-                    value={snakeAnalytics.bestScore}
-                  />
-                  <StatBox
-                    label="Best Survival Time"
-                    value={snakeAnalytics.bestTime}
-                  />
-                  <StatBox
-                    label="Avg Survival Time"
-                    value={snakeAnalytics.averageTime}
-                  />
-                  <StatBox
-                    label="Avg Turns/Game"
-                    value={snakeAnalytics.averageTurns}
-                  />
-                  <StatBox
-                    label="Total Session Moves"
-                    value={snakeAnalytics.totalMoves}
-                  />
-                  <StatBox
-                    label="Total Session Turns"
-                    value={snakeAnalytics.totalTurns}
-                  />
-                  <StatBox label="Final Length" value={snake.length} />
-                  <StatBox
-                    label="CSV Games"
-                    value={
-                      snakeGameHistory.length === 0
-                        ? "--"
-                        : snakeGameHistory.length
-                    }
-                  />
-                  <StatBox
-                    label="Export Ready"
-                    value={snakeGameHistory.length === 0 ? "No" : "Yes"}
-                  />
-                  <StatBox label="Controls" value="Keys + Touch" />
-                </div>
+                <p className="mt-3 text-sm leading-7 text-zinc-300">
+                  Score = User Value × 35% + Business Impact × 30% + Build
+                  Confidence × 25% + Low Risk Bonus × 10%.
+                </p>
+
+                <p className="mt-3 text-sm leading-7 text-zinc-400">
+                  Low Risk Bonus is calculated as 100 minus Complexity Risk, so
+                  higher complexity lowers the final score.
+                </p>
+              </div>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <StatBox label="Readiness Score" value={decisionScore} accent />
+                <StatBox label="Decision" value={decisionLabel} />
+                <StatBox label="Saved Tests" value={scenarioAnalytics.total} />
+                <StatBox label="Avg Saved" value={scenarioAnalytics.averageScore} />
+              </div>
+
+              <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
+                <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                  Recommendation
+                </p>
+                <p className="mt-3 text-sm leading-6 text-zinc-300">
+                  {decisionRecommendation}
+                </p>
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <GhostButton onClick={saveScenario}>
+                  <BarChart3 size={15} />
+                  Save Test
+                </GhostButton>
+
+                <GhostButton onClick={exportScenarioCsv}>
+                  <Download size={15} />
+                  Export CSV
+                </GhostButton>
               </div>
             </div>
-          </div>
-        </section>
-                <section className="mt-20 grid gap-6 xl:grid-cols-2">
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 md:p-8">
-            <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-              Real-World Data Demo
-            </p>
 
-            <h2 className="mt-3 text-3xl font-bold">
-              CSV Data Quality Analyzer
-            </h2>
+            <div className={`${glassPanel} p-6 md:p-8`}>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                Inputs
+              </p>
 
-            <p className="mt-3 text-sm leading-6 text-zinc-400">
-              Upload a CSV and the tool checks row count, column count, missing
-              cells, duplicate rows, numeric columns, a quality score, and a
-              histogram for numeric data.
-            </p>
+              <h3 className="mt-3 text-2xl font-black text-white">
+                Move the sliders to test an idea
+              </h3>
 
-            <label className="mt-6 block cursor-pointer rounded-2xl border border-dashed border-cyan-300/40 bg-black/30 p-6 text-center transition hover:bg-cyan-300/10">
-              <span className="font-semibold text-cyan-300">Upload CSV</span>
-              <input
-                type="file"
-                accept=".csv,text/csv"
-                onChange={handleCsvUpload}
-                className="hidden"
-              />
-            </label>
+              <div className="mt-8 space-y-6">
+                <label className="block space-y-2">
+                  <span className="text-sm font-bold text-zinc-300">
+                    User Value: {userValue}
+                  </span>
+                  <p className="text-xs leading-5 text-zinc-500">
+                    How useful or meaningful this would be to the person using
+                    it.
+                  </p>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={userValue}
+                    onChange={(event) => setUserValue(Number(event.target.value))}
+                    className="w-full"
+                  />
+                </label>
 
-            <p className="mt-4 text-sm text-zinc-400">{csvFileName}</p>
-
-            {csvError && <p className="mt-3 text-sm text-red-300">{csvError}</p>}
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <StatBox label="Rows" value={csvAnalysis.rowCount} />
-              <StatBox label="Columns" value={csvAnalysis.columnCount} />
-              <StatBox label="Missing Cells" value={csvAnalysis.missingCells} />
-              <StatBox
-                label="Duplicate Rows"
-                value={csvAnalysis.duplicateRows}
-              />
-              <StatBox
-                label="Numeric Columns"
-                value={csvAnalysis.numericColumns}
-              />
-              <CompactStat
-                label="Quality Score"
-                value={csvAnalysis.qualityScore}
-                accent
-              />
-            </div>
-
-            {csvVisualization.numericColumns.length > 0 && (
-              <div className="mt-8 rounded-2xl border border-zinc-800 bg-black/40 p-5">
-                <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-                  <div>
-                    <p className="text-sm font-semibold text-cyan-300">
-                      Histogram / Distribution
-                    </p>
-                    <p className="mt-1 text-sm text-zinc-400">
-                      Pick a numeric column to see how the values are distributed.
-                    </p>
-                  </div>
-
-                  <select
-                    value={csvVisualization.selectedColumn}
+                <label className="block space-y-2">
+                  <span className="text-sm font-bold text-zinc-300">
+                    Business Impact: {businessImpact}
+                  </span>
+                  <p className="text-xs leading-5 text-zinc-500">
+                    How much this could help the business, team, client, or
+                    portfolio.
+                  </p>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={businessImpact}
                     onChange={(event) =>
-                      setSelectedNumericColumn(event.target.value)
+                      setBusinessImpact(Number(event.target.value))
                     }
-                    className="rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white outline-none transition focus:border-cyan-300"
-                  >
-                    {csvVisualization.numericColumns.map((column) => (
-                      <option key={column} value={column}>
-                        {column}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    className="w-full"
+                  />
+                </label>
 
-                <div className="mt-6 space-y-3">
-                  {csvVisualization.bins.map((bin) => {
-                    const width = `${(bin.count / histogramMaxCount) * 100}%`;
+                <label className="block space-y-2">
+                  <span className="text-sm font-bold text-zinc-300">
+                    Build Confidence: {buildConfidence}
+                  </span>
+                  <p className="text-xs leading-5 text-zinc-500">
+                    How confident you are that this can be built cleanly with
+                    the time and tools available.
+                  </p>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={buildConfidence}
+                    onChange={(event) =>
+                      setBuildConfidence(Number(event.target.value))
+                    }
+                    className="w-full"
+                  />
+                </label>
 
-                    return (
-                      <div key={bin.label}>
-                        <div className="mb-1 flex justify-between text-xs text-zinc-400">
-                          <span>{bin.label}</span>
-                          <span>{bin.count}</span>
-                        </div>
-
-                        <div className="h-4 rounded-full bg-zinc-900">
-                          <div
-                            className="h-4 rounded-full bg-cyan-300"
-                            style={{ width }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <label className="block space-y-2">
+                  <span className="text-sm font-bold text-zinc-300">
+                    Complexity Risk: {complexityRisk}
+                  </span>
+                  <p className="text-xs leading-5 text-zinc-500">
+                    How likely this is to become confusing, expensive, buggy, or
+                    too large in scope.
+                  </p>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={complexityRisk}
+                    onChange={(event) =>
+                      setComplexityRisk(Number(event.target.value))
+                    }
+                    className="w-full"
+                  />
+                </label>
               </div>
-            )}
 
-            <button
-              onClick={exportCsvQualityReport}
-              className="mt-6 rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
-            >
-              Export Quality Report
-            </button>
-          </div>
-
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 md:p-8">
-            <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-              Decision Analytics Demo
-            </p>
-
-            <h2 className="mt-3 text-3xl font-bold">
-              Weather Activity Analyzer
-            </h2>
-
-            <p className="mt-3 text-sm leading-6 text-zinc-400">
-              Enter weather conditions and the tool converts raw conditions into
-              comfort, running, travel, and outdoor scores.
-            </p>
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <label className="text-sm text-zinc-300">
-                City
-                <input
-                  value={weather.city}
-                  onChange={(event) =>
-                    setWeather((previous) => ({
-                      ...previous,
-                      city: event.target.value,
-                    }))
-                  }
-                  className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white outline-none transition focus:border-cyan-300"
+              <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                <StatBox label="Low Risk Bonus" value={lowRiskBonus} />
+                <StatBox
+                  label="Strongest Saved"
+                  value={scenarioAnalytics.strongestScore}
+                  accent={scenarioHistory.length > 0}
                 />
-              </label>
-
-              <label className="text-sm text-zinc-300">
-                Temperature °F
-                <input
-                  type="number"
-                  value={weather.tempF}
-                  onChange={(event) =>
-                    updateWeatherNumber("tempF", event.target.value)
-                  }
-                  className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white outline-none transition focus:border-cyan-300"
+                <StatBox
+                  label="Best Decision"
+                  value={scenarioAnalytics.strongestDecision}
                 />
-              </label>
-
-              <label className="text-sm text-zinc-300">
-                Rain Chance %
-                <input
-                  type="number"
-                  value={weather.rainChance}
-                  onChange={(event) =>
-                    updateWeatherNumber("rainChance", event.target.value)
-                  }
-                  className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white outline-none transition focus:border-cyan-300"
+                <StatBox
+                  label="Export Ready"
+                  value={scenarioHistory.length > 0 ? "Yes" : "No"}
                 />
-              </label>
+              </div>
 
-              <label className="text-sm text-zinc-300">
-                Wind MPH
-                <input
-                  type="number"
-                  value={weather.windMph}
-                  onChange={(event) =>
-                    updateWeatherNumber("windMph", event.target.value)
-                  }
-                  className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white outline-none transition focus:border-cyan-300"
-                />
-              </label>
+              {scenarioHistory.length > 0 && (
+                <div className="mt-8 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
+                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                    Recent Tests
+                  </p>
 
-              <label className="text-sm text-zinc-300">
-                Humidity %
-                <input
-                  type="number"
-                  value={weather.humidity}
-                  onChange={(event) =>
-                    updateWeatherNumber("humidity", event.target.value)
-                  }
-                  className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white outline-none transition focus:border-cyan-300"
-                />
-              </label>
+                  <div className="mt-4 space-y-3">
+                    {scenarioHistory.slice(-4).reverse().map((scenario) => (
+                      <div
+                        key={scenario.scenarioNumber}
+                        className="grid gap-2 rounded-2xl border border-cyan-300/10 bg-black/25 p-4 sm:grid-cols-[90px_1fr_120px]"
+                      >
+                        <p className="text-sm font-black text-cyan-200">
+                          #{scenario.scenarioNumber}
+                        </p>
 
-              <label className="text-sm text-zinc-300">
-                UV Index
-                <input
-                  type="number"
-                  value={weather.uvIndex}
-                  onChange={(event) =>
-                    updateWeatherNumber("uvIndex", event.target.value)
-                  }
-                  className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white outline-none transition focus:border-cyan-300"
-                />
-              </label>
+                        <p className="text-sm text-zinc-300">
+                          Value {scenario.userValue}, Impact{" "}
+                          {scenario.businessImpact}, Confidence{" "}
+                          {scenario.buildConfidence}, Risk{" "}
+                          {scenario.complexityRisk}
+                        </p>
 
-              <label className="text-sm text-zinc-300">
-                Visibility Miles
-                <input
-                  type="number"
-                  value={weather.visibilityMiles}
-                  onChange={(event) =>
-                    updateWeatherNumber("visibilityMiles", event.target.value)
-                  }
-                  className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white outline-none transition focus:border-cyan-300"
-                />
-              </label>
+                        <p className="text-sm font-black text-white sm:text-right">
+                          {scenario.score} / {scenario.decision}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <CompactStat
-                label="Outdoor Score"
-                value={weatherScores.outdoorScore}
-                accent
-              />
-              <StatBox
-                label="Comfort Score"
-                value={weatherScores.comfortScore}
-              />
-              <StatBox
-                label="Running Score"
-                value={weatherScores.runningScore}
-              />
-              <StatBox label="Travel Score" value={weatherScores.travelScore} />
-            </div>
-
-            <div className="mt-6 rounded-2xl border border-cyan-300/30 bg-black/40 p-5">
-              <p className="text-sm font-semibold text-cyan-300">
-                Recommendation
-              </p>
-              <p className="mt-2 text-sm leading-6 text-zinc-300">
-                {weatherScores.recommendation}
-              </p>
-            </div>
-
-            <button
-              onClick={exportWeatherReport}
-              className="mt-6 rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10"
-            >
-              Export Weather Report
-            </button>
-          </div>
-        </section>
+          </section>
+        )}
 
         <footer className="mt-12 pb-6 text-center text-sm text-zinc-500">
           Built by Brian Dacell Cabrera.
