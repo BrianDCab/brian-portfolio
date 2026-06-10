@@ -23,7 +23,7 @@ export default function SiteNav() {
         <div className="hidden items-center justify-between gap-6 py-4 lg:flex">
           <Link href="/" className="group shrink-0">
             <div className="text-sm font-black tracking-[0.32em] text-white transition group-hover:text-cyan-300">
-              BDC
+              BC
             </div>
             <div className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/70">
               Data • Code • Systems

@@ -3,6 +3,8 @@
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
+  ArrowLeft,
+  ArrowRight,
   Bell,
   CheckCircle2,
   Copy,
@@ -19,11 +21,11 @@ import {
 } from "lucide-react";
 
 type AppKey =
+  | "bubble"
   | "runaway"
   | "autocorrect"
   | "notifications"
   | "fidget"
-  | "bubble"
   | "perfect";
 
 type ChaosNote = {
@@ -32,78 +34,13 @@ type ChaosNote = {
   kind: "info" | "chaos" | "calm" | "perfect";
 };
 
-type BubbleCelebrationPiece = {
+type ConfettiPiece = {
   id: string;
   x: number;
   y: number;
   rotate: number;
   delay: number;
 };
-
-const glassPanel =
-  "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
-
-const glassCard =
-  "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-cyan-300/[0.07]";
-
-const appCards = [
-  {
-    key: "runaway" as const,
-    title: "Runaway Button",
-    label: "Annoying",
-    text: "A button that dodges taps, raises a rage meter, and talks trash without relying on hover.",
-    button: "Open Runaway",
-    icon: MousePointerClick,
-  },
-  {
-    key: "autocorrect" as const,
-    title: "Bad Autocorrect",
-    label: "Live Typing",
-    text: "Type normal words and watch the lab autocorrect them into nonsense in real time.",
-    button: "Open Autocorrect",
-    icon: Keyboard,
-  },
-  {
-    key: "notifications" as const,
-    title: "Fake Notifications",
-    label: "Popups",
-    text: "Spawn silly Windows-style toast popups, tap to dismiss, or clear the full stack.",
-    button: "Open Notifications",
-    icon: Bell,
-  },
-  {
-    key: "fidget" as const,
-    title: "Fidget Board",
-    label: "Toggles",
-    text: "Big touch-friendly switches, sliders, pulse controls, glow, and calm mode.",
-    button: "Open Fidget Board",
-    icon: ToggleLeft,
-  },
-  {
-    key: "bubble" as const,
-    title: "Bubble Wrap",
-    label: "Satisfying",
-    text: "Tap bubbles to pop them. One random golden bubble triggers confetti.",
-    button: "Open Bubble Wrap",
-    icon: Gamepad2,
-  },
-  {
-    key: "perfect" as const,
-    title: "Perfect Button",
-    label: "Wholesome",
-    text: "The opposite of the runaway button. It wants to be clicked and rewards you for it.",
-    button: "Open Perfect Button",
-    icon: CheckCircle2,
-  },
-];
-
-function clamp(value: number, min = 0, max = 100) {
-  return Math.max(min, Math.min(max, value));
-}
-
-function getId() {
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
 
 type SoundName =
   | "pop"
@@ -119,6 +56,77 @@ type WebAudioWindow = Window &
   typeof globalThis & {
     webkitAudioContext?: typeof AudioContext;
   };
+
+const glassPanel =
+  "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
+
+const glassCard =
+  "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-cyan-300/[0.07]";
+
+const appCards = [
+  {
+    key: "bubble" as const,
+    title: "Bubble Wrap",
+    label: "Satisfying",
+    short: "Pop bubbles. Find gold.",
+    text: "A soft bubble grid with one hidden golden bubble and confetti.",
+    button: "Open Bubble Wrap",
+    icon: Gamepad2,
+  },
+  {
+    key: "runaway" as const,
+    title: "Runaway Button",
+    label: "Annoying",
+    short: "Tap it. It runs.",
+    text: "A button that dodges taps and complains about it.",
+    button: "Open Runaway",
+    icon: MousePointerClick,
+  },
+  {
+    key: "autocorrect" as const,
+    title: "Bad Autocorrect",
+    label: "Typing",
+    short: "Type normally. Regret it.",
+    text: "A live text toy that turns normal sentences into cursed nonsense.",
+    button: "Open Autocorrect",
+    icon: Keyboard,
+  },
+  {
+    key: "notifications" as const,
+    title: "Notifications",
+    label: "Popups",
+    short: "Spawn fake alerts.",
+    text: "Modern toast popups you can spawn, stack, and dismiss.",
+    button: "Open Notifications",
+    icon: Bell,
+  },
+  {
+    key: "fidget" as const,
+    title: "Fidget Board",
+    label: "Controls",
+    short: "Flip switches.",
+    text: "Big toggles, sliders, glow, pulse, wiggle, and calm mode.",
+    button: "Open Fidget Board",
+    icon: ToggleLeft,
+  },
+  {
+    key: "perfect" as const,
+    title: "Perfect Button",
+    label: "Wholesome",
+    short: "It wants the click.",
+    text: "A button that stays still, rewards you, and feels appreciated.",
+    button: "Open Perfect Button",
+    icon: CheckCircle2,
+  },
+];
+
+function clamp(value: number, min = 0, max = 100) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getId() {
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
 
 function playTone(
   context: AudioContext,
@@ -174,8 +182,8 @@ function playSound(enabled: boolean, sound: SoundName) {
   }
 
   if (sound === "toggle") {
-    playTone(context, 360, now, 0.05, "triangle", 0.045);
-    playTone(context, 540, now + 0.04, 0.06, "triangle", 0.04);
+    playTone(context, 360, now, 0.045, "triangle", 0.04);
+    playTone(context, 540, now + 0.04, 0.055, "triangle", 0.035);
   }
 
   if (sound === "ding") {
@@ -199,14 +207,14 @@ function playSound(enabled: boolean, sound: SoundName) {
 
   window.setTimeout(() => {
     void context.close();
-  }, 450);
+  }, 500);
 }
 
 function PageButton({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300"
+      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300"
     >
       {children}
     </Link>
@@ -257,6 +265,7 @@ function StatBox({
       <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300/80">
         {label}
       </p>
+
       <p
         className={
           accent
@@ -317,9 +326,11 @@ function AppHeader({
         <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
           {kicker}
         </p>
+
         <h2 className="mt-3 text-3xl font-black text-white md:text-5xl">
           {title}
         </h2>
+
         <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-300 md:text-base">
           {text}
         </p>
@@ -350,7 +361,7 @@ function ModalShell({
     <section
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/70 px-3 py-5 backdrop-blur-md sm:px-4 md:py-10"
+      className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/70 px-3 py-5 backdrop-blur-md sm:px-4 md:py-8"
     >
       <button
         type="button"
@@ -359,16 +370,22 @@ function ModalShell({
         aria-label="Close app"
       />
 
-      <div className="relative z-10 w-full max-w-6xl overflow-hidden rounded-[1.6rem] border border-cyan-300/25 bg-[#061018]/95 text-white shadow-[0_0_70px_rgba(34,211,238,0.25)]">
-        <div className="sticky top-0 z-20 border-b border-cyan-300/15 bg-[#07131d]/95 backdrop-blur-xl">
+      <div className="relative z-10 w-full max-w-6xl overflow-hidden rounded-[1.65rem] border border-cyan-300/25 bg-[#07111c]/95 text-white shadow-[0_0_80px_rgba(34,211,238,0.23)]">
+        <div className="sticky top-0 z-20 border-b border-cyan-300/15 bg-[#081522]/95 backdrop-blur-xl">
           <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-black text-cyan-200">
-                Chaos Lab.exe
-              </p>
-              <p className="truncate text-xs text-zinc-500">
-                {activeCard.title} — modern Windows-style mini app
-              </p>
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-300 text-sm font-black text-black">
+                CL
+              </div>
+
+              <div className="min-w-0">
+                <p className="truncate text-sm font-black text-cyan-100">
+                  Chaos Lab OS
+                </p>
+                <p className="truncate text-xs text-zinc-500">
+                  {activeCard.title} · {activeCard.short}
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
@@ -379,6 +396,7 @@ function ModalShell({
               >
                 —
               </button>
+
               <button
                 type="button"
                 className="hidden h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-300 sm:flex"
@@ -386,6 +404,7 @@ function ModalShell({
               >
                 □
               </button>
+
               <button
                 type="button"
                 onClick={onClose}
@@ -415,10 +434,10 @@ function ModalShell({
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[250px_1fr]">
+        <div className="grid lg:grid-cols-[260px_1fr]">
           <aside className="hidden border-r border-cyan-300/15 bg-black/20 p-4 lg:block">
             <p className="mb-4 text-xs font-black uppercase tracking-[0.24em] text-cyan-300">
-              Mini Apps
+              Apps
             </p>
 
             <div className="space-y-2">
@@ -445,7 +464,7 @@ function ModalShell({
                         {app.title}
                       </span>
                       <span className="block text-xs text-zinc-500">
-                        {app.label}
+                        {app.short}
                       </span>
                     </span>
                   </button>
@@ -453,22 +472,188 @@ function ModalShell({
               })}
             </div>
 
-            <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-black/25 p-4">
+            <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-cyan-300/5 p-4">
               <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">
-                Rule
+                Built for touch
               </p>
               <p className="mt-3 text-sm leading-6 text-zinc-400">
-                Every mini-app has its own sound toggle and works with touch.
+                Big targets. No hover-only tricks. Sound stays off until the user
+                turns it on.
               </p>
             </div>
           </aside>
 
-          <div className="min-h-[620px] p-4 sm:p-6 md:p-8">{children}</div>
+          <div className="min-h-[640px] bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.08),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.08),transparent_35%)] p-4 sm:p-6 md:p-8">
+            {children}
+          </div>
         </div>
       </div>
     </section>
   );
 }
+function BubbleWrapApp() {
+  const bubbleCount = 60;
+  const [soundOn, setSoundOn] = useState(false);
+  const [goldenIndex, setGoldenIndex] = useState(() =>
+    Math.floor(Math.random() * bubbleCount)
+  );
+  const [popped, setPopped] = useState<boolean[]>(
+    Array.from({ length: bubbleCount }, () => false)
+  );
+  const [confetti, setConfetti] = useState<ConfettiPiece[]>([]);
+  const [goldenPopped, setGoldenPopped] = useState(false);
+
+  const poppedCount = popped.filter(Boolean).length;
+  const remaining = bubbleCount - poppedCount;
+
+  function createConfetti() {
+    const pieces = Array.from({ length: 28 }, () => ({
+      id: getId(),
+      x: Math.round(Math.random() * 100),
+      y: Math.round(Math.random() * 100),
+      rotate: Math.round(Math.random() * 360),
+      delay: Math.round(Math.random() * 300),
+    }));
+
+    setConfetti(pieces);
+
+    window.setTimeout(() => {
+      setConfetti([]);
+    }, 1400);
+  }
+
+  function popBubble(index: number) {
+    if (popped[index]) return;
+
+    const isGolden = index === goldenIndex;
+
+    playSound(soundOn, isGolden ? "golden" : "pop");
+
+    setPopped((previous) =>
+      previous.map((isPopped, bubbleIndex) =>
+        bubbleIndex === index ? true : isPopped
+      )
+    );
+
+    if (isGolden) {
+      setGoldenPopped(true);
+      createConfetti();
+    }
+  }
+
+  function refill() {
+    playSound(soundOn, "ding");
+    setPopped(Array.from({ length: bubbleCount }, () => false));
+    setGoldenIndex(Math.floor(Math.random() * bubbleCount));
+    setGoldenPopped(false);
+    setConfetti([]);
+  }
+
+  function popRandom() {
+    const available = popped
+      .map((isPopped, index) => ({ isPopped, index }))
+      .filter((bubble) => !bubble.isPopped);
+
+    if (available.length === 0) return;
+
+    const selected = available[Math.floor(Math.random() * available.length)];
+
+    if (!selected) return;
+
+    popBubble(selected.index);
+  }
+
+  return (
+    <div>
+      <AppHeader
+        kicker="Bubble Wrap"
+        title="Pop bubbles. Find gold."
+        text="Tap the bubbles one by one. One random golden bubble celebrates with confetti when you find it."
+        soundOn={soundOn}
+        setSoundOn={setSoundOn}
+      >
+        <AppButton onClick={popRandom}>
+          <Zap size={15} />
+          Pop One
+        </AppButton>
+
+        <AppButton onClick={refill}>
+          <RefreshCcw size={15} />
+          Refill
+        </AppButton>
+      </AppHeader>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-4">
+        <StatBox label="Popped" value={poppedCount} accent />
+        <StatBox label="Remaining" value={remaining} />
+        <StatBox
+          label="Done"
+          value={`${Math.round((poppedCount / bubbleCount) * 100)}%`}
+        />
+        <StatBox label="Golden" value={goldenPopped ? "Found" : "Hidden"} />
+      </div>
+
+      <div className="relative mt-8 overflow-hidden rounded-[2rem] border border-cyan-300/15 bg-black/25 p-4 sm:p-6">
+        {confetti.length > 0 && (
+          <div className="pointer-events-none absolute inset-0 z-20">
+            {confetti.map((piece) => (
+              <span
+                key={piece.id}
+                className="absolute h-3 w-2 animate-bounce rounded-sm bg-yellow-300 shadow-[0_0_12px_rgba(250,204,21,0.65)]"
+                style={{
+                  left: `${piece.x}%`,
+                  top: `${piece.y}%`,
+                  transform: `rotate(${piece.rotate}deg)`,
+                  animationDelay: `${piece.delay}ms`,
+                }}
+              />
+            ))}
+
+            <div className="absolute inset-x-4 top-8 mx-auto max-w-sm rounded-3xl border border-yellow-300/40 bg-yellow-300/15 p-5 text-center shadow-[0_0_35px_rgba(250,204,21,0.25)] backdrop-blur-md">
+              <p className="text-3xl font-black text-yellow-200">Golden Pop</p>
+              <p className="mt-2 text-sm text-yellow-100">
+                You found the celebration bubble.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10">
+          {popped.map((isPopped, index) => {
+            const isGolden = index === goldenIndex && !isPopped;
+
+            return (
+              <button
+                key={`bubble-${index}`}
+                type="button"
+                onClick={() => popBubble(index)}
+                aria-label={`Bubble ${index + 1}`}
+                className={`aspect-square min-h-11 rounded-full border transition active:scale-90 ${
+                  isPopped
+                    ? "border-zinc-700 bg-zinc-900/70 shadow-inner"
+                    : isGolden
+                      ? "border-yellow-200/70 bg-yellow-300/25 shadow-[inset_0_6px_14px_rgba(255,255,255,0.35),0_0_22px_rgba(250,204,21,0.35)]"
+                      : "border-cyan-200/50 bg-cyan-300/20 shadow-[inset_0_6px_14px_rgba(255,255,255,0.28),0_0_16px_rgba(34,211,238,0.16)] hover:bg-cyan-300/30"
+                }`}
+              >
+                <span
+                  className={`mx-auto block h-1/2 w-1/2 rounded-full ${
+                    isPopped
+                      ? "bg-zinc-800"
+                      : isGolden
+                        ? "bg-yellow-100/70"
+                        : "bg-white/35"
+                  }`}
+                />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RunawayButtonApp() {
   const [soundOn, setSoundOn] = useState(false);
   const [rage, setRage] = useState(0);
@@ -532,7 +717,7 @@ function RunawayButtonApp() {
     <div>
       <AppHeader
         kicker="Runaway Button"
-        title="Tap it. It runs away."
+        title="Tap it. It runs."
         text="No hover tricks. The button moves on tap, so it works on phones and touch screens."
         soundOn={soundOn}
         setSoundOn={setSoundOn}
@@ -545,9 +730,9 @@ function RunawayButtonApp() {
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         <StatBox label="Attempts" value={attempts} />
-        <StatBox label="Rage Meter" value={`${rage}%`} accent />
+        <StatBox label="Rage" value={`${rage}%`} accent />
         <StatBox
-          label="Status"
+          label="Mood"
           value={rage >= 80 ? "Cursed" : rage >= 40 ? "Irritated" : "Stable"}
         />
       </div>
@@ -622,6 +807,7 @@ function applyBadAutocorrect(text: string, intensity: number) {
   let corrected = text;
 
   const replacementCount = Math.max(4, Math.round(intensity / 7));
+
   replacements.slice(0, replacementCount).forEach(([pattern, replacement]) => {
     corrected = corrected.replace(pattern, replacement);
   });
@@ -686,7 +872,10 @@ function BadAutocorrectApp() {
     navigator.clipboard.writeText(output);
     setCopied(true);
     playSound(soundOn, "copy");
-    window.setTimeout(() => setCopied(false), 1200);
+
+    window.setTimeout(() => {
+      setCopied(false);
+    }, 1200);
   }
 
   function resetText() {
@@ -702,8 +891,8 @@ function BadAutocorrectApp() {
     <div>
       <AppHeader
         kicker="Bad Autocorrect"
-        title="Live cursed typing"
-        text="Type normal words and the lab quietly ruins them in real time. You can keep it as autocorrect or add a little glitch flavor."
+        title="Type normally. Regret it."
+        text="A live text toy that quietly turns normal sentences into cursed nonsense."
         soundOn={soundOn}
         setSoundOn={setSoundOn}
       >
@@ -734,7 +923,7 @@ function BadAutocorrectApp() {
 
           <label className="mt-5 block">
             <span className="text-sm font-black text-zinc-300">
-              Autocorrect Badness: {intensity}
+              Badness: {intensity}
             </span>
             <input
               type="range"
@@ -763,10 +952,10 @@ function BadAutocorrectApp() {
           >
             <span>
               <span className="block font-black text-white">
-                Add Glitch Flavor
+                Glitch Flavor
               </span>
               <span className="block text-sm text-zinc-400">
-                Optional visual corruption on top of autocorrect.
+                Optional visual corruption.
               </span>
             </span>
 
@@ -803,7 +992,6 @@ function BadAutocorrectApp() {
     </div>
   );
 }
-
 function NotificationsApp() {
   const [soundOn, setSoundOn] = useState(false);
 
@@ -822,7 +1010,7 @@ function NotificationsApp() {
   const [notifications, setNotifications] = useState<ChaosNote[]>([
     {
       id: getId(),
-      text: "Welcome to fake notifications. Tap a toast to dismiss it.",
+      text: "Tap a toast to dismiss it.",
       kind: "info",
     },
   ]);
@@ -875,9 +1063,9 @@ function NotificationsApp() {
   return (
     <div>
       <AppHeader
-        kicker="Fake Notifications"
-        title="Silly toast popup stack"
-        text="Spawn modern Windows-style notifications. Tap any notification to dismiss it. Big tap targets, no weird hover behavior."
+        kicker="Notifications"
+        title="Spawn fake alerts."
+        text="Modern toast popups you can stack, dismiss, or clear. Big tap targets, no hidden behavior."
         soundOn={soundOn}
         setSoundOn={setSoundOn}
       >
@@ -889,6 +1077,11 @@ function NotificationsApp() {
         <AppButton onClick={() => spawnNotification("chaos")}>
           <Zap size={15} />
           Chaos
+        </AppButton>
+
+        <AppButton onClick={() => spawnNotification("calm")}>
+          <Sparkles size={15} />
+          Calm
         </AppButton>
 
         <AppButton onClick={spawnStack}>
@@ -912,15 +1105,15 @@ function NotificationsApp() {
         />
       </div>
 
-      <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_360px]">
+      <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_340px]">
         <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
             Desktop Preview
           </p>
 
-          <div className="relative mt-4 min-h-[420px] overflow-hidden rounded-3xl border border-cyan-300/10 bg-gradient-to-br from-slate-950 via-black to-cyan-950/30 p-5">
+          <div className="relative mt-4 min-h-[430px] overflow-hidden rounded-3xl border border-cyan-300/10 bg-gradient-to-br from-slate-950 via-black to-cyan-950/30 p-5">
             <div className="absolute bottom-4 left-4 right-4 rounded-2xl border border-cyan-300/10 bg-black/35 p-4 text-xs text-zinc-500">
-              Fake taskbar • Chaos Lab.exe • Notifications enabled
+              Fake taskbar · Chaos Lab OS · Notifications enabled
             </div>
 
             <div className="absolute right-4 top-4 flex w-[min(310px,calc(100%-2rem))] flex-col gap-3">
@@ -969,30 +1162,20 @@ function NotificationsApp() {
 
         <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
-            Why this works
+            Why it feels better
           </p>
 
           <div className="mt-4 space-y-4 text-sm leading-6 text-zinc-300">
-            <p>
-              It keeps the nuisance energy without breaking mobile. Every toast
-              is a big button.
-            </p>
-
-            <p>
-              Sound is optional per app, so the page stays quiet unless someone
-              turns it on.
-            </p>
-
-            <p>
-              It shows React list state, dynamic rendering, deletion, and
-              interaction design.
-            </p>
+            <p>It gives the page annoying popup energy without breaking mobile.</p>
+            <p>Every toast is a big button, so it works fine on touch screens.</p>
+            <p>Sound is optional, so the app stays quiet unless the user turns it on.</p>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
 function FidgetBoardApp() {
   const [soundOn, setSoundOn] = useState(false);
   const [pulse, setPulse] = useState(true);
@@ -1013,8 +1196,8 @@ function FidgetBoardApp() {
     <div>
       <AppHeader
         kicker="Fidget Board"
-        title="Big switches and soft chaos"
-        text="A touch-safe toggle board with satisfying controls, sliders, glow, pulse, wiggle, and calm mode."
+        title="Flip switches."
+        text="Big toggles, sliders, glow, pulse, wiggle, and calm mode. This is the soft control-panel part of the lab."
         soundOn={soundOn}
         setSoundOn={setSoundOn}
       />
@@ -1169,175 +1352,12 @@ function FidgetBoardApp() {
   );
 }
 
-function BubbleWrapApp() {
-  const bubbleCount = 60;
-  const [soundOn, setSoundOn] = useState(false);
-  const [goldenIndex, setGoldenIndex] = useState(() =>
-    Math.floor(Math.random() * bubbleCount)
-  );
-  const [popped, setPopped] = useState<boolean[]>(
-    Array.from({ length: bubbleCount }, () => false)
-  );
-  const [confetti, setConfetti] = useState<BubbleCelebrationPiece[]>([]);
-  const [goldenPopped, setGoldenPopped] = useState(false);
-
-  const poppedCount = popped.filter(Boolean).length;
-  const remaining = bubbleCount - poppedCount;
-
-  function createConfetti() {
-    const pieces = Array.from({ length: 24 }, () => ({
-      id: getId(),
-      x: Math.round(Math.random() * 100),
-      y: Math.round(Math.random() * 100),
-      rotate: Math.round(Math.random() * 360),
-      delay: Math.round(Math.random() * 300),
-    }));
-
-    setConfetti(pieces);
-
-    window.setTimeout(() => {
-      setConfetti([]);
-    }, 1300);
-  }
-
-  function popBubble(index: number) {
-    if (popped[index]) return;
-
-    const isGolden = index === goldenIndex;
-
-    playSound(soundOn, isGolden ? "golden" : "pop");
-
-    setPopped((previous) =>
-      previous.map((isPopped, bubbleIndex) =>
-        bubbleIndex === index ? true : isPopped
-      )
-    );
-
-    if (isGolden) {
-      setGoldenPopped(true);
-      createConfetti();
-    }
-  }
-
-  function refill() {
-    playSound(soundOn, "ding");
-    setPopped(Array.from({ length: bubbleCount }, () => false));
-    setGoldenIndex(Math.floor(Math.random() * bubbleCount));
-    setGoldenPopped(false);
-    setConfetti([]);
-  }
-
-  function popRandom() {
-    const available = popped
-      .map((isPopped, index) => ({ isPopped, index }))
-      .filter((bubble) => !bubble.isPopped);
-
-    if (available.length === 0) return;
-
-    const selected = available[Math.floor(Math.random() * available.length)];
-
-    if (!selected) return;
-
-    popBubble(selected.index);
-  }
-
-  return (
-    <div>
-      <AppHeader
-        kicker="Bubble Wrap"
-        title="Pleasant little pop grid"
-        text="Tap bubbles to pop them. One random golden bubble celebrates with confetti when you find it."
-        soundOn={soundOn}
-        setSoundOn={setSoundOn}
-      >
-        <AppButton onClick={popRandom}>
-          <Zap size={15} />
-          Pop One
-        </AppButton>
-
-        <AppButton onClick={refill}>
-          <RefreshCcw size={15} />
-          Refill
-        </AppButton>
-      </AppHeader>
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-4">
-        <StatBox label="Popped" value={poppedCount} accent />
-        <StatBox label="Remaining" value={remaining} />
-        <StatBox
-          label="Completion"
-          value={`${Math.round((poppedCount / bubbleCount) * 100)}%`}
-        />
-        <StatBox label="Golden" value={goldenPopped ? "Found" : "Hidden"} />
-      </div>
-
-      <div className="relative mt-8 overflow-hidden rounded-[2rem] border border-cyan-300/15 bg-black/25 p-4 sm:p-6">
-        {confetti.length > 0 && (
-          <div className="pointer-events-none absolute inset-0 z-20">
-            {confetti.map((piece) => (
-              <span
-                key={piece.id}
-                className="absolute h-3 w-2 animate-bounce rounded-sm bg-yellow-300 shadow-[0_0_12px_rgba(250,204,21,0.65)]"
-                style={{
-                  left: `${piece.x}%`,
-                  top: `${piece.y}%`,
-                  rotate: `${piece.rotate}deg`,
-                  animationDelay: `${piece.delay}ms`,
-                }}
-              />
-            ))}
-
-            <div className="absolute inset-x-4 top-8 mx-auto max-w-sm rounded-3xl border border-yellow-300/40 bg-yellow-300/15 p-5 text-center shadow-[0_0_35px_rgba(250,204,21,0.25)] backdrop-blur-md">
-              <p className="text-3xl font-black text-yellow-200">Golden Pop!</p>
-              <p className="mt-2 text-sm text-yellow-100">
-                You found the celebration bubble.
-              </p>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10">
-          {popped.map((isPopped, index) => {
-            const isGolden = index === goldenIndex && !isPopped;
-
-            return (
-              <button
-                key={`bubble-${index}`}
-                type="button"
-                onClick={() => popBubble(index)}
-                aria-label={`Bubble ${index + 1}`}
-                className={`aspect-square min-h-11 rounded-full border transition active:scale-90 ${
-                  isPopped
-                    ? "border-zinc-700 bg-zinc-900/70 shadow-inner"
-                    : isGolden
-                      ? "border-yellow-200/70 bg-yellow-300/25 shadow-[inset_0_6px_14px_rgba(255,255,255,0.35),0_0_22px_rgba(250,204,21,0.35)]"
-                      : "border-cyan-200/50 bg-cyan-300/20 shadow-[inset_0_6px_14px_rgba(255,255,255,0.28),0_0_16px_rgba(34,211,238,0.16)] hover:bg-cyan-300/30"
-                }`}
-              >
-                <span
-                  className={`mx-auto block h-1/2 w-1/2 rounded-full ${
-                    isPopped
-                      ? "bg-zinc-800"
-                      : isGolden
-                        ? "bg-yellow-100/70"
-                        : "bg-white/35"
-                  }`}
-                />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function PerfectButtonApp() {
   const [soundOn, setSoundOn] = useState(false);
   const [clicks, setClicks] = useState(0);
   const [happiness, setHappiness] = useState(50);
   const [message, setMessage] = useState("The perfect button is ready.");
-  const [sparkles, setSparkles] = useState<BubbleCelebrationPiece[]>([]);
+  const [sparkles, setSparkles] = useState<ConfettiPiece[]>([]);
 
   const buttonMood =
     happiness >= 95 ? "Thriving" : happiness >= 75 ? "Happy" : "Hopeful";
@@ -1402,7 +1422,7 @@ function PerfectButtonApp() {
     <div>
       <AppHeader
         kicker="Perfect Button"
-        title="It wants to be clicked"
+        title="It wants the click."
         text="The opposite of the runaway button. It stays still, rewards you, celebrates streaks, and is emotionally supportive."
         soundOn={soundOn}
         setSoundOn={setSoundOn}
@@ -1429,7 +1449,7 @@ function PerfectButtonApp() {
                 style={{
                   left: `${sparkle.x}%`,
                   top: `${sparkle.y}%`,
-                  rotate: `${sparkle.rotate}deg`,
+                  transform: `rotate(${sparkle.rotate}deg)`,
                   animationDelay: `${sparkle.delay}ms`,
                 }}
               />
@@ -1469,11 +1489,11 @@ export default function ChaosLabPage() {
   const [activeApp, setActiveApp] = useState<AppKey | null>(null);
 
   function renderActiveApp() {
+    if (activeApp === "bubble") return <BubbleWrapApp />;
     if (activeApp === "runaway") return <RunawayButtonApp />;
     if (activeApp === "autocorrect") return <BadAutocorrectApp />;
     if (activeApp === "notifications") return <NotificationsApp />;
     if (activeApp === "fidget") return <FidgetBoardApp />;
-    if (activeApp === "bubble") return <BubbleWrapApp />;
     if (activeApp === "perfect") return <PerfectButtonApp />;
     return null;
   }
@@ -1488,18 +1508,24 @@ export default function ChaosLabPage() {
           </div>
 
           <h1 className="mt-6 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
-            WIP - Windows Style Fidget Lab - Note: Must add images
+            A little OS for fidget nonsense
           </h1>
 
           <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-300 md:text-lg">
-            Touch-friendly chaos toys with optional sound: a runaway button, bad
-            autocorrect, fake notifications, toggle board, bubble wrap with a
-            golden confetti bubble, and the perfect button.
+            Bubble wrap, runaway buttons, bad autocorrect, fake notifications,
+            switches, and one button that actually wants to be clicked.
           </p>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-            <PageButton href="/playground">Back to Playground</PageButton>
-            <PageButton href="/gravity-lab">Next: Gravity Lab</PageButton>
+<PageButton href="/playground">
+  <ArrowLeft size={16} />
+  Back to Playground
+</PageButton>
+
+<PageButton href="/gravity-lab">
+  Next: Gravity Lab
+  <ArrowRight size={16} />
+</PageButton>
           </div>
         </div>
 
@@ -1542,33 +1568,31 @@ export default function ChaosLabPage() {
           <div className={`${glassCard} p-6`}>
             <Gamepad2 className="text-cyan-300" size={24} />
             <h3 className="mt-4 text-xl font-black text-white">
-              Satisfying side
+              Actually playful
             </h3>
             <p className="mt-3 text-sm leading-6 text-zinc-300">
-              Bubble wrap, perfect button, and fidget toggles make the page feel
-              pleasant, not just annoying.
+              It is silly on purpose: tap, pop, switch, type, dismiss, repeat.
             </p>
           </div>
 
           <div className={`${glassCard} p-6`}>
             <Zap className="text-cyan-300" size={24} />
             <h3 className="mt-4 text-xl font-black text-white">
-              Nuisance side
+              Touch safe
             </h3>
             <p className="mt-3 text-sm leading-6 text-zinc-300">
-              Runaway button, bad autocorrect, and fake notifications keep the
-              chaotic toy-box personality.
+              No hover-only tricks. The buttons are big enough for mobile.
             </p>
           </div>
 
           <div className={`${glassCard} p-6`}>
             <Volume2 className="text-cyan-300" size={24} />
             <h3 className="mt-4 text-xl font-black text-white">
-              Optional sound
+              Quiet by default
             </h3>
             <p className="mt-3 text-sm leading-6 text-zinc-300">
-              Every app has its own sound toggle. The page stays quiet until the
-              user turns sound on.
+              Every app has its own sound toggle, so the page only makes noise
+              when someone turns it on.
             </p>
           </div>
         </section>

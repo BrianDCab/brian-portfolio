@@ -142,7 +142,7 @@ export default function Home() {
             </p>
 
             <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
-              Brian Dacell Cabrera
+              Brian Cabrera
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-300 md:text-lg">

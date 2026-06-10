@@ -1,50 +1,146 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { ChangeEvent, ReactNode } from "react";
+import { useMemo, useState, type ChangeEvent, type ReactNode } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle,
   BarChart3,
-  CheckCircle2,
   CloudSun,
-  DollarSign,
+  Download,
   ExternalLink,
-  FileText,
-  Gauge,
+  FileDown,
+  RefreshCcw,
+  ShieldCheck,
+  Sparkles,
+  Table2,
+  TrendingDown,
+  TrendingUp,
   Upload,
 } from "lucide-react";
 
-type RowData = Record<string, string>;
+type LabKey = "offers" | "weather";
+type Flag = "Y" | "N";
+type Status = "Pass" | "Review" | "Fail";
+type MetricFormat = "number" | "money" | "percent";
 
-function createSampleRows(): RowData[] {
-  const tiers = ["Base", "Bronze", "Silver", "Gold", "Platinum", "VIP"];
+type PlayerOfferRow = {
+  PlayerID: string;
+  UniversalID: string;
+  FirstName: string;
+  LastName: string;
+  TierRank: string;
+  PlayerStatus: string;
+  ActiveInactive: "Active" | "Inactive";
+  HostName: string;
+  TotalTrips: number;
+  TripsMonth: number;
+  TripsLast3Months: number;
+  TripsLast6Months: number;
+  LastTripDate: string;
+  DaysSinceLastTrip: number;
+  CoinIn: number;
+  TheoWin: number;
+  ActualWin: number;
+  NetWinLoss: number;
+  ADT: number;
+  NetADT: number;
+  MonthlyTheo: number;
+  MonthlyActual: number;
+  SegmentName: string;
+  OfferGroup: string;
+  WorthGroup: string;
+  VIPFlag: Flag;
+  NewMemberFlag: Flag;
+  BirthdayMonth: string;
+  MailableFlag: Flag;
+  EmailableFlag: Flag;
+  AppEligibleFlag: Flag;
+  DoNotMail: Flag;
+  DoNotEmail: Flag;
+  BadAddressFlag: Flag;
+  ExcludedFlag: Flag;
+  OfferFSP: number;
+  OfferTG: number;
+  OfferHotel: string;
+  OfferHotelCode: string;
+  OfferFood: number;
+  OfferGift: string;
+  OfferBonusEntries: number;
+  BirthdayOffer: string;
+  FSPValidStart: string;
+  FSPValidEnd: string;
+  TGValidStart: string;
+  TGValidEnd: string;
+  HotelValidStart: string;
+  HotelValidEnd: string;
+  FoodValidStart: string;
+  FoodValidEnd: string;
+  GiftValidStart: string;
+  GiftValidEnd: string;
+  RedeemedFSP: Flag;
+  RedeemedTG: Flag;
+  RedeemedHotel: Flag;
+  RedeemedFood: Flag;
+  RedeemedGift: Flag;
+  TotalRedeemedValue: number;
+  RedemptionCount: number;
+  FirstRedeemDate: string;
+  LastRedeemDate: string;
+  OfferCost: number;
+  PostOfferTrips: number;
+  PostOfferTheo: number;
+  PostOfferActual: number;
+  CampaignID: string;
+  CampaignName: string;
+  ExportMonth: string;
+  ExportDate: string;
+  SourceSystem: string;
+  SourceFile: string;
+  ScriptVersion: string;
+  ValidationStatus: Status;
+  ValidationNotes: string;
+  DuplicateFlag: Flag;
+  MissingIDFlag: Flag;
+  MissingOfferFlag: Flag;
+};
 
-  return Array.from({ length: 130 }, (_, index) => {
-    const playerNumber = 1001 + index;
-    const tier = tiers[index % tiers.length];
+type OfferDisplayRow = PlayerOfferRow & {
+  HotelNights: string;
+  HotelRoomType: string;
+};
 
-    const netADT = Math.min(
-      1000,
-      Math.round(((index * 47) % 1001) + (index % 7) * 13)
-    );
+type WeatherTrafficRow = {
+  Date: string;
+  DayOfWeek: string;
+  WeekendFlag: Flag;
+  EventFlag: Flag;
+  PromoFlag: Flag;
+  WeatherCondition: string;
+  TempHigh: number;
+  TempLow: number;
+  HeatIndex: number;
+  RainChance: number;
+  RainInches: number;
+  WindMPH: number;
+  WeatherRiskScore: number;
+  ExpectedTrips: number;
+  ActualTrips: number;
+  TripDelta: number;
+  TripDeltaPercent: number;
+  FSPRedemptions: number;
+  TGRedemptions: number;
+  HotelBookings: number;
+  FoodRedemptions: number;
+  TheoWin: number;
+  ActualWin: number;
+  Recommendation: string;
+};
 
-    const trips = 1 + ((index * 3) % 28);
-    const theo = Math.round(netADT * (0.75 + (index % 5) * 0.08));
-    const offer = Math.max(5, Math.round(netADT * 0.12 + trips * 1.5));
-
-    return {
-      PlayerID: String(playerNumber),
-      Tier: tier,
-      "Net ADT": String(netADT),
-      "# Trips": String(trips),
-      Theo: String(theo),
-      Offer: String(offer),
-    };
-  });
-}
-
-const sampleRows: RowData[] = createSampleRows();
+type MetricOption = {
+  label: string;
+  key: string;
+  format: MetricFormat;
+  description: string;
+};
 
 const glassPanel =
   "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
@@ -52,108 +148,1398 @@ const glassPanel =
 const glassCard =
   "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-cyan-300/[0.07]";
 
-function parseCSV(text: string): RowData[] {
-  const lines = text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
+const offerBase: PlayerOfferRow = {
+  PlayerID: "",
+  UniversalID: "",
+  FirstName: "Demo",
+  LastName: "Player",
+  TierRank: "Gold",
+  PlayerStatus: "Good Standing",
+  ActiveInactive: "Active",
+  HostName: "Unhosted",
+  TotalTrips: 0,
+  TripsMonth: 0,
+  TripsLast3Months: 0,
+  TripsLast6Months: 0,
+  LastTripDate: "",
+  DaysSinceLastTrip: 0,
+  CoinIn: 0,
+  TheoWin: 0,
+  ActualWin: 0,
+  NetWinLoss: 0,
+  ADT: 0,
+  NetADT: 0,
+  MonthlyTheo: 0,
+  MonthlyActual: 0,
+  SegmentName: "",
+  OfferGroup: "",
+  WorthGroup: "",
+  VIPFlag: "N",
+  NewMemberFlag: "N",
+  BirthdayMonth: "",
+  MailableFlag: "Y",
+  EmailableFlag: "Y",
+  AppEligibleFlag: "Y",
+  DoNotMail: "N",
+  DoNotEmail: "N",
+  BadAddressFlag: "N",
+  ExcludedFlag: "N",
+  OfferFSP: 0,
+  OfferTG: 0,
+  OfferHotel: "NONE",
+  OfferHotelCode: "NONE",
+  OfferFood: 0,
+  OfferGift: "",
+  OfferBonusEntries: 0,
+  BirthdayOffer: "",
+  FSPValidStart: "2026-07-01",
+  FSPValidEnd: "2026-07-31",
+  TGValidStart: "2026-07-01",
+  TGValidEnd: "2026-07-31",
+  HotelValidStart: "",
+  HotelValidEnd: "",
+  FoodValidStart: "2026-07-01",
+  FoodValidEnd: "2026-07-31",
+  GiftValidStart: "",
+  GiftValidEnd: "",
+  RedeemedFSP: "N",
+  RedeemedTG: "N",
+  RedeemedHotel: "N",
+  RedeemedFood: "N",
+  RedeemedGift: "N",
+  TotalRedeemedValue: 0,
+  RedemptionCount: 0,
+  FirstRedeemDate: "",
+  LastRedeemDate: "",
+  OfferCost: 0,
+  PostOfferTrips: 0,
+  PostOfferTheo: 0,
+  PostOfferActual: 0,
+  CampaignID: "JUL26-DEMO",
+  CampaignName: "July Demo Offers",
+  ExportMonth: "July 2026",
+  ExportDate: "2026-06-10",
+  SourceSystem: "Demo Oasis Export",
+  SourceFile: "casino_offer_export_demo.csv",
+  ScriptVersion: "v2.3",
+  ValidationStatus: "Pass",
+  ValidationNotes: "Eligible and complete.",
+  DuplicateFlag: "N",
+  MissingIDFlag: "N",
+  MissingOfferFlag: "N",
+};
 
-  if (lines.length < 2) return [];
+const weatherBase: WeatherTrafficRow = {
+  Date: "",
+  DayOfWeek: "",
+  WeekendFlag: "N",
+  EventFlag: "N",
+  PromoFlag: "N",
+  WeatherCondition: "",
+  TempHigh: 0,
+  TempLow: 0,
+  HeatIndex: 0,
+  RainChance: 0,
+  RainInches: 0,
+  WindMPH: 0,
+  WeatherRiskScore: 0,
+  ExpectedTrips: 0,
+  ActualTrips: 0,
+  TripDelta: 0,
+  TripDeltaPercent: 0,
+  FSPRedemptions: 0,
+  TGRedemptions: 0,
+  HotelBookings: 0,
+  FoodRedemptions: 0,
+  TheoWin: 0,
+  ActualWin: 0,
+  Recommendation: "",
+};
 
-  const headers = lines[0].split(",").map((header) => header.trim());
+const offerColumns = Object.keys(offerBase) as Array<keyof PlayerOfferRow>;
+const weatherColumns = Object.keys(weatherBase) as Array<keyof WeatherTrafficRow>;
+const requiredOfferColumns = [
+  "PlayerID",
+  "TierRank",
+  "ActiveInactive",
+  "TripsMonth",
+  "DaysSinceLastTrip",
+  "NetADT",
+  "SegmentName",
+  "OfferFSP",
+  "OfferTG",
+  "OfferHotel",
+  "OfferFood",
+  "OfferGift",
+  "MailableFlag",
+  "AppEligibleFlag",
+  "ValidationStatus",
+];
 
-  return lines.slice(1).map((line) => {
-    const values = line.split(",").map((value) => value.trim());
-    const row: RowData = {};
+const requiredWeatherColumns = [
+  "Date",
+  "DayOfWeek",
+  "WeatherCondition",
+  "TempHigh",
+  "RainChance",
+  "WeatherRiskScore",
+  "ExpectedTrips",
+  "ActualTrips",
+  "TripDelta",
+  "TripDeltaPercent",
+  "FSPRedemptions",
+  "HotelBookings",
+  "FoodRedemptions",
+  "Recommendation",
+];
 
-    headers.forEach((header, index) => {
-      row[header || `Column ${index + 1}`] = values[index] ?? "";
-    });
+const numericOfferColumns = new Set([
+  "TotalTrips",
+  "TripsMonth",
+  "TripsLast3Months",
+  "TripsLast6Months",
+  "DaysSinceLastTrip",
+  "CoinIn",
+  "TheoWin",
+  "ActualWin",
+  "NetWinLoss",
+  "ADT",
+  "NetADT",
+  "MonthlyTheo",
+  "MonthlyActual",
+  "OfferFSP",
+  "OfferTG",
+  "OfferFood",
+  "OfferBonusEntries",
+  "TotalRedeemedValue",
+  "RedemptionCount",
+  "OfferCost",
+  "PostOfferTrips",
+  "PostOfferTheo",
+  "PostOfferActual",
+]);
 
-    return row;
+const numericWeatherColumns = new Set([
+  "TempHigh",
+  "TempLow",
+  "HeatIndex",
+  "RainChance",
+  "RainInches",
+  "WindMPH",
+  "WeatherRiskScore",
+  "ExpectedTrips",
+  "ActualTrips",
+  "TripDelta",
+  "TripDeltaPercent",
+  "FSPRedemptions",
+  "TGRedemptions",
+  "HotelBookings",
+  "FoodRedemptions",
+  "TheoWin",
+  "ActualWin",
+]);
+
+const flagOfferColumns = new Set([
+  "VIPFlag",
+  "NewMemberFlag",
+  "MailableFlag",
+  "EmailableFlag",
+  "AppEligibleFlag",
+  "DoNotMail",
+  "DoNotEmail",
+  "BadAddressFlag",
+  "ExcludedFlag",
+  "RedeemedFSP",
+  "RedeemedTG",
+  "RedeemedHotel",
+  "RedeemedFood",
+  "RedeemedGift",
+  "DuplicateFlag",
+  "MissingIDFlag",
+  "MissingOfferFlag",
+]);
+
+const flagWeatherColumns = new Set(["WeekendFlag", "EventFlag", "PromoFlag"]);
+
+const offerRowsDefault: PlayerOfferRow[] = [
+  {
+    ...offerBase,
+    PlayerID: "P100284",
+    UniversalID: "U778201",
+    TierRank: "Platinum",
+    TotalTrips: 88,
+    TripsMonth: 9,
+    TripsLast3Months: 24,
+    TripsLast6Months: 51,
+    LastTripDate: "2026-06-07",
+    DaysSinceLastTrip: 3,
+    CoinIn: 84500,
+    TheoWin: 3920,
+    ActualWin: -850,
+    NetWinLoss: 850,
+    ADT: 435,
+    NetADT: 412,
+    MonthlyTheo: 3915,
+    MonthlyActual: 740,
+    SegmentName: "Core Active",
+    OfferGroup: "FSP-High",
+    WorthGroup: "W4",
+    BirthdayMonth: "June",
+    OfferFSP: 125,
+    OfferTG: 70,
+    OfferHotel: "2DLX",
+    OfferHotelCode: "2DLX",
+    OfferFood: 45,
+    OfferGift: "Premium Tumbler",
+    OfferBonusEntries: 2500,
+    BirthdayOffer: "$25 Birthday FSP",
+    HotelValidStart: "2026-07-07",
+    HotelValidEnd: "2026-07-28",
+    GiftValidStart: "2026-07-12",
+    GiftValidEnd: "2026-07-12",
+    RedeemedFSP: "Y",
+    RedeemedFood: "Y",
+    TotalRedeemedValue: 170,
+    RedemptionCount: 2,
+    FirstRedeemDate: "2026-07-03",
+    LastRedeemDate: "2026-07-15",
+    OfferCost: 170,
+    PostOfferTrips: 4,
+    PostOfferTheo: 1440,
+    PostOfferActual: 320,
+    CampaignID: "JUL26-ACT-W4",
+    SourceFile: "active_offers_july_demo.csv",
+  },
+  {
+    ...offerBase,
+    PlayerID: "P100918",
+    UniversalID: "U778475",
+    TierRank: "Gold",
+    TotalTrips: 42,
+    TripsMonth: 5,
+    TripsLast3Months: 14,
+    TripsLast6Months: 28,
+    LastTripDate: "2026-06-01",
+    DaysSinceLastTrip: 9,
+    CoinIn: 42100,
+    TheoWin: 1840,
+    ActualWin: 620,
+    NetWinLoss: -620,
+    ADT: 265,
+    NetADT: 248,
+    MonthlyTheo: 1325,
+    MonthlyActual: -220,
+    SegmentName: "Mid Active",
+    OfferGroup: "FSP-Mid",
+    WorthGroup: "W3",
+    BirthdayMonth: "October",
+    OfferFSP: 75,
+    OfferTG: 35,
+    OfferHotel: "1DLX",
+    OfferHotelCode: "1DLX",
+    OfferFood: 30,
+    OfferGift: "Kitchen Set",
+    OfferBonusEntries: 1000,
+    HotelValidStart: "2026-07-08",
+    HotelValidEnd: "2026-07-29",
+    GiftValidStart: "2026-07-19",
+    GiftValidEnd: "2026-07-19",
+    CampaignID: "JUL26-ACT-W3",
+    SourceFile: "active_offers_july_demo.csv",
+  },
+  {
+    ...offerBase,
+    PlayerID: "P101337",
+    UniversalID: "U779044",
+    TierRank: "Diamond",
+    HostName: "Hosted",
+    TotalTrips: 134,
+    TripsMonth: 12,
+    TripsLast3Months: 39,
+    TripsLast6Months: 78,
+    LastTripDate: "2026-06-09",
+    DaysSinceLastTrip: 1,
+    CoinIn: 156900,
+    TheoWin: 8450,
+    ActualWin: -3120,
+    NetWinLoss: 3120,
+    ADT: 704,
+    NetADT: 690,
+    MonthlyTheo: 8448,
+    MonthlyActual: 1880,
+    SegmentName: "VIP Active",
+    OfferGroup: "VIP-FSP",
+    WorthGroup: "W5",
+    VIPFlag: "Y",
+    BirthdayMonth: "July",
+    OfferFSP: 250,
+    OfferTG: 175,
+    OfferHotel: "2MS",
+    OfferHotelCode: "2MS",
+    OfferFood: 75,
+    OfferGift: "VIP Gift",
+    OfferBonusEntries: 5000,
+    BirthdayOffer: "$100 Birthday FSP",
+    HotelValidStart: "2026-07-01",
+    HotelValidEnd: "2026-07-31",
+    GiftValidStart: "2026-07-26",
+    GiftValidEnd: "2026-07-26",
+    RedeemedFSP: "Y",
+    RedeemedTG: "Y",
+    RedeemedHotel: "Y",
+    RedeemedFood: "Y",
+    RedeemedGift: "Y",
+    TotalRedeemedValue: 500,
+    RedemptionCount: 5,
+    FirstRedeemDate: "2026-07-02",
+    LastRedeemDate: "2026-07-26",
+    OfferCost: 500,
+    PostOfferTrips: 8,
+    PostOfferTheo: 5520,
+    PostOfferActual: 1425,
+    CampaignID: "JUL26-VIP-W5",
+    CampaignName: "July VIP Offers",
+    SourceFile: "vip_offers_july_demo.csv",
+    ValidationNotes: "Hosted VIP. Offer package complete.",
+  },
+  {
+    ...offerBase,
+    PlayerID: "P102014",
+    UniversalID: "U779821",
+    LastName: "Inactive",
+    TierRank: "Silver",
+    ActiveInactive: "Inactive",
+    TotalTrips: 18,
+    TripsMonth: 0,
+    TripsLast3Months: 1,
+    TripsLast6Months: 3,
+    LastTripDate: "2026-02-18",
+    DaysSinceLastTrip: 112,
+    CoinIn: 13200,
+    TheoWin: 410,
+    ActualWin: 130,
+    NetWinLoss: -130,
+    ADT: 92,
+    NetADT: 88,
+    SegmentName: "Reactivation",
+    OfferGroup: "Reactivation-FSP",
+    WorthGroup: "W2",
+    BirthdayMonth: "April",
+    EmailableFlag: "N",
+    DoNotEmail: "Y",
+    OfferFSP: 25,
+    OfferTG: 35,
+    OfferHotel: "NONE",
+    OfferHotelCode: "NONE",
+    OfferFood: 15,
+    OfferGift: "Comeback Gift",
+    OfferBonusEntries: 500,
+    GiftValidStart: "2026-07-20",
+    GiftValidEnd: "2026-07-20",
+    CampaignID: "JUL26-REACT-W2",
+    CampaignName: "July Reactivation Offers",
+    SourceFile: "inactive_offers_july_demo.csv",
+    ValidationStatus: "Review",
+    ValidationNotes: "Email suppressed. Mail/app only.",
+  },
+  {
+    ...offerBase,
+    PlayerID: "P102880",
+    UniversalID: "",
+    FirstName: "Needs",
+    LastName: "Review",
+    TotalTrips: 31,
+    TripsMonth: 4,
+    TripsLast3Months: 12,
+    TripsLast6Months: 22,
+    LastTripDate: "2026-06-04",
+    DaysSinceLastTrip: 6,
+    CoinIn: 28400,
+    TheoWin: 1180,
+    ActualWin: -430,
+    NetWinLoss: 430,
+    ADT: 195,
+    NetADT: 188,
+    MonthlyTheo: 780,
+    MonthlyActual: 210,
+    SegmentName: "Mid Active",
+    OfferGroup: "FSP-Mid",
+    WorthGroup: "W3",
+    AppEligibleFlag: "N",
+    BirthdayMonth: "January",
+    OfferFSP: 50,
+    OfferTG: 35,
+    OfferHotel: "NONE",
+    OfferHotelCode: "NONE",
+    OfferFood: 30,
+    OfferGift: "Mystery Gift",
+    OfferBonusEntries: 750,
+    GiftValidStart: "2026-07-13",
+    GiftValidEnd: "2026-07-13",
+    CampaignID: "JUL26-ACT-W3",
+    ValidationStatus: "Review",
+    ValidationNotes: "Missing UniversalID. Review before app import.",
+    MissingIDFlag: "Y",
+  },
+  {
+    ...offerBase,
+    PlayerID: "P103552",
+    UniversalID: "U780455",
+    FirstName: "Excluded",
+    LastName: "Demo",
+    PlayerStatus: "Suppressed",
+    TotalTrips: 25,
+    TripsMonth: 3,
+    TripsLast3Months: 8,
+    TripsLast6Months: 19,
+    LastTripDate: "2026-05-28",
+    DaysSinceLastTrip: 13,
+    CoinIn: 21900,
+    TheoWin: 930,
+    ActualWin: 190,
+    NetWinLoss: -190,
+    ADT: 155,
+    NetADT: 149,
+    MonthlyTheo: 465,
+    MonthlyActual: -90,
+    SegmentName: "Suppressed",
+    WorthGroup: "W2",
+    MailableFlag: "N",
+    EmailableFlag: "N",
+    AppEligibleFlag: "N",
+    DoNotMail: "Y",
+    DoNotEmail: "Y",
+    BadAddressFlag: "Y",
+    ExcludedFlag: "Y",
+    OfferHotel: "NONE",
+    OfferHotelCode: "NONE",
+    CampaignID: "JUL26-SUPPRESS",
+    CampaignName: "July Suppression Review",
+    SourceFile: "suppression_review_july_demo.csv",
+    ValidationStatus: "Fail",
+    ValidationNotes: "Excluded due to suppression and bad address.",
+    MissingOfferFlag: "Y",
+  },
+];
+const weatherRowsDefault: WeatherTrafficRow[] = [
+  {
+    ...weatherBase,
+    Date: "2026-07-03",
+    DayOfWeek: "Friday",
+    WeekendFlag: "Y",
+    EventFlag: "Y",
+    PromoFlag: "Y",
+    WeatherCondition: "Clear",
+    TempHigh: 86,
+    TempLow: 67,
+    HeatIndex: 88,
+    RainChance: 5,
+    WindMPH: 7,
+    WeatherRiskScore: 18,
+    ExpectedTrips: 1280,
+    ActualTrips: 1395,
+    TripDelta: 115,
+    TripDeltaPercent: 9,
+    FSPRedemptions: 226,
+    TGRedemptions: 91,
+    HotelBookings: 44,
+    FoodRedemptions: 138,
+    TheoWin: 182400,
+    ActualWin: 60400,
+    Recommendation: "Strong traffic signal. Keep floor coverage high.",
+  },
+  {
+    ...weatherBase,
+    Date: "2026-07-04",
+    DayOfWeek: "Saturday",
+    WeekendFlag: "Y",
+    EventFlag: "Y",
+    PromoFlag: "Y",
+    WeatherCondition: "Hot",
+    TempHigh: 103,
+    TempLow: 78,
+    HeatIndex: 108,
+    RainChance: 3,
+    WindMPH: 9,
+    WeatherRiskScore: 72,
+    ExpectedTrips: 1510,
+    ActualTrips: 1328,
+    TripDelta: -182,
+    TripDeltaPercent: -12.1,
+    FSPRedemptions: 241,
+    TGRedemptions: 84,
+    HotelBookings: 71,
+    FoodRedemptions: 164,
+    TheoWin: 171800,
+    ActualWin: 52200,
+    Recommendation: "Heat may suppress trips but lift hotel demand.",
+  },
+  {
+    ...weatherBase,
+    Date: "2026-07-05",
+    DayOfWeek: "Sunday",
+    WeekendFlag: "Y",
+    PromoFlag: "Y",
+    WeatherCondition: "Hot",
+    TempHigh: 101,
+    TempLow: 77,
+    HeatIndex: 106,
+    RainChance: 4,
+    WindMPH: 8,
+    WeatherRiskScore: 68,
+    ExpectedTrips: 1180,
+    ActualTrips: 1044,
+    TripDelta: -136,
+    TripDeltaPercent: -11.5,
+    FSPRedemptions: 184,
+    TGRedemptions: 63,
+    HotelBookings: 52,
+    FoodRedemptions: 119,
+    TheoWin: 139200,
+    ActualWin: 41100,
+    Recommendation: "Push app visibility and monitor food usage.",
+  },
+  {
+    ...weatherBase,
+    Date: "2026-07-06",
+    DayOfWeek: "Monday",
+    WeatherCondition: "Mild",
+    TempHigh: 82,
+    TempLow: 64,
+    HeatIndex: 83,
+    RainChance: 8,
+    WindMPH: 6,
+    WeatherRiskScore: 20,
+    ExpectedTrips: 820,
+    ActualTrips: 846,
+    TripDelta: 26,
+    TripDeltaPercent: 3.2,
+    FSPRedemptions: 91,
+    TGRedemptions: 31,
+    HotelBookings: 18,
+    FoodRedemptions: 54,
+    TheoWin: 88200,
+    ActualWin: 20400,
+    Recommendation: "Use as a baseline against promo-heavy dates.",
+  },
+  {
+    ...weatherBase,
+    Date: "2026-07-07",
+    DayOfWeek: "Tuesday",
+    PromoFlag: "Y",
+    WeatherCondition: "Rain",
+    TempHigh: 74,
+    TempLow: 62,
+    HeatIndex: 74,
+    RainChance: 78,
+    RainInches: 0.42,
+    WindMPH: 16,
+    WeatherRiskScore: 81,
+    ExpectedTrips: 930,
+    ActualTrips: 734,
+    TripDelta: -196,
+    TripDeltaPercent: -21.1,
+    FSPRedemptions: 112,
+    TGRedemptions: 44,
+    HotelBookings: 29,
+    FoodRedemptions: 72,
+    TheoWin: 74300,
+    ActualWin: 18100,
+    Recommendation: "Rain likely reduced trips. Compare app engagement.",
+  },
+  {
+    ...weatherBase,
+    Date: "2026-07-08",
+    DayOfWeek: "Wednesday",
+    PromoFlag: "Y",
+    WeatherCondition: "Cloudy",
+    TempHigh: 79,
+    TempLow: 63,
+    HeatIndex: 80,
+    RainChance: 35,
+    RainInches: 0.05,
+    WindMPH: 10,
+    WeatherRiskScore: 38,
+    ExpectedTrips: 970,
+    ActualTrips: 948,
+    TripDelta: -22,
+    TripDeltaPercent: -2.3,
+    FSPRedemptions: 126,
+    TGRedemptions: 39,
+    HotelBookings: 24,
+    FoodRedemptions: 81,
+    TheoWin: 100700,
+    ActualWin: 26700,
+    Recommendation: "Slight weather drag. Promo appears stable.",
+  },
+  {
+    ...weatherBase,
+    Date: "2026-07-09",
+    DayOfWeek: "Thursday",
+    EventFlag: "Y",
+    PromoFlag: "Y",
+    WeatherCondition: "Clear",
+    TempHigh: 84,
+    TempLow: 66,
+    HeatIndex: 85,
+    RainChance: 6,
+    WindMPH: 7,
+    WeatherRiskScore: 16,
+    ExpectedTrips: 1120,
+    ActualTrips: 1248,
+    TripDelta: 128,
+    TripDeltaPercent: 11.4,
+    FSPRedemptions: 177,
+    TGRedemptions: 72,
+    HotelBookings: 38,
+    FoodRedemptions: 102,
+    TheoWin: 152900,
+    ActualWin: 48200,
+    Recommendation: "Clear weather plus event activity produced lift.",
+  },
+  {
+    ...weatherBase,
+    Date: "2026-07-10",
+    DayOfWeek: "Friday",
+    WeekendFlag: "Y",
+    PromoFlag: "Y",
+    WeatherCondition: "Wind",
+    TempHigh: 88,
+    TempLow: 68,
+    HeatIndex: 89,
+    RainChance: 12,
+    WindMPH: 28,
+    WeatherRiskScore: 55,
+    ExpectedTrips: 1210,
+    ActualTrips: 1136,
+    TripDelta: -74,
+    TripDeltaPercent: -6.1,
+    FSPRedemptions: 168,
+    TGRedemptions: 58,
+    HotelBookings: 35,
+    FoodRedemptions: 94,
+    TheoWin: 130400,
+    ActualWin: 31800,
+    Recommendation: "Moderate weather risk. Weekend demand remains healthy.",
+  },
+];
+const visibleOfferColumns: Array<keyof OfferDisplayRow> = [
+  "PlayerID",
+  "TierRank",
+  "ActiveInactive",
+  "TripsMonth",
+  "DaysSinceLastTrip",
+  "NetADT",
+  "SegmentName",
+  "OfferFSP",
+  "OfferTG",
+  "OfferHotel",
+  "HotelNights",
+  "HotelRoomType",
+  "OfferFood",
+  "OfferGift",
+  "MailableFlag",
+  "AppEligibleFlag",
+  "ValidationStatus",
+  "ValidationNotes",
+];
+
+const visibleWeatherColumns: Array<keyof WeatherTrafficRow> = [
+  "Date",
+  "DayOfWeek",
+  "WeekendFlag",
+  "EventFlag",
+  "PromoFlag",
+  "WeatherCondition",
+  "TempHigh",
+  "RainChance",
+  "WeatherRiskScore",
+  "ExpectedTrips",
+  "ActualTrips",
+  "TripDelta",
+  "TripDeltaPercent",
+  "FSPRedemptions",
+  "HotelBookings",
+  "FoodRedemptions",
+  "Recommendation",
+];
+
+const offerMetricOptions: MetricOption[] = [
+  {
+    label: "Net ADT",
+    key: "NetADT",
+    format: "money",
+    description: "Player value after adjustments.",
+  },
+  {
+    label: "Trips This Month",
+    key: "TripsMonth",
+    format: "number",
+    description: "Trips during the selected export month.",
+  },
+  {
+    label: "Days Since Last Trip",
+    key: "DaysSinceLastTrip",
+    format: "number",
+    description: "How long it has been since the player last visited.",
+  },
+  {
+    label: "Total Trips",
+    key: "TotalTrips",
+    format: "number",
+    description: "Total recorded trips in the demo player profile.",
+  },
+  {
+    label: "Monthly Theo",
+    key: "MonthlyTheo",
+    format: "money",
+    description: "Monthly theoretical win estimate.",
+  },
+  {
+    label: "Coin In",
+    key: "CoinIn",
+    format: "money",
+    description: "Total wagered amount represented in the demo row.",
+  },
+  {
+    label: "Offer FSP",
+    key: "OfferFSP",
+    format: "money",
+    description: "Assigned free slot play offer value.",
+  },
+  {
+    label: "Offer TG",
+    key: "OfferTG",
+    format: "money",
+    description: "Assigned table games offer value.",
+  },
+  {
+    label: "Offer Food",
+    key: "OfferFood",
+    format: "money",
+    description: "Assigned food offer value.",
+  },
+  {
+    label: "Bonus Entries",
+    key: "OfferBonusEntries",
+    format: "number",
+    description: "Assigned drawing or promotion entry amount.",
+  },
+  {
+    label: "Redeemed Value",
+    key: "TotalRedeemedValue",
+    format: "money",
+    description: "Total value redeemed after the offer period.",
+  },
+  {
+    label: "Redemption Count",
+    key: "RedemptionCount",
+    format: "number",
+    description: "Number of offer types redeemed.",
+  },
+  {
+    label: "Post-Offer Trips",
+    key: "PostOfferTrips",
+    format: "number",
+    description: "Trips recorded after offer assignment.",
+  },
+  {
+    label: "Post-Offer Theo",
+    key: "PostOfferTheo",
+    format: "money",
+    description: "Theo generated after offer assignment.",
+  },
+];
+
+const weatherMetricOptions: MetricOption[] = [
+  {
+    label: "Weather Risk",
+    key: "WeatherRiskScore",
+    format: "number",
+    description: "Modeled risk from heat, rain, wind, or weather friction.",
+  },
+  {
+    label: "Temp High",
+    key: "TempHigh",
+    format: "number",
+    description: "Daily high temperature.",
+  },
+  {
+    label: "Rain Chance",
+    key: "RainChance",
+    format: "percent",
+    description: "Chance of rain during the traffic window.",
+  },
+  {
+    label: "Wind MPH",
+    key: "WindMPH",
+    format: "number",
+    description: "Wind speed used as a travel friction signal.",
+  },
+  {
+    label: "Expected Trips",
+    key: "ExpectedTrips",
+    format: "number",
+    description: "Baseline expected player trips for the day.",
+  },
+  {
+    label: "Actual Trips",
+    key: "ActualTrips",
+    format: "number",
+    description: "Observed or simulated player trips.",
+  },
+  {
+    label: "Trip Delta",
+    key: "TripDelta",
+    format: "number",
+    description: "Actual trips minus expected trips.",
+  },
+  {
+    label: "Trip Delta %",
+    key: "TripDeltaPercent",
+    format: "percent",
+    description: "Percent difference between expected and actual trips.",
+  },
+  {
+    label: "FSP Redemptions",
+    key: "FSPRedemptions",
+    format: "number",
+    description: "Free slot play redemptions during the weather window.",
+  },
+  {
+    label: "TG Redemptions",
+    key: "TGRedemptions",
+    format: "number",
+    description: "Table games offer redemptions during the weather window.",
+  },
+  {
+    label: "Hotel Bookings",
+    key: "HotelBookings",
+    format: "number",
+    description: "Hotel demand signal during the weather window.",
+  },
+  {
+    label: "Food Redemptions",
+    key: "FoodRedemptions",
+    format: "number",
+    description: "Food offer redemptions during the weather window.",
+  },
+  {
+    label: "Theo Win",
+    key: "TheoWin",
+    format: "money",
+    description: "Theoretical win during the weather window.",
+  },
+  {
+    label: "Actual Win",
+    key: "ActualWin",
+    format: "money",
+    description: "Actual win during the weather window.",
+  },
+];
+
+const offerSchemaGroups = [
+  {
+    title: "Identity",
+    fields: [
+      "PlayerID",
+      "UniversalID",
+      "FirstName",
+      "LastName",
+      "TierRank",
+      "PlayerStatus",
+      "ActiveInactive",
+      "HostName",
+    ],
+  },
+  {
+    title: "Player Value",
+    fields: [
+      "TotalTrips",
+      "TripsMonth",
+      "TripsLast3Months",
+      "TripsLast6Months",
+      "LastTripDate",
+      "DaysSinceLastTrip",
+      "CoinIn",
+      "TheoWin",
+      "ActualWin",
+      "NetWinLoss",
+      "ADT",
+      "NetADT",
+      "MonthlyTheo",
+      "MonthlyActual",
+    ],
+  },
+  {
+    title: "Eligibility",
+    fields: [
+      "SegmentName",
+      "OfferGroup",
+      "WorthGroup",
+      "VIPFlag",
+      "NewMemberFlag",
+      "BirthdayMonth",
+      "MailableFlag",
+      "EmailableFlag",
+      "AppEligibleFlag",
+      "DoNotMail",
+      "DoNotEmail",
+      "BadAddressFlag",
+      "ExcludedFlag",
+    ],
+  },
+  {
+    title: "Offers",
+    fields: [
+      "OfferFSP",
+      "OfferTG",
+      "OfferHotel",
+      "OfferHotelCode",
+      "OfferFood",
+      "OfferGift",
+      "OfferBonusEntries",
+      "BirthdayOffer",
+    ],
+  },
+  {
+    title: "Valid Dates",
+    fields: [
+      "FSPValidStart",
+      "FSPValidEnd",
+      "TGValidStart",
+      "TGValidEnd",
+      "HotelValidStart",
+      "HotelValidEnd",
+      "FoodValidStart",
+      "FoodValidEnd",
+      "GiftValidStart",
+      "GiftValidEnd",
+    ],
+  },
+  {
+    title: "Redemption",
+    fields: [
+      "RedeemedFSP",
+      "RedeemedTG",
+      "RedeemedHotel",
+      "RedeemedFood",
+      "RedeemedGift",
+      "TotalRedeemedValue",
+      "RedemptionCount",
+      "FirstRedeemDate",
+      "LastRedeemDate",
+      "OfferCost",
+      "PostOfferTrips",
+      "PostOfferTheo",
+      "PostOfferActual",
+    ],
+  },
+  {
+    title: "Audit",
+    fields: [
+      "CampaignID",
+      "CampaignName",
+      "ExportMonth",
+      "ExportDate",
+      "SourceSystem",
+      "SourceFile",
+      "ScriptVersion",
+      "ValidationStatus",
+      "ValidationNotes",
+      "DuplicateFlag",
+      "MissingIDFlag",
+      "MissingOfferFlag",
+    ],
+  },
+];
+
+const weatherSchemaGroups = [
+  {
+    title: "Calendar",
+    fields: ["Date", "DayOfWeek", "WeekendFlag", "EventFlag", "PromoFlag"],
+  },
+  {
+    title: "Weather",
+    fields: [
+      "WeatherCondition",
+      "TempHigh",
+      "TempLow",
+      "HeatIndex",
+      "RainChance",
+      "RainInches",
+      "WindMPH",
+      "WeatherRiskScore",
+    ],
+  },
+  {
+    title: "Traffic",
+    fields: ["ExpectedTrips", "ActualTrips", "TripDelta", "TripDeltaPercent"],
+  },
+  {
+    title: "Redemption Demand",
+    fields: [
+      "FSPRedemptions",
+      "TGRedemptions",
+      "HotelBookings",
+      "FoodRedemptions",
+    ],
+  },
+  {
+    title: "Gaming Result",
+    fields: ["TheoWin", "ActualWin", "Recommendation"],
+  },
+];
+function csvValue(value: unknown) {
+  const stringValue = String(value ?? "");
+  return `"${stringValue.replaceAll('"', '""')}"`;
+}
+
+function downloadCsv<T extends object>(
+  fileName: string,
+  rows: T[],
+  columns?: string[]
+) {
+  const headers = columns ?? Object.keys((rows[0] ?? {}) as object);
+
+  const csv = [
+    headers.map(csvValue).join(","),
+    ...rows.map((row) => {
+      const record = row as Record<string, unknown>;
+      return headers.map((header) => csvValue(record[header])).join(",");
+    }),
+  ].join("\n");
+
+  const blob = new Blob(["\uFEFF" + csv], {
+    type: "text/csv;charset=utf-8;",
   });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = fileName;
+  link.click();
+
+  URL.revokeObjectURL(url);
 }
 
-function toNumber(value: string) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : 0;
-}
+function parseCsvText(text: string) {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let inQuotes = false;
 
-function isMetricColumn(column: string) {
-  const lower = column.toLowerCase();
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const nextChar = text[index + 1];
 
-  return !(
-    lower === "id" ||
-    lower.includes("playerid") ||
-    lower.includes("player id") ||
-    lower.includes("universalid") ||
-    lower.includes("universal id") ||
-    lower.endsWith("id")
-  );
-}
+    if (char === '"' && nextChar === '"') {
+      cell += '"';
+      index += 1;
+    } else if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === "," && !inQuotes) {
+      row.push(cell);
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && nextChar === "\n") index += 1;
 
-function isMoneyLikeMetric(metric: string) {
-  const lower = metric.toLowerCase();
-
-  return (
-    lower.includes("adt") ||
-    lower.includes("theo") ||
-    lower.includes("offer") ||
-    lower.includes("amount") ||
-    lower.includes("value")
-  );
-}
-
-function formatMetricValue(metric: string, value: number) {
-  if (isMoneyLikeMetric(metric)) {
-    return `$${Math.round(value).toLocaleString()}`;
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += char;
+    }
   }
 
+  row.push(cell);
+  rows.push(row);
+
+  const cleanRows = rows.filter((cells) =>
+    cells.some((value) => value.trim() !== "")
+  );
+
+  const headers = cleanRows[0]?.map((header) => header.trim()) ?? [];
+
+  const records = cleanRows.slice(1).map((cells) => {
+    const record: Record<string, string> = {};
+
+    headers.forEach((header, index) => {
+      record[header] = cells[index]?.trim() ?? "";
+    });
+
+    return record;
+  });
+
+  return { headers, records };
+}
+
+function normalizeRecordToColumns(
+  record: Record<string, string>,
+  columns: string[]
+) {
+  const lookup = Object.fromEntries(
+    Object.entries(record).map(([key, value]) => [
+      key.trim().toLowerCase(),
+      value,
+    ])
+  );
+
+  const normalized: Record<string, string> = {};
+
+  columns.forEach((column) => {
+    normalized[column] = lookup[column.toLowerCase()] ?? "";
+  });
+
+  return normalized;
+}
+
+function parseNumber(value: unknown) {
+  const cleaned = String(value ?? "")
+    .replaceAll("$", "")
+    .replaceAll("%", "")
+    .replaceAll(",", "");
+
+  const parsed = Number(cleaned);
+
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeFlag(value: unknown): Flag {
+  const cleaned = String(value ?? "").trim().toLowerCase();
+
+  if (["y", "yes", "true", "1"].includes(cleaned)) return "Y";
+  return "N";
+}
+
+function normalizeStatus(value: unknown): Status {
+  const cleaned = String(value ?? "").trim().toLowerCase();
+
+  if (cleaned.startsWith("fail")) return "Fail";
+  if (cleaned.startsWith("review")) return "Review";
+  return "Pass";
+}
+
+function normalizeActiveInactive(value: unknown): "Active" | "Inactive" {
+  const cleaned = String(value ?? "").trim().toLowerCase();
+
+  if (cleaned.startsWith("inactive")) return "Inactive";
+  return "Active";
+}
+
+function normalizeHotelCode(value: unknown) {
+  const cleaned = String(value ?? "").trim().toUpperCase().replace(/\s+/g, "");
+
+  if (
+    cleaned === "" ||
+    cleaned === "0" ||
+    cleaned === "NO" ||
+    cleaned === "NONE"
+  ) {
+    return "NONE";
+  }
+
+  return cleaned;
+}
+
+function getHotelDetails(code: string) {
+  const normalized = normalizeHotelCode(code);
+
+  if (normalized === "NONE") {
+    return {
+      nights: "0",
+      roomType: "No hotel offer",
+    };
+  }
+
+  const nights = normalized.startsWith("2") ? "2" : "1";
+  const roomCode = normalized.replace(/^\d+/, "");
+
+  const roomType =
+    roomCode === "DLX"
+      ? "Deluxe"
+      : roomCode === "PT"
+        ? "Penthouse"
+        : roomCode === "MS"
+          ? "Master Suite"
+          : "Custom hotel code";
+
+  return { nights, roomType };
+}
+
+function parseOfferRow(record: Record<string, string>): PlayerOfferRow {
+  const row = { ...offerBase } as Record<string, string | number>;
+
+  offerColumns.forEach((column) => {
+    const columnName = String(column);
+    const incoming = record[columnName];
+    const value =
+      incoming === "" || incoming === undefined ? row[columnName] : incoming;
+
+    if (numericOfferColumns.has(columnName)) {
+      row[columnName] = parseNumber(value);
+    } else if (flagOfferColumns.has(columnName)) {
+      row[columnName] = normalizeFlag(value);
+    } else if (columnName === "ValidationStatus") {
+      row[columnName] = normalizeStatus(value);
+    } else if (columnName === "ActiveInactive") {
+      row[columnName] = normalizeActiveInactive(value);
+    } else if (columnName === "OfferHotel" || columnName === "OfferHotelCode") {
+      row[columnName] = normalizeHotelCode(value);
+    } else {
+      row[columnName] = String(value ?? "");
+    }
+  });
+
+  const hotelCode = normalizeHotelCode(row.OfferHotel || row.OfferHotelCode);
+
+  row.OfferHotel = hotelCode;
+  row.OfferHotelCode = hotelCode;
+
+  return row as unknown as PlayerOfferRow;
+}
+
+function parseWeatherRow(record: Record<string, string>): WeatherTrafficRow {
+  const row = { ...weatherBase } as Record<string, string | number>;
+
+  weatherColumns.forEach((column) => {
+    const columnName = String(column);
+    const incoming = record[columnName];
+    const value =
+      incoming === "" || incoming === undefined ? row[columnName] : incoming;
+
+    if (numericWeatherColumns.has(columnName)) {
+      row[columnName] = parseNumber(value);
+    } else if (flagWeatherColumns.has(columnName)) {
+      row[columnName] = normalizeFlag(value);
+    } else {
+      row[columnName] = String(value ?? "");
+    }
+  });
+
+  return row as unknown as WeatherTrafficRow;
+}
+
+function validateRequiredColumns(headers: string[], requiredColumns: string[]) {
+  const lowerHeaders = new Set(headers.map((header) => header.toLowerCase()));
+
+  return requiredColumns.filter(
+    (column) => !lowerHeaders.has(column.toLowerCase())
+  );
+}
+
+function addHotelDisplayFields(row: PlayerOfferRow): OfferDisplayRow {
+  const details = getHotelDetails(row.OfferHotel);
+
+  return {
+    ...row,
+    HotelNights: details.nights,
+    HotelRoomType: details.roomType,
+  };
+}
+
+function formatMoney(value: number) {
+  return `$${Math.round(value).toLocaleString()}`;
+}
+
+function formatNumber(value: number) {
   return Math.round(value).toLocaleString();
 }
 
-function formatRangeLabel(metric: string, start: number, end: number) {
-  if (isMoneyLikeMetric(metric)) {
-    return `$${Math.round(start).toLocaleString()}–$${Math.round(
-      end
-    ).toLocaleString()}`;
-  }
-
-  return `${Math.round(start).toLocaleString()}–${Math.round(
-    end
-  ).toLocaleString()}`;
+function formatPercent(value: number) {
+  return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
 }
 
-function DataButton({
-  href,
-  children,
-}: {
-  href: string;
-  children: ReactNode;
-}) {
-  const isInternal = href.startsWith("/");
-  const isEmail = href.startsWith("mailto:");
+function formatCellValue(value: unknown) {
+  if (typeof value === "number") return value.toLocaleString();
+  if (value === "" || value === undefined || value === null) return "—";
+  return String(value);
+}
 
-  const className =
-    "inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-4 py-2 text-sm font-bold text-black shadow-[0_0_20px_rgba(34,211,238,0.22)] transition hover:-translate-y-0.5 hover:bg-cyan-300";
+function getMetricNumber(row: object, key: string) {
+  const value = (row as Record<string, unknown>)[key];
 
-  if (isInternal) {
-    return (
-      <Link href={href} className={className}>
-        {children}
-      </Link>
-    );
+  if (typeof value === "number") return value;
+
+  return parseNumber(value);
+}
+
+function formatMetricValue(value: number, format: MetricFormat) {
+  if (format === "money") return formatMoney(value);
+  if (format === "percent") return formatPercent(value);
+  return formatNumber(value);
+}
+function getMetricStats(rows: object[], metric: MetricOption) {
+  const values = rows.map((row) => getMetricNumber(row, metric.key));
+  const sorted = [...values].sort((a, b) => a - b);
+
+  const total = values.reduce((sum, value) => sum + value, 0);
+  const average = values.length === 0 ? 0 : total / values.length;
+  const min = sorted[0] ?? 0;
+  const max = sorted[sorted.length - 1] ?? 0;
+
+  const middle = Math.floor(sorted.length / 2);
+  const median =
+    sorted.length === 0
+      ? 0
+      : sorted.length % 2 === 0
+        ? ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2
+        : sorted[middle] ?? 0;
+
+  return { values, total, average, median, min, max };
+}
+
+function buildHistogramBins(values: number[], metric: MetricOption) {
+  if (values.length === 0) return [];
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+
+  if (min === max) {
+    return [
+      {
+        label: formatMetricValue(min, metric.format),
+        count: values.length,
+      },
+    ];
   }
 
+  const binCount = 6;
+  const step = (max - min) / binCount;
+
+  const bins = Array.from({ length: binCount }, (_, index) => {
+    const start = min + step * index;
+    const end = index === binCount - 1 ? max : min + step * (index + 1);
+
+    return {
+      label: `${formatMetricValue(start, metric.format)}–${formatMetricValue(
+        end,
+        metric.format
+      )}`,
+      count: 0,
+    };
+  });
+
+  values.forEach((value) => {
+    const index = Math.min(binCount - 1, Math.floor((value - min) / step));
+    const bin = bins[index];
+
+    if (bin) bin.count += 1;
+  });
+
+  return bins;
+}
+
+function PageButton({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <a
+    <Link
       href={href}
-      className={className}
-      target={isEmail ? undefined : "_blank"}
-      rel={isEmail ? undefined : "noreferrer"}
+      className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300"
     >
       {children}
-    </a>
+    </Link>
   );
 }
 
@@ -175,691 +1561,919 @@ function GhostButton({
   );
 }
 
-export default function DataLabPage() {
-  const [rows, setRows] = useState<RowData[]>(sampleRows);
-  const [selectedMetric, setSelectedMetric] = useState("Net ADT");
-  const [betAmount, setBetAmount] = useState(25);
-  const [winChance, setWinChance] = useState(42);
-  const [temperature, setTemperature] = useState(72);
-  const [rainChance, setRainChance] = useState(15);
-  const [windSpeed, setWindSpeed] = useState(8);
+function ImportButton({
+  id,
+  onChange,
+}: {
+  id: string;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <>
+      <label
+        htmlFor={id}
+        className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-cyan-300/25 bg-black/25 px-4 py-2 text-sm font-bold text-cyan-200 transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10"
+      >
+        <Upload size={15} />
+        Import CSV
+      </label>
 
-  const columns = useMemo(() => {
-    const first = rows[0] ?? {};
-    return Object.keys(first);
-  }, [rows]);
-
-  const numericColumns = useMemo(() => {
-    return columns.filter(
-      (column) =>
-        isMetricColumn(column) &&
-        rows.some(
-          (row) => row[column] !== "" && !Number.isNaN(Number(row[column]))
-        )
-    );
-  }, [columns, rows]);
-
-  const activeMetric = numericColumns.includes(selectedMetric)
-    ? selectedMetric
-    : numericColumns[0] ?? "";
-
-  const metricValues = useMemo(() => {
-    if (!activeMetric) return [];
-
-    return rows
-      .map((row) => Number(row[activeMetric]))
-      .filter((value) => Number.isFinite(value));
-  }, [activeMetric, rows]);
-
-  const metricStats = useMemo(() => {
-    if (metricValues.length === 0) {
-      return {
-        average: 0,
-        min: 0,
-        max: 0,
-      };
-    }
-
-    const total = metricValues.reduce((sum, value) => sum + value, 0);
-
-    return {
-      average: Math.round(total / metricValues.length),
-      min: Math.min(...metricValues),
-      max: Math.max(...metricValues),
-    };
-  }, [metricValues]);
-
-  const chartData = useMemo(() => {
-    if (!activeMetric) return [];
-
-    return rows.slice(0, 12).map((row, index) => ({
-      label: `Player ${row.PlayerID || row.ID || index + 1}`,
-      value: toNumber(row[activeMetric]),
-    }));
-  }, [activeMetric, rows]);
-
-  const maxChartValue = Math.max(...chartData.map((item) => item.value), 1);
-
-  const histogramData = useMemo(() => {
-    if (!activeMetric) return [];
-
-    const values = rows
-      .map((row) => Number(row[activeMetric]))
-      .filter((value) => Number.isFinite(value));
-
-    if (values.length === 0) return [];
-
-    const min = Math.floor(Math.min(...values));
-    const max = Math.ceil(Math.max(...values));
-
-    if (min === max) {
-      return [
-        {
-          label: formatRangeLabel(activeMetric, min, max),
-          count: values.length,
-        },
-      ];
-    }
-
-    const bucketCount = Math.min(8, Math.max(5, Math.ceil(Math.sqrt(values.length))));
-    const bucketSize = Math.max(1, Math.ceil((max - min + 1) / bucketCount));
-
-    const buckets = Array.from({ length: bucketCount }, (_, index) => {
-      const start = min + index * bucketSize;
-      const end = Math.min(max, start + bucketSize - 1);
-
-      return {
-        start,
-        end,
-        label: formatRangeLabel(activeMetric, start, end),
-        count: 0,
-      };
-    }).filter((bucket) => bucket.start <= max);
-
-    values.forEach((value) => {
-      const index = Math.min(
-        buckets.length - 1,
-        Math.floor((value - min) / bucketSize)
-      );
-
-      buckets[index].count += 1;
-    });
-
-    return buckets;
-  }, [activeMetric, rows]);
-
-  const maxHistogramCount = Math.max(
-    ...histogramData.map((bucket) => bucket.count),
-    1
+      <input
+        id={id}
+        type="file"
+        accept=".csv,text/csv"
+        onChange={onChange}
+        className="hidden"
+      />
+    </>
   );
+}
 
-  const strongestBucket = useMemo(() => {
-    if (histogramData.length === 0) return null;
+function StatBox({
+  label,
+  value,
+  accent = false,
+  trend,
+  description,
+}: {
+  label: string;
+  value: string | number;
+  accent?: boolean;
+  trend?: "up" | "down" | "neutral";
+  description?: string;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border p-4 ${
+        accent
+          ? "border-cyan-300/40 bg-cyan-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
+          : "border-cyan-300/15 bg-black/25"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300/80">
+          {label}
+        </p>
 
-    return histogramData.reduce((best, bucket) =>
-      bucket.count > best.count ? bucket : best
-    );
-  }, [histogramData]);
+        {trend === "up" && <TrendingUp size={16} className="text-green-300" />}
+        {trend === "down" && (
+          <TrendingDown size={16} className="text-red-300" />
+        )}
+        {trend === "neutral" && (
+          <BarChart3 size={16} className="text-cyan-300" />
+        )}
+      </div>
 
-  const qualityStats = useMemo(() => {
-    const totalCells = rows.length * Math.max(columns.length, 1);
+      <p
+        className={
+          accent
+            ? "mt-2 text-3xl font-black text-cyan-200"
+            : "mt-2 text-2xl font-black text-white"
+        }
+      >
+        {value}
+      </p>
 
-    const emptyCells = rows.reduce((count, row) => {
-      return (
-        count +
-        columns.filter((column) => String(row[column] ?? "").trim() === "").length
-      );
-    }, 0);
+      {description && (
+        <p className="mt-2 text-xs leading-5 text-zinc-400">{description}</p>
+      )}
+    </div>
+  );
+}
 
-    const duplicateIds =
-      columns.includes("PlayerID") || columns.includes("ID")
-        ? rows.length -
-          new Set(rows.map((row) => row.PlayerID || row.ID).filter(Boolean)).size
-        : 0;
-
-    const completeness =
-      totalCells === 0
-        ? 100
-        : Math.round(((totalCells - emptyCells) / totalCells) * 100);
-
-    return {
-      players: rows.length,
-      columns: columns.length,
-      emptyCells,
-      duplicateIds: Math.max(duplicateIds, 0),
-      completeness,
-    };
-  }, [columns, rows]);
-
-  const scoring = useMemo(() => {
-    const expectedValue = betAmount * (winChance / 100);
-    const riskScore = Math.round((betAmount * (100 - winChance)) / 100);
-    const confidence =
-      winChance >= 65 ? "High" : winChance >= 40 ? "Medium" : "Low";
-
-    return {
-      expectedValue: expectedValue.toFixed(2),
-      riskScore,
-      confidence,
-    };
-  }, [betAmount, winChance]);
-
-  const weatherScore = useMemo(() => {
-    let score = 100;
-
-    if (temperature > 90) score -= 18;
-    if (temperature < 50) score -= 14;
-    score -= Math.round(rainChance * 0.35);
-    score -= Math.round(windSpeed * 0.8);
-
-    return Math.max(0, Math.min(100, score));
-  }, [temperature, rainChance, windSpeed]);
-
-  function handleCSVUpload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      const text = String(reader.result ?? "");
-      const parsed = parseCSV(text);
-
-      if (parsed.length > 0) {
-        setRows(parsed);
-
-        const firstNumericMetric = Object.keys(parsed[0]).find(
-          (column) =>
-            isMetricColumn(column) &&
-            parsed.some((row) => !Number.isNaN(Number(row[column])))
-        );
-
-        if (firstNumericMetric) setSelectedMetric(firstNumericMetric);
-      }
-    };
-
-    reader.readAsText(file);
-  }
-
-  function resetSampleData() {
-    setRows(sampleRows);
-    setSelectedMetric("Net ADT");
-  }
+function StatusPill({ status }: { status: string }) {
+  const statusClass =
+    status === "Pass" || status === "Y"
+      ? "border-green-300/30 bg-green-400/10 text-green-200"
+      : status === "Review"
+        ? "border-yellow-300/30 bg-yellow-400/10 text-yellow-200"
+        : status === "Fail" || status === "N"
+          ? "border-red-300/30 bg-red-400/10 text-red-200"
+          : "border-cyan-300/25 bg-cyan-300/10 text-cyan-200";
 
   return (
-    <main className="min-h-screen">
-      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16 lg:py-24">
-        <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className={`${glassPanel} p-6 md:p-10`}>
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">
-              <BarChart3 size={15} />
-              Data Lab
-            </div>
+    <span
+      className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusClass}`}
+    >
+      {status}
+    </span>
+  );
+}
 
-            <h1 className="mt-6 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
-              CSV, charts, scoring, and analyst tools
-            </h1>
+function RequiredColumnsPanel({
+  title,
+  columns,
+}: {
+  title: string;
+  columns: string[];
+}) {
+  return (
+    <div className="rounded-[2rem] border border-yellow-300/20 bg-yellow-300/10 p-5">
+      <p className="text-xs font-black uppercase tracking-[0.22em] text-yellow-300">
+        Required Import Columns
+      </p>
 
-            <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-300 md:text-lg">
-              A live data playground for uploading CSV files, checking data
-              quality, charting player metrics, and testing simple scoring
-              logic.
-            </p>
+      <h3 className="mt-2 text-xl font-black text-white">{title}</h3>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <DataButton href="/projects">
-                View Projects <ExternalLink size={15} />
-              </DataButton>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {columns.map((column) => (
+          <span
+            key={column}
+            className="rounded-full border border-yellow-300/35 bg-yellow-300/15 px-3 py-1 text-xs font-black text-yellow-100"
+          >
+            {column}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-              <DataButton href="/security-lab">
-                Open Security Lab <ExternalLink size={15} />
-              </DataButton>
-            </div>
-          </div>
+function DataTable<T extends object>({
+  columns,
+  rows,
+  requiredColumns = [],
+}: {
+  columns: Array<keyof T>;
+  rows: T[];
+  requiredColumns?: string[];
+}) {
+  return (
+    <div className="overflow-hidden rounded-[2rem] border border-cyan-300/15 bg-black/25">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[1100px] text-left text-sm">
+          <thead className="border-b border-cyan-300/15 bg-cyan-300/10 text-xs uppercase tracking-[0.16em] text-cyan-200">
+            <tr>
+              {columns.map((column) => {
+                const columnName = String(column);
+                const isRequired = requiredColumns.includes(columnName);
 
-          <div className={`${glassPanel} p-6 md:p-8`}>
-            <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">
-              Dataset
-            </p>
+                return (
+                  <th
+                    key={columnName}
+                    className={`whitespace-nowrap px-4 py-4 ${
+                      isRequired ? "bg-yellow-300/10 text-yellow-200" : ""
+                    }`}
+                  >
+                    {columnName}
+                    {isRequired && (
+                      <span className="ml-2 rounded-full border border-yellow-300/30 px-2 py-0.5 text-[10px] text-yellow-100">
+                        Required
+                      </span>
+                    )}
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
 
-            <h2 className="mt-4 text-3xl font-black text-white">
-              130 sample players
-            </h2>
+          <tbody>
+            {rows.map((row, rowIndex) => (
+              <tr
+                key={rowIndex}
+                className="border-b border-cyan-300/10 text-zinc-300 last:border-b-0"
+              >
+                {columns.map((column) => {
+                  const columnName = String(column);
+                  const value = (row as Record<string, unknown>)[columnName];
+                  const isRequired = requiredColumns.includes(columnName);
 
-            <p className="mt-4 text-sm leading-7 text-zinc-300">
-              The sample data includes PlayerID, Tier, Net ADT, # Trips, Theo,
-              and Offer. Upload your own CSV or reset back to the demo data.
-            </p>
+                  return (
+                    <td
+                      key={columnName}
+                      className={`whitespace-nowrap px-4 py-4 ${
+                        isRequired ? "bg-yellow-300/5 text-yellow-50" : ""
+                      }`}
+                    >
+                      {columnName.includes("Flag") ||
+                      columnName.includes("Status") ? (
+                        <StatusPill status={String(value)} />
+                      ) : (
+                        formatCellValue(value)
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
-            <div className="mt-6 flex flex-col gap-3">
-              <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300">
-                <Upload size={16} />
-                Upload CSV
-                <input
-                  type="file"
-                  accept=".csv,text/csv"
-                  onChange={handleCSVUpload}
-                  className="hidden"
-                />
-              </label>
+function MetricDropdown({
+  value,
+  options,
+  onChange,
+}: {
+  value: MetricOption;
+  options: MetricOption[];
+  onChange: (option: MetricOption) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+        Analyze Metric
+      </span>
 
-              <GhostButton onClick={resetSampleData}>
-                <FileText size={16} />
-                Reset Sample Data
-              </GhostButton>
-            </div>
-          </div>
+      <select
+        value={value.key}
+        onChange={(event) => {
+          const next =
+            options.find((option) => option.key === event.target.value) ??
+            value;
+
+          onChange(next);
+        }}
+        className="mt-3 w-full rounded-full border border-cyan-300/25 bg-black px-5 py-4 text-lg font-black text-cyan-100 outline-none transition focus:border-cyan-300"
+      >
+        {options.map((option) => (
+          <option key={option.key} value={option.key}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function HistogramCard({
+  title,
+  rows,
+  metric,
+}: {
+  title: string;
+  rows: object[];
+  metric: MetricOption;
+}) {
+  const stats = getMetricStats(rows, metric);
+  const bins = buildHistogramBins(stats.values, metric);
+  const maxCount = Math.max(...bins.map((bin) => bin.count), 1);
+
+  return (
+    <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+            Histogram
+          </p>
+
+          <h3 className="mt-2 text-2xl font-black text-white">{title}</h3>
+
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
+            {metric.description}
+          </p>
         </div>
 
-        <section className="mt-12 grid gap-5 md:grid-cols-4">
-          <div className={`${glassCard} p-6`}>
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
-              Players
-            </p>
-            <div className="mt-3 text-4xl font-black text-white">
-              {qualityStats.players}
-            </div>
+        <div className="rounded-2xl border border-cyan-300/15 bg-cyan-300/10 px-4 py-3 text-right">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">
+            Avg
+          </p>
+          <p className="text-2xl font-black text-cyan-100">
+            {formatMetricValue(stats.average, metric.format)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-4">
+        <StatBox
+          label="Min"
+          value={formatMetricValue(stats.min, metric.format)}
+        />
+        <StatBox
+          label="Median"
+          value={formatMetricValue(stats.median, metric.format)}
+          accent
+        />
+        <StatBox
+          label="Max"
+          value={formatMetricValue(stats.max, metric.format)}
+        />
+        <StatBox
+          label="Total"
+          value={formatMetricValue(stats.total, metric.format)}
+        />
+      </div>
+
+      <div className="mt-7 rounded-3xl border border-cyan-300/10 bg-black/30 p-5">
+        {bins.length === 0 ? (
+          <div className="flex min-h-[230px] items-center justify-center text-sm text-zinc-500">
+            Import rows to generate a histogram.
           </div>
+        ) : (
+          <div
+            className="grid min-h-[230px] items-end gap-3"
+            style={{
+              gridTemplateColumns: `repeat(${bins.length}, minmax(0, 1fr))`,
+            }}
+          >
+            {bins.map((bin) => {
+              const height = Math.max(8, (bin.count / maxCount) * 100);
 
-          <div className={`${glassCard} p-6`}>
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
-              Columns
-            </p>
-            <div className="mt-3 text-4xl font-black text-white">
-              {qualityStats.columns}
-            </div>
-          </div>
-
-          <div className={`${glassCard} p-6`}>
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
-              Complete
-            </p>
-            <div className="mt-3 text-4xl font-black text-white">
-              {qualityStats.completeness}%
-            </div>
-          </div>
-
-          <div className={`${glassCard} p-6`}>
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
-              Empty Cells
-            </p>
-            <div className="mt-3 text-4xl font-black text-white">
-              {qualityStats.emptyCells}
-            </div>
-          </div>
-        </section>
-
-        <section className="mt-12 rounded-[2rem] border border-cyan-300/20 bg-cyan-950/[0.14] p-6 shadow-2xl shadow-black/20 backdrop-blur-md md:p-8">
-          <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
-                Current Story
-              </p>
-
-              <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
-                Reading {activeMetric}
-              </h2>
-
-              <p className="mt-4 text-sm leading-7 text-zinc-300 md:text-base">
-                The bar chart compares individual players. The histogram groups
-                all {qualityStats.players} players into ranges so you can see
-                where the group is concentrated.
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl border border-cyan-300/20 bg-black/25 p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
-                  Average
-                </p>
-                <p className="mt-2 text-2xl font-black text-white">
-                  {formatMetricValue(activeMetric, metricStats.average)}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-cyan-300/20 bg-black/25 p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
-                  Low
-                </p>
-                <p className="mt-2 text-2xl font-black text-white">
-                  {formatMetricValue(activeMetric, metricStats.min)}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-cyan-300/20 bg-black/25 p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
-                  High
-                </p>
-                <p className="mt-2 text-2xl font-black text-white">
-                  {formatMetricValue(activeMetric, metricStats.max)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {strongestBucket && (
-            <p className="mt-6 rounded-2xl border border-cyan-300/15 bg-black/25 p-4 text-sm leading-6 text-zinc-300">
-              Most players are currently in the{" "}
-              <span className="font-bold text-cyan-200">
-                {strongestBucket.label}
-              </span>{" "}
-              range, with{" "}
-              <span className="font-bold text-cyan-200">
-                {strongestBucket.count} players
-              </span>{" "}
-              in that bucket.
-            </p>
-          )}
-        </section>
-
-        <section className="mt-12 grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
-          <div className={`${glassPanel} p-6 md:p-8`}>
-            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
-                  Bar Chart
-                </p>
-
-                <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
-                  {activeMetric} by player
-                </h2>
-
-                <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-300">
-                  Each row is one player. The number on the right is that
-                  player&apos;s selected metric value.
-                </p>
-              </div>
-
-              <select
-                value={activeMetric}
-                onChange={(event) => setSelectedMetric(event.target.value)}
-                className="rounded-full border border-cyan-300/25 bg-black/40 px-4 py-3 text-sm font-bold text-cyan-100 outline-none"
-              >
-                {numericColumns.map((column) => (
-                  <option key={column} value={column} className="bg-black">
-                    {column}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="mt-8 space-y-4">
-              {chartData.map((item) => (
+              return (
                 <div
-                  key={item.label}
-                  className="grid gap-2 md:grid-cols-[120px_1fr_90px] md:items-center"
+                  key={bin.label}
+                  className="flex h-full flex-col justify-end"
                 >
-                  <div className="truncate text-sm font-bold text-zinc-300">
-                    {item.label}
-                  </div>
+                  <p className="mb-2 text-center text-sm font-black text-cyan-100">
+                    {bin.count}
+                  </p>
 
-                  <div className="h-4 overflow-hidden rounded-full border border-cyan-300/20 bg-black/30">
+                  <div className="flex h-44 items-end rounded-2xl border border-cyan-300/10 bg-black/30 p-1">
                     <div
-                      className="h-full rounded-full bg-cyan-400 shadow-[0_0_18px_rgba(34,211,238,0.35)]"
-                      style={{
-                        width: `${Math.max(
-                          (item.value / maxChartValue) * 100,
-                          4
-                        )}%`,
-                      }}
+                      className="w-full rounded-xl bg-cyan-300 shadow-[0_0_22px_rgba(34,211,238,0.28)] transition-all"
+                      style={{ height: `${height}%` }}
                     />
                   </div>
 
-                  <div className="text-sm font-black text-cyan-200 md:text-right">
-                    {formatMetricValue(activeMetric, item.value)}
-                  </div>
+                  <p className="mt-3 min-h-10 text-center text-[10px] font-bold leading-4 text-zinc-400">
+                    {bin.label}
+                  </p>
                 </div>
-              ))}
-            </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+function OfferExportModel() {
+  const [rows, setRows] = useState<PlayerOfferRow[]>(offerRowsDefault);
+  const [importMessage, setImportMessage] = useState(
+    "Using demo data. Download the template, fill it out, then import it here."
+  );
+  const [selectedMetric, setSelectedMetric] = useState<MetricOption>(
+    offerMetricOptions[0]!
+  );
+
+  const displayRows = useMemo(() => rows.map(addHotelDisplayFields), [rows]);
+
+  const stats = useMemo(() => {
+    return {
+      totalRows: rows.length,
+      passRows: rows.filter((row) => row.ValidationStatus === "Pass").length,
+      reviewRows: rows.filter((row) => row.ValidationStatus === "Review")
+        .length,
+      failRows: rows.filter((row) => row.ValidationStatus === "Fail").length,
+      totalFsp: rows.reduce((sum, row) => sum + row.OfferFSP, 0),
+      totalFood: rows.reduce((sum, row) => sum + row.OfferFood, 0),
+      totalRedeemed: rows.reduce(
+        (sum, row) => sum + row.TotalRedeemedValue,
+        0
+      ),
+      appEligible: rows.filter((row) => row.AppEligibleFlag === "Y").length,
+    };
+  }, [rows]);
+
+  async function importOfferCsv(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const text = await file.text();
+    const parsed = parseCsvText(text);
+    const missing = validateRequiredColumns(
+      parsed.headers,
+      requiredOfferColumns
+    );
+
+    if (missing.length > 0) {
+      setImportMessage(`Missing required columns: ${missing.join(", ")}`);
+      event.target.value = "";
+      return;
+    }
+
+    const importedRows = parsed.records.map((record) =>
+      parseOfferRow(normalizeRecordToColumns(record, offerColumns.map(String)))
+    );
+
+    setRows(importedRows);
+    setImportMessage(
+      `Imported ${importedRows.length} casino offer rows from ${file.name}.`
+    );
+    event.target.value = "";
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className={`${glassPanel} p-6 md:p-8`}>
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+              Casino Offer Export Model
+            </p>
+
+            <h2 className="mt-3 text-3xl font-black text-white md:text-5xl">
+              Live offer export analyzer
+            </h2>
+
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-300 md:text-base">
+              Download the template, fill out the highlighted required columns,
+              import the CSV, and the table plus histogram update live.
+            </p>
           </div>
 
-          <div className="grid gap-5">
-            <div className={`${glassPanel} p-6 md:p-8`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
-                Histogram
+          <div className="flex flex-wrap gap-3">
+            <GhostButton
+              onClick={() =>
+                downloadCsv(
+                  "casino-offer-template.csv",
+                  [offerRowsDefault[0] ?? offerBase],
+                  offerColumns.map(String)
+                )
+              }
+            >
+              <FileDown size={15} />
+              Download Template
+            </GhostButton>
+
+            <ImportButton id="offer-import" onChange={importOfferCsv} />
+
+            <GhostButton
+              onClick={() => downloadCsv("casino-offer-export.csv", rows)}
+            >
+              <Download size={15} />
+              Export CSV
+            </GhostButton>
+
+            <GhostButton
+              onClick={() => {
+                setRows(offerRowsDefault);
+                setImportMessage("Reset to demo casino offer data.");
+              }}
+            >
+              <RefreshCcw size={15} />
+              Reset
+            </GhostButton>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-cyan-300/15 bg-black/25 p-4 text-sm text-cyan-100">
+          {importMessage}
+        </div>
+
+        <div className="mt-7 grid items-start gap-5 lg:grid-cols-[320px_1fr]">
+          <div className="space-y-4 rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
+            <MetricDropdown
+              value={selectedMetric}
+              options={offerMetricOptions}
+              onChange={setSelectedMetric}
+            />
+
+            <RequiredColumnsPanel
+              title="Casino offer import"
+              columns={requiredOfferColumns}
+            />
+          </div>
+
+          <HistogramCard
+            title={`${selectedMetric.label} distribution`}
+            rows={rows}
+            metric={selectedMetric}
+          />
+        </div>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatBox label="Rows" value={stats.totalRows} accent />
+          <StatBox label="Passed" value={stats.passRows} trend="up" />
+          <StatBox label="Review" value={stats.reviewRows} trend="neutral" />
+          <StatBox label="Failed" value={stats.failRows} trend="down" />
+          <StatBox label="Total FSP" value={formatMoney(stats.totalFsp)} />
+          <StatBox label="Total Food" value={formatMoney(stats.totalFood)} />
+          <StatBox
+            label="Redeemed Value"
+            value={formatMoney(stats.totalRedeemed)}
+          />
+          <StatBox label="App Eligible" value={stats.appEligible} accent />
+        </div>
+      </div>
+
+      <div className={`${glassPanel} p-5 md:p-6`}>
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-300">
+              Detail Block
+            </p>
+            <h3 className="mt-2 text-2xl font-black text-white">
+              Imported table and export schema
+            </h3>
+          </div>
+
+          <Table2 className="text-cyan-300" size={24} />
+        </div>
+
+        <DataTable
+          columns={visibleOfferColumns}
+          rows={displayRows}
+          requiredColumns={requiredOfferColumns}
+        />
+
+        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {offerSchemaGroups.map((group) => (
+            <div
+              key={group.title}
+              className="rounded-3xl border border-cyan-300/15 bg-black/25 p-5"
+            >
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-cyan-300">
+                {group.title}
               </p>
 
-              <h2 className="mt-3 text-3xl font-black text-white">
-                Player count by {activeMetric} range
-              </h2>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {group.fields.map((field) => {
+                  const isRequired = requiredOfferColumns.includes(field);
 
-              <p className="mt-4 text-sm leading-6 text-zinc-300">
-                Each bar shows how many players fall inside that non-overlapping
-                value range.
-              </p>
-
-              <div className="mt-8 overflow-x-auto">
-                <div className="flex h-72 min-w-[520px] items-end gap-3 rounded-3xl border border-cyan-300/15 bg-black/20 p-4">
-                  {histogramData.map((bucket) => (
-                    <div
-                      key={bucket.label}
-                      className="flex h-full flex-1 flex-col items-center justify-end gap-2"
+                  return (
+                    <span
+                      key={field}
+                      className={`rounded-full border px-3 py-1 text-xs font-bold ${
+                        isRequired
+                          ? "border-yellow-300/35 bg-yellow-300/15 text-yellow-100"
+                          : "border-cyan-300/15 bg-cyan-300/10 text-zinc-300"
+                      }`}
                     >
-                      <div className="text-center text-[11px] font-black leading-4 text-cyan-200">
-                        {bucket.count}
-                        <br />
-                        players
-                      </div>
+                      {field}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-                      <div
-                        className="w-full rounded-t-2xl border border-cyan-300/30 bg-cyan-400 shadow-[0_0_18px_rgba(34,211,238,0.35)]"
-                        style={{
-                          height: `${Math.max(
-                            (bucket.count / maxHistogramCount) * 100,
-                            8
-                          )}%`,
-                        }}
-                      />
+function WeatherTrafficModel() {
+  const [rows, setRows] = useState<WeatherTrafficRow[]>(weatherRowsDefault);
+  const [importMessage, setImportMessage] = useState(
+    "Using demo data. Download the template, fill it out, then import it here."
+  );
+  const [selectedMetric, setSelectedMetric] = useState<MetricOption>(
+    weatherMetricOptions[0]!
+  );
 
-                      <div className="h-12 text-center text-[10px] font-bold leading-4 text-zinc-400">
-                        {bucket.label}
-                      </div>
+  const stats = useMemo(() => {
+    const safeRows = rows.length > 0 ? rows : [weatherBase];
+    const totalExpected = rows.reduce((sum, row) => sum + row.ExpectedTrips, 0);
+    const totalActual = rows.reduce((sum, row) => sum + row.ActualTrips, 0);
+    const totalTripDelta = totalActual - totalExpected;
+    const totalTripDeltaPercent =
+      totalExpected === 0 ? 0 : (totalTripDelta / totalExpected) * 100;
+
+    const averageRisk =
+      rows.length === 0
+        ? 0
+        : rows.reduce((sum, row) => sum + row.WeatherRiskScore, 0) /
+          rows.length;
+
+    return {
+      averageRisk: Math.round(averageRisk),
+      totalTripDelta,
+      totalTripDeltaPercent,
+      hotelDemandSignal: rows.reduce((sum, row) => sum + row.HotelBookings, 0),
+      bestTrafficDay: safeRows.reduce((best, row) =>
+        row.TripDelta > best.TripDelta ? row : best
+      ),
+      worstTrafficDay: safeRows.reduce((worst, row) =>
+        row.TripDelta < worst.TripDelta ? row : worst
+      ),
+      highestRedemptionDay: safeRows.reduce((best, row) =>
+        row.FSPRedemptions + row.FoodRedemptions >
+        best.FSPRedemptions + best.FoodRedemptions
+          ? row
+          : best
+      ),
+    };
+  }, [rows]);
+
+  async function importWeatherCsv(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const text = await file.text();
+    const parsed = parseCsvText(text);
+    const missing = validateRequiredColumns(
+      parsed.headers,
+      requiredWeatherColumns
+    );
+
+    if (missing.length > 0) {
+      setImportMessage(`Missing required columns: ${missing.join(", ")}`);
+      event.target.value = "";
+      return;
+    }
+
+    const importedRows = parsed.records.map((record) =>
+      parseWeatherRow(
+        normalizeRecordToColumns(record, weatherColumns.map(String))
+      )
+    );
+
+    setRows(importedRows);
+    setImportMessage(
+      `Imported ${importedRows.length} weather traffic rows from ${file.name}.`
+    );
+    event.target.value = "";
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className={`${glassPanel} p-6 md:p-8`}>
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+              Weather vs. Player Traffic Model
+            </p>
+
+            <h2 className="mt-3 text-3xl font-black text-white md:text-5xl">
+              Weather impact traffic analyzer
+            </h2>
+
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-300 md:text-base">
+              Import weather, trip, redemption, and hotel demand data to model
+              how heat, rain, wind, and events may affect player traffic.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <GhostButton
+              onClick={() =>
+                downloadCsv(
+                  "weather-player-traffic-template.csv",
+                  [weatherRowsDefault[0] ?? weatherBase],
+                  weatherColumns.map(String)
+                )
+              }
+            >
+              <FileDown size={15} />
+              Download Template
+            </GhostButton>
+
+            <ImportButton id="weather-import" onChange={importWeatherCsv} />
+
+            <GhostButton
+              onClick={() =>
+                downloadCsv("weather-player-traffic-export.csv", rows)
+              }
+            >
+              <Download size={15} />
+              Export CSV
+            </GhostButton>
+
+            <GhostButton
+              onClick={() => {
+                setRows(weatherRowsDefault);
+                setImportMessage("Reset to demo weather traffic data.");
+              }}
+            >
+              <RefreshCcw size={15} />
+              Reset
+            </GhostButton>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-cyan-300/15 bg-black/25 p-4 text-sm text-cyan-100">
+          {importMessage}
+        </div>
+
+        <div className="mt-7 grid items-start gap-5 lg:grid-cols-[320px_1fr]">
+          <div className="space-y-4 rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
+            <MetricDropdown
+              value={selectedMetric}
+              options={weatherMetricOptions}
+              onChange={setSelectedMetric}
+            />
+
+            <RequiredColumnsPanel
+              title="Weather traffic import"
+              columns={requiredWeatherColumns}
+            />
+          </div>
+
+          <HistogramCard
+            title={`${selectedMetric.label} distribution`}
+            rows={rows}
+            metric={selectedMetric}
+          />
+        </div>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatBox
+            label="Avg Risk"
+            value={`${stats.averageRisk}/100`}
+            accent
+          />
+          <StatBox
+            label="Trip Delta"
+            value={formatNumber(stats.totalTripDelta)}
+            trend={stats.totalTripDelta >= 0 ? "up" : "down"}
+          />
+          <StatBox
+            label="Trip Delta %"
+            value={formatPercent(stats.totalTripDeltaPercent)}
+            trend={stats.totalTripDeltaPercent >= 0 ? "up" : "down"}
+          />
+          <StatBox
+            label="Hotel Bookings"
+            value={formatNumber(stats.hotelDemandSignal)}
+            trend="neutral"
+          />
+          <StatBox
+            label="Best Traffic Day"
+            value={`${stats.bestTrafficDay.DayOfWeek || "—"} ${formatNumber(
+              stats.bestTrafficDay.TripDelta
+            )}`}
+            trend="up"
+          />
+          <StatBox
+            label="Worst Traffic Day"
+            value={`${stats.worstTrafficDay.DayOfWeek || "—"} ${formatNumber(
+              stats.worstTrafficDay.TripDelta
+            )}`}
+            trend="down"
+          />
+          <StatBox
+            label="Highest Redemption"
+            value={stats.highestRedemptionDay.DayOfWeek || "—"}
+            accent
+          />
+          <StatBox
+            label="Loaded Days"
+            value={rows.length}
+            description="Rows currently loaded from demo data or imported CSV."
+          />
+        </div>
+      </div>
+
+      <div className={`${glassPanel} p-5 md:p-6`}>
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-300">
+              Detail Block
+            </p>
+            <h3 className="mt-2 text-2xl font-black text-white">
+              Imported table and weather schema
+            </h3>
+          </div>
+
+          <CloudSun className="text-cyan-300" size={24} />
+        </div>
+
+        <DataTable
+          columns={visibleWeatherColumns}
+          rows={rows}
+          requiredColumns={requiredWeatherColumns}
+        />
+
+        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {weatherSchemaGroups.map((group) => (
+            <div
+              key={group.title}
+              className="rounded-3xl border border-cyan-300/15 bg-black/25 p-5"
+            >
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-cyan-300">
+                {group.title}
+              </p>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {group.fields.map((field) => {
+                  const isRequired = requiredWeatherColumns.includes(field);
+
+                  return (
+                    <span
+                      key={field}
+                      className={`rounded-full border px-3 py-1 text-xs font-bold ${
+                        isRequired
+                          ? "border-yellow-300/35 bg-yellow-300/15 text-yellow-100"
+                          : "border-cyan-300/15 bg-cyan-300/10 text-zinc-300"
+                      }`}
+                    >
+                      {field}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function DataLabPage() {
+  const [activeLab, setActiveLab] = useState<LabKey>("offers");
+
+  const labCards = [
+    {
+      key: "offers" as LabKey,
+      title: "Casino Offer Export",
+      eyebrow: "Template + Import",
+      description:
+        "Offer values, hotel codes, eligibility flags, validation status, and export-ready campaign rows.",
+      icon: ShieldCheck,
+    },
+    {
+      key: "weather" as LabKey,
+      title: "Weather vs. Player Traffic",
+      eyebrow: "Traffic Modeling",
+      description:
+        "Weather risk, trip deltas, redemption demand, hotel bookings, and traffic recommendations.",
+      icon: CloudSun,
+    },
+  ];
+
+  return (
+    <main className="relative min-h-screen overflow-hidden px-5 pb-20 pt-28 text-white md:px-10">
+      <section className="mx-auto max-w-7xl">
+        <div className={`${glassPanel} p-6 md:p-10`}>
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-cyan-200">
+                <Sparkles size={14} />
+                Data Lab
+              </div>
+
+              <h1 className="mt-6 max-w-4xl text-5xl font-black tracking-tight md:text-7xl">
+                Casino analytics demos with live CSV import.
+              </h1>
+
+              <p className="mt-6 max-w-3xl text-base leading-8 text-zinc-300 md:text-lg">
+                A hands-on analyst dashboard for casino offer exports and
+                weather-driven player traffic modeling. Download templates,
+                fill required fields, import CSV files, and watch the metrics,
+                histograms, and tables update.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <PageButton href="/projects">
+                View Projects
+                <ExternalLink size={15} />
+              </PageButton>
+
+              <PageButton href="/playground">
+                Open Playground
+                <ExternalLink size={15} />
+              </PageButton>
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
+            {labCards.map((card) => {
+              const Icon = card.icon;
+              const isActive = activeLab === card.key;
+
+              return (
+                <button
+                  key={card.key}
+                  type="button"
+                  onClick={() => setActiveLab(card.key)}
+                  className={`text-left ${glassCard} p-6 ${
+                    isActive
+                      ? "border-cyan-300/60 bg-cyan-300/[0.11] shadow-[0_0_30px_rgba(34,211,238,0.12)]"
+                      : ""
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+                        {card.eyebrow}
+                      </p>
+
+                      <h2 className="mt-3 text-2xl font-black text-white">
+                        {card.title}
+                      </h2>
+
+                      <p className="mt-3 text-sm leading-6 text-zinc-400">
+                        {card.description}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              <div className="mt-6">
-                <GhostButton onClick={resetSampleData}>
-                  <FileText size={16} />
-                  Reset Histogram Data
-                </GhostButton>
-              </div>
-            </div>
+                    <div className="rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-3 text-cyan-200">
+                      <Icon size={24} />
+                    </div>
+                  </div>
 
-            <div className={`${glassPanel} p-6 md:p-8`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
-                Quality Check
-              </p>
-
-              <h2 className="mt-3 text-3xl font-black text-white">
-                Quick audit
-              </h2>
-
-              <div className="mt-6 space-y-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-1 text-cyan-300" size={20} />
-                  <p className="text-sm leading-6 text-zinc-300">
-                    Dataset has {qualityStats.players} players and{" "}
-                    {qualityStats.columns} columns.
-                  </p>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="mt-1 text-cyan-300" size={20} />
-                  <p className="text-sm leading-6 text-zinc-300">
-                    Found {qualityStats.emptyCells} empty cells and{" "}
-                    {qualityStats.duplicateIds} possible duplicate IDs.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-7">
-                <DataButton href="/projects">
-                  Add to Portfolio <ExternalLink size={15} />
-                </DataButton>
-              </div>
-            </div>
+                  <div className="mt-5 inline-flex rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-cyan-100">
+                    {isActive ? "Currently Open" : "Open Model"}
+                  </div>
+                </button>
+              );
+            })}
           </div>
-        </section>
+        </div>
 
-        <section className="mt-12 grid gap-5 lg:grid-cols-2">
-          <div className={`${glassPanel} p-6 md:p-8`}>
-            <div className="flex items-center gap-3">
-              <DollarSign className="text-cyan-300" size={24} />
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
-                Bet / Scoring Model
-              </p>
-            </div>
-
-            <h2 className="mt-4 text-3xl font-black text-white">
-              Simple risk score
-            </h2>
-
-            <div className="mt-7 grid gap-5 md:grid-cols-2">
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-zinc-300">
-                  Bet Amount: ${betAmount}
-                </span>
-                <input
-                  type="range"
-                  min="5"
-                  max="250"
-                  value={betAmount}
-                  onChange={(event) => setBetAmount(Number(event.target.value))}
-                  className="w-full"
-                />
-              </label>
-
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-zinc-300">
-                  Win Chance: {winChance}%
-                </span>
-                <input
-                  type="range"
-                  min="1"
-                  max="99"
-                  value={winChance}
-                  onChange={(event) => setWinChance(Number(event.target.value))}
-                  className="w-full"
-                />
-              </label>
-            </div>
-
-            <div className="mt-7 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl border border-cyan-300/20 bg-black/25 p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
-                  EV
-                </p>
-                <p className="mt-2 text-2xl font-black text-white">
-                  ${scoring.expectedValue}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-cyan-300/20 bg-black/25 p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
-                  Risk
-                </p>
-                <p className="mt-2 text-2xl font-black text-white">
-                  {scoring.riskScore}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-cyan-300/20 bg-black/25 p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
-                  Confidence
-                </p>
-                <p className="mt-2 text-2xl font-black text-white">
-                  {scoring.confidence}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-7">
-              <DataButton href="/security-lab">
-                Connect to Secure App Later <ExternalLink size={15} />
-              </DataButton>
-            </div>
-          </div>
-
-          <div className={`${glassPanel} p-6 md:p-8`}>
-            <div className="flex items-center gap-3">
-              <CloudSun className="text-cyan-300" size={24} />
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
-                Weather Analyzer
-              </p>
-            </div>
-
-            <h2 className="mt-4 text-3xl font-black text-white">
-              Event comfort score
-            </h2>
-
-            <div className="mt-7 space-y-5">
-              <label className="block space-y-2">
-                <span className="text-sm font-bold text-zinc-300">
-                  Temperature: {temperature}°F
-                </span>
-                <input
-                  type="range"
-                  min="30"
-                  max="110"
-                  value={temperature}
-                  onChange={(event) => setTemperature(Number(event.target.value))}
-                  className="w-full"
-                />
-              </label>
-
-              <label className="block space-y-2">
-                <span className="text-sm font-bold text-zinc-300">
-                  Rain Chance: {rainChance}%
-                </span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={rainChance}
-                  onChange={(event) => setRainChance(Number(event.target.value))}
-                  className="w-full"
-                />
-              </label>
-
-              <label className="block space-y-2">
-                <span className="text-sm font-bold text-zinc-300">
-                  Wind: {windSpeed} mph
-                </span>
-                <input
-                  type="range"
-                  min="0"
-                  max="45"
-                  value={windSpeed}
-                  onChange={(event) => setWindSpeed(Number(event.target.value))}
-                  className="w-full"
-                />
-              </label>
-            </div>
-
-            <div className="mt-7 rounded-2xl border border-cyan-300/20 bg-black/25 p-5">
-              <div className="flex items-center gap-3">
-                <Gauge className="text-cyan-300" size={22} />
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
-                    Comfort Score
-                  </p>
-                  <p className="mt-1 text-4xl font-black text-white">
-                    {weatherScore}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-7">
-              <DataButton href="/travel">
-                Open Travel Page <ExternalLink size={15} />
-              </DataButton>
-            </div>
-          </div>
-        </section>
+        <div className="mt-8">
+          {activeLab === "offers" && <OfferExportModel />}
+          {activeLab === "weather" && <WeatherTrafficModel />}
+        </div>
       </section>
     </main>
   );
 }
+
+
