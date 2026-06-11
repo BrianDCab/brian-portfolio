@@ -135,53 +135,47 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16 lg:py-24">
-        <div className="grid items-center gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className={`${glassPanel} p-6 md:p-9 lg:p-10`}>
-            <p className="text-xs font-bold uppercase tracking-[0.32em] text-cyan-300">
-              Data Analyst • Programmer • Automation Builder
-            </p>
+        <div className={`${glassPanel} p-6 md:p-9 lg:p-12`}>
+          <p className="text-xs font-bold uppercase tracking-[0.32em] text-cyan-300">
+            Data Analyst • Programmer • Automation Builder
+          </p>
 
-            <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
-              Brian Cabrera
-            </h1>
+          <h1 className="mt-5 text-5xl font-black tracking-tight text-white sm:text-6xl lg:text-8xl">
+            Brian Cabrera
+          </h1>
 
-            <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-300 md:text-lg">
-              I build data tools, reports, dashboards, and automation workflows
-              that make business work cleaner and easier to trust.
-            </p>
+          <p className="mt-5 max-w-4xl text-base leading-7 text-zinc-300 md:text-xl md:leading-9">
+            I build data tools, reports, dashboards, and automation workflows
+            that make business work cleaner and easier to trust.
+          </p>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <PrimaryButton href="/projects" icon={<ExternalLink size={16} />}>
-                View Projects
-              </PrimaryButton>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <PrimaryButton href="/projects" icon={<ExternalLink size={16} />}>
+              View Projects
+            </PrimaryButton>
 
-              <PrimaryButton href="/data-lab" icon={<BarChart3 size={16} />}>
-                Open Data Lab
-              </PrimaryButton>
+            <PrimaryButton href="/data-lab" icon={<BarChart3 size={16} />}>
+              Open Data Lab
+            </PrimaryButton>
 
-              <PrimaryButton
-                href="https://github.com/BrianDCab"
-                icon={<Code2 size={16} />}
-              >
-                GitHub
-              </PrimaryButton>
-            </div>
+            <PrimaryButton
+              href="https://github.com/BrianDCab"
+              icon={<Code2 size={16} />}
+            >
+              GitHub
+            </PrimaryButton>
           </div>
+        </div>
 
-          <div className={`${glassPanel} p-5 md:p-7`}>
-            <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">
-              Current Focus
-            </p>
+        <div className={`${glassPanel} mt-8 p-5 md:p-7`}>
+          <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">
+            Current Focus
+          </p>
 
-            <div className="mt-5 space-y-4">
-              {strengths.map((item) => (
-                <SoftCard
-                  key={item.title}
-                  title={item.title}
-                  text={item.text}
-                />
-              ))}
-            </div>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            {strengths.map((item) => (
+              <SoftCard key={item.title} title={item.title} text={item.text} />
+            ))}
           </div>
         </div>
       </section>

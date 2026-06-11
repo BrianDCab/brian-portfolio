@@ -65,7 +65,7 @@ export default function SiteNav() {
           <div className="flex items-center justify-between gap-3 py-3">
             <Link href="/" className="shrink-0">
               <div className="text-sm font-black tracking-[0.3em] text-white">
-                BDC
+                BC
               </div>
               <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-300/70">
                 Portfolio
