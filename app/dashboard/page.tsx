@@ -26,21 +26,20 @@ function StatBox({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-4 ${
+      className={`min-w-0 overflow-hidden rounded-2xl border p-4 ${
         accent
           ? "border-cyan-300/40 bg-cyan-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
           : "border-cyan-300/15 bg-black/25"
       }`}
     >
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300/80">
+      <p className="truncate text-xs font-bold uppercase tracking-[0.2em] text-cyan-300/80">
         {label}
       </p>
+
       <p
-        className={
-          accent
-            ? "mt-2 text-3xl font-black text-cyan-200"
-            : "mt-2 text-2xl font-black text-white"
-        }
+        className={`mt-2 min-w-0 break-words leading-tight text-white ${
+          accent ? "text-2xl font-black text-cyan-200" : "text-xl font-black"
+        }`}
       >
         {value}
       </p>
@@ -242,3 +241,4 @@ export default async function DashboardPage() {
     </main>
   );
 }
+
