@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, Save } from "lucide-react";
+import { createClient } from "../../utils/supabase/client";
 
 export default function SaveDemoDataButton() {
 const [loading, setLoading] = useState(false);
@@ -12,9 +13,24 @@ setLoading(true);
 setMessage("");
 
 ```
+const supabase = createClient();
+
+const {
+  data: { session },
+  error: sessionError,
+} = await supabase.auth.getSession();
+
+if (sessionError || !session?.access_token) {
+  setLoading(false);
+  setMessage("You must be logged in to save data.");
+  return;
+}
+
 const response = await fetch("/api/save-demo-data", {
   method: "POST",
-  credentials: "include",
+  headers: {
+    Authorization: `Bearer ${session.access_token}`,
+  },
   cache: "no-store",
 });
 
