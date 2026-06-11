@@ -12,7 +12,6 @@ async function saveDemoData() {
 setLoading(true);
 setMessage("");
 
-```
 const supabase = createClient();
 
 const {
@@ -29,7 +28,7 @@ if (sessionError || !session?.access_token) {
 const response = await fetch("/api/save-demo-data", {
   method: "POST",
   headers: {
-    Authorization: `Bearer ${session.access_token}`,
+    Authorization: "Bearer " + session.access_token,
   },
   cache: "no-store",
 });
@@ -48,7 +47,6 @@ setMessage("Saved. Refreshing dashboard...");
 window.setTimeout(() => {
   window.location.reload();
 }, 600);
-```
 
 }
 
@@ -63,14 +61,12 @@ return ( <div> <button
 )}
 Save demo data </button>
 
-```
   {message && (
     <p className="mt-3 text-sm leading-6 text-zinc-300">
       {message}
     </p>
   )}
 </div>
-```
 
 );
 }
