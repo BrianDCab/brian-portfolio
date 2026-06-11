@@ -1,312 +1,838 @@
-const travelHighlights = [
+"use client";
+
+import { useMemo, useState, type ReactNode } from "react";
+import Link from "next/link";
+import {
+  ArrowRight,
+  BarChart3,
+  CalendarDays,
+  Clock,
+  DollarSign,
+  ExternalLink,
+  Globe2,
+  Luggage,
+  MapPin,
+  Plane,
+  Route,
+  Sparkles,
+} from "lucide-react";
+
+type TravelMode = "overview" | "asia" | "northAmerica" | "tools";
+
+type Stop = {
+  city: string;
+  country: string;
+  region: string;
+  note: string;
+  tags: string[];
+};
+
+type ToolCardProps = {
+  title: string;
+  label: string;
+  children: ReactNode;
+};
+
+const glassPanel =
+  "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
+
+const glassCard =
+  "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-cyan-300/[0.07]";
+
+const travelModes = [
   {
-    place: "Japan",
-    route: "Osaka → Kyoto → Hakone → Fuji → Tokyo",
-    description:
-      "Explored temples, city districts, food markets, mountain views, onsen areas, and dense transit-heavy travel planning.",
-    tags: ["Japan", "Transit", "Food", "Culture", "Photography"],
+    key: "overview" as const,
+    title: "Overview",
+    label: "Trip Story",
+    text: "A polished travel log showing route planning, city grouping, timeline logic, and personal context.",
+    icon: Globe2,
   },
   {
-    place: "China",
-    route: "Shanghai → Zhangjiajie → Chongqing → Jiuzhaigou → Beijing",
-    description:
-      "Planned a multi-city route across major cities, national parks, mountain landscapes, and long-distance transportation windows.",
-    tags: ["China", "Route Planning", "Nature", "Cities", "Logistics"],
+    key: "asia" as const,
+    title: "Asia 2026",
+    label: "Major Route",
+    text: "China and Japan route cards, city clusters, highlights, and travel-planning notes.",
+    icon: Plane,
   },
   {
-    place: "Kyoto",
-    route: "Gion, Fushimi Inari, Arashiyama, Nishiki Market",
-    description:
-      "Balanced historic districts, shrines, night walks, food stops, and slower scenic exploration.",
-    tags: ["Kyoto", "Shrines", "Walking", "Food"],
+    key: "northAmerica" as const,
+    title: "North America",
+    label: "City Log",
+    text: "U.S. cities and Mexico City organized into a clean travel collection.",
+    icon: MapPin,
   },
   {
-    place: "Hakone / Fuji Area",
-    route: "Onsen stay, mountain scenery, Fuji-area planning",
-    description:
-      "Focused on slower travel, scenic stays, weather-dependent planning, and choosing the right base for views and rest.",
-    tags: ["Hakone", "Fuji", "Onsen", "Weather Planning"],
+    key: "tools" as const,
+    title: "Travel Tools",
+    label: "Data Logic",
+    text: "Small frontend calculators for trip pace, budget forecasting, time zones, and packing load.",
+    icon: BarChart3,
   },
 ];
 
-const travelSkills = [
+const asiaStops: Stop[] = [
   {
-    title: "Route Planning",
-    description:
-      "Breaking a large trip into realistic city blocks, travel days, transportation windows, and backup plans.",
+    city: "Shanghai",
+    country: "China",
+    region: "China Route",
+    note: "Arrival city, skyline energy, food, transit, and first major landing point.",
+    tags: ["Arrival", "City", "Food", "Transit"],
   },
   {
-    title: "Decision Making",
-    description:
-      "Choosing what to do based on time, weather, distance, cost, energy, and the experience I actually want.",
+    city: "Zhangjiajie",
+    country: "China",
+    region: "China Route",
+    note: "Mountain scenery, national park planning, nature routes, and high-impact visuals.",
+    tags: ["Mountains", "Nature", "Views", "Route Planning"],
   },
   {
-    title: "Research",
-    description:
-      "Comparing neighborhoods, transit options, tickets, closures, restaurants, attractions, and timing.",
+    city: "Chongqing",
+    country: "China",
+    region: "China Route",
+    note: "Dense urban layout, food culture, night views, and layered city logistics.",
+    tags: ["Megacity", "Food", "Night Views", "Urban"],
   },
   {
-    title: "Adaptability",
-    description:
-      "Changing plans when weather, fatigue, crowds, delays, or better opportunities show up.",
+    city: "Jiuzhaigou",
+    country: "China",
+    region: "China Route",
+    note: "Scenic landscape stop focused on lakes, color, nature, and slower pacing.",
+    tags: ["Nature", "Lakes", "Scenic", "Recovery"],
+  },
+  {
+    city: "Beijing",
+    country: "China",
+    region: "China Route",
+    note: "History, major landmarks, long-distance transit, and route-closing logistics.",
+    tags: ["History", "Landmarks", "Transit", "Culture"],
+  },
+  {
+    city: "Osaka",
+    country: "Japan",
+    region: "Japan Route",
+    note: "Food-heavy city stop, nightlife, shopping, and easy connection point.",
+    tags: ["Food", "Nightlife", "Transit", "Shopping"],
+  },
+  {
+    city: "Kyoto",
+    country: "Japan",
+    region: "Japan Route",
+    note: "Temples, shrines, Gion, Fushimi Inari, Arashiyama, and slower visual storytelling.",
+    tags: ["Temples", "Gion", "Shrines", "Walkable"],
+  },
+  {
+    city: "Tokyo",
+    country: "Japan",
+    region: "Japan Route",
+    note: "Dense itinerary hub for shopping, food, games, character stores, and late-night options.",
+    tags: ["Shopping", "Games", "Food", "Metro"],
+  },
+  {
+    city: "Hakone / Fuji",
+    country: "Japan",
+    region: "Japan Route",
+    note: "Onsen, ryokan energy, mountain views, recovery pacing, and Fuji-area planning.",
+    tags: ["Onsen", "Fuji", "Ryokan", "Recovery"],
+  },
+  {
+    city: "Hiroshima",
+    country: "Japan",
+    region: "Japan Route",
+    note: "History, day-trip potential, reflective pacing, and long-distance rail planning.",
+    tags: ["History", "Rail", "Culture", "Day Trip"],
   },
 ];
 
-const travelIdeas = [
-  "Trip cost tracker by city",
-  "Travel itinerary optimizer",
-  "Weather-based activity scorer",
-  "Food map and restaurant ranking tool",
-  "Photo location database",
-  "Transit time comparison dashboard",
+const northAmericaStops: Stop[] = [
+  {
+    city: "Atlanta",
+    country: "United States",
+    region: "U.S. Cities",
+    note: "Southern city stop with food, airport logistics, and urban exploration potential.",
+    tags: ["U.S.", "Food", "City", "Airport"],
+  },
+  {
+    city: "Chicago",
+    country: "United States",
+    region: "U.S. Cities",
+    note: "Architecture, lakefront routes, city food, transit, and skyline views.",
+    tags: ["Architecture", "Food", "Lakefront", "Transit"],
+  },
+  {
+    city: "New York City",
+    country: "United States",
+    region: "U.S. Cities",
+    note: "Dense city itinerary with neighborhoods, food, museums, and transit-heavy planning.",
+    tags: ["Transit", "Food", "Museums", "Neighborhoods"],
+  },
+  {
+    city: "Philadelphia",
+    country: "United States",
+    region: "U.S. Cities",
+    note: "East Coast city stop with history, walkable planning, and food notes.",
+    tags: ["History", "Walkable", "Food", "East Coast"],
+  },
+  {
+    city: "Mexico City",
+    country: "Mexico",
+    region: "International Cities",
+    note: "Major international city target with food, culture, museums, neighborhoods, and planning depth.",
+    tags: ["International", "Food", "Culture", "Museums"],
+  },
 ];
 
-function Tag({ children }: { children: string }) {
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function formatMoney(value: number) {
+  return `$${Math.round(value).toLocaleString()}`;
+}
+
+function formatHour(hour: number) {
+  const normalized = ((hour % 24) + 24) % 24;
+  const suffix = normalized >= 12 ? "PM" : "AM";
+  const twelveHour = normalized % 12 === 0 ? 12 : normalized % 12;
+  return `${twelveHour}:00 ${suffix}`;
+}
+
+function ProjectButton({
+  href,
+  children,
+  subtle = false,
+}: {
+  href: string;
+  children: ReactNode;
+  subtle?: boolean;
+}) {
+  const isInternal = href.startsWith("/");
+
+  const className = subtle
+    ? "inline-flex items-center justify-center gap-2 rounded-full border border-cyan-300/25 bg-black/25 px-4 py-2 text-sm font-bold text-cyan-200 transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10"
+    : "inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300";
+
+  if (isInternal) {
+    return (
+      <Link href={href} className={className}>
+        {children}
+      </Link>
+    );
+  }
+
   return (
-    <span className="rounded-full border border-zinc-700 bg-black/40 px-3 py-1 text-xs text-zinc-300">
+    <a href={href} className={className} target="_blank" rel="noreferrer">
       {children}
-    </span>
+    </a>
+  );
+}
+
+function StatBox({
+  label,
+  value,
+  accent = false,
+}: {
+  label: string;
+  value: string | number;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border p-4 ${
+        accent
+          ? "border-cyan-300/40 bg-cyan-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
+          : "border-cyan-300/15 bg-black/25"
+      }`}
+    >
+      <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300/80">
+        {label}
+      </p>
+
+      <p
+        className={
+          accent
+            ? "mt-2 text-3xl font-black text-cyan-200"
+            : "mt-2 text-2xl font-black text-white"
+        }
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function TagList({ tags }: { tags: string[] }) {
+  return (
+    <div className="mt-5 flex flex-wrap gap-2">
+      {tags.map((tag) => (
+        <span
+          key={tag}
+          className="rounded-full border border-cyan-300/20 bg-black/25 px-3 py-1 text-xs font-semibold text-zinc-300"
+        >
+          {tag}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function StopCard({ stop }: { stop: Stop }) {
+  return (
+    <div className={`${glassCard} p-6`}>
+      <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+        {stop.region}
+      </p>
+
+      <h3 className="mt-3 text-2xl font-black text-white">{stop.city}</h3>
+
+      <p className="mt-1 text-sm font-bold text-zinc-500">{stop.country}</p>
+
+      <p className="mt-4 text-sm leading-6 text-zinc-300">{stop.note}</p>
+
+      <TagList tags={stop.tags} />
+    </div>
+  );
+}
+
+function ToolCard({ title, label, children }: ToolCardProps) {
+  return (
+    <div className={`${glassCard} p-6`}>
+      <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+        {label}
+      </p>
+
+      <h3 className="mt-3 text-2xl font-black text-white">{title}</h3>
+
+      <div className="mt-6">{children}</div>
+    </div>
+  );
+}
+
+function RangeInput({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  suffix = "",
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  suffix?: string;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="flex items-center justify-between gap-3 text-sm font-bold text-zinc-300">
+        <span>{label}</span>
+        <span className="text-cyan-300">
+          {value}
+          {suffix}
+        </span>
+      </span>
+
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className="mt-3 w-full accent-cyan-300"
+      />
+    </label>
   );
 }
 
 export default function TravelPage() {
+  const [activeMode, setActiveMode] = useState<TravelMode>("overview");
+
+  const [tripDays, setTripDays] = useState(27);
+  const [cityCount, setCityCount] = useState(10);
+  const [travelDays, setTravelDays] = useState(8);
+  const [restDays, setRestDays] = useState(3);
+
+  const [dailyBudget, setDailyBudget] = useState(145);
+  const [flightBudget, setFlightBudget] = useState(2200);
+  const [bufferPercent, setBufferPercent] = useState(15);
+
+  const [homeHour, setHomeHour] = useState(19);
+  const [timezoneOffset, setTimezoneOffset] = useState(16);
+
+  const [outfits, setOutfits] = useState(7);
+  const [laundryDays, setLaundryDays] = useState(5);
+  const [souvenirSpace, setSouvenirSpace] = useState(20);
+
+  const allStops = [...asiaStops, ...northAmericaStops];
+
+  const tripPace = useMemo(() => {
+    const activeDays = Math.max(tripDays - travelDays, 1);
+    const nightsPerCity = activeDays / Math.max(cityCount, 1);
+
+    const paceScore = Math.round(
+      clamp(nightsPerCity * 24 + restDays * 6 - travelDays * 2.5, 0, 100)
+    );
+
+    const paceLabel =
+      paceScore >= 75
+        ? "Comfortable"
+        : paceScore >= 55
+          ? "Balanced"
+          : paceScore >= 35
+            ? "Rushed"
+            : "Too Rushed";
+
+    return {
+      activeDays,
+      nightsPerCity: nightsPerCity.toFixed(1),
+      paceScore,
+      paceLabel,
+    };
+  }, [tripDays, cityCount, travelDays, restDays]);
+
+  const budgetForecast = useMemo(() => {
+    const baseTotal = dailyBudget * tripDays + flightBudget;
+    const buffer = baseTotal * (bufferPercent / 100);
+    const total = baseTotal + buffer;
+
+    return {
+      baseTotal,
+      buffer,
+      total,
+      averagePerDayWithFlights: total / tripDays,
+    };
+  }, [dailyBudget, tripDays, flightBudget, bufferPercent]);
+
+  const timezonePlanner = useMemo(() => {
+    const destinationHour = ((homeHour + timezoneOffset) % 24 + 24) % 24;
+
+    const callQuality =
+      destinationHour >= 8 && destinationHour <= 22
+        ? "Good call window"
+        : destinationHour >= 6 && destinationHour <= 23
+          ? "Possible, but awkward"
+          : "Bad call window";
+
+    return {
+      destinationHour,
+      callQuality,
+    };
+  }, [homeHour, timezoneOffset]);
+
+  const packingScore = useMemo(() => {
+    const laundryPressure = laundryDays <= 3 ? 30 : laundryDays <= 5 ? 18 : 8;
+    const outfitPressure = outfits > 10 ? 30 : outfits > 7 ? 18 : 8;
+    const souvenirPressure = souvenirSpace < 10 ? 25 : souvenirSpace < 20 ? 14 : 5;
+
+    const score = Math.round(
+      clamp(100 - laundryPressure - outfitPressure - souvenirPressure, 0, 100)
+    );
+
+    const label =
+      score >= 75
+        ? "Light Pack"
+        : score >= 55
+          ? "Balanced"
+          : score >= 35
+            ? "Heavy"
+            : "Overpacked";
+
+    return {
+      score,
+      label,
+    };
+  }, [outfits, laundryDays, souvenirSpace]);
+
   return (
-    <main className="min-h-screen bg-black px-6 py-8 text-white">
-      <section className="mx-auto max-w-7xl">
-        <nav className="mb-10 flex flex-col gap-4 rounded-2xl border border-zinc-800 bg-zinc-950/80 px-5 py-4 shadow-[0_0_30px_rgba(34,211,238,0.08)] md:flex-row md:items-center md:justify-between">
-          <a href="/" className="text-lg font-bold tracking-tight text-white">
-            Brian Dacell Cabrera<span className="text-cyan-300">.</span>
-          </a>
-
-          <div className="flex flex-wrap gap-4 text-sm font-medium text-zinc-300">
-            <a className="transition hover:text-cyan-300" href="/">
-              Home
-            </a>
-            <a className="transition hover:text-cyan-300" href="/projects">
-              Projects
-            </a>
-            <a className="transition hover:text-cyan-300" href="/#skills">
-              Skills
-            </a>
-            <a className="transition hover:text-cyan-300" href="/playground">
-              Playground
-            </a>
-            <a className="text-cyan-300 transition" href="/travel">
-              Travel
-            </a>
-            <a className="transition hover:text-cyan-300" href="/#contact">
-              Contact
-            </a>
+    <main className="min-h-screen">
+      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16 lg:py-24">
+        <div className={`${glassPanel} p-6 md:p-10`}>
+          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">
+            <Plane size={15} />
+            Travel Log
           </div>
-        </nav>
 
-        <section className="rounded-3xl border border-cyan-400/30 bg-zinc-950 p-8 shadow-[0_0_45px_rgba(34,211,238,0.12)] md:p-12">
-          <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-            Travel
-          </p>
-
-          <h1 className="mt-6 max-w-5xl text-5xl font-bold tracking-tight text-white md:text-7xl">
-            Travel, planning, logistics, and curiosity.
+          <h1 className="mt-6 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
+            Routes, cities, and travel planning logic
           </h1>
 
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-zinc-300">
-            Travel is one of the ways I practice planning, research, pattern
-            recognition, and decision-making. I like building routes, comparing
-            options, working around constraints, and turning messy information
-            into a real plan.
+          <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-300 md:text-lg">
+            A polished travel page that mixes personal route history with
+            frontend data tools: trip pace scoring, budget forecasting, time
+            zone planning, and packing-load logic.
           </p>
 
-          <div className="mt-8 flex flex-wrap gap-4">
-            <a
-              href="/playground"
-              className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-black shadow-[0_0_25px_rgba(103,232,249,0.35)] transition hover:bg-cyan-200"
-            >
-              View Weather Analyzer
-            </a>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <ProjectButton href="/projects">
+              View Projects <ExternalLink size={15} />
+            </ProjectButton>
 
-            <a
-              href="/projects"
-              className="rounded-xl border border-zinc-700 px-5 py-3 font-semibold text-white transition hover:border-cyan-300 hover:bg-cyan-300/10 hover:text-cyan-300"
-            >
-              View Projects
-            </a>
-          </div>
-        </section>
-
-        <section className="mt-12 grid gap-6 md:grid-cols-3">
-          <div className="rounded-3xl border border-cyan-300/30 bg-cyan-300/10 p-6">
-            <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-              Travel Style
-            </p>
-            <h2 className="mt-3 text-3xl font-bold text-white">
-              Dense but intentional
-            </h2>
-            <p className="mt-4 text-sm leading-6 text-zinc-300">
-              I like trips that mix big cities, food, culture, scenic areas,
-              walking, and enough flexibility to adapt when the plan changes.
-            </p>
+            <ProjectButton href="/data-lab" subtle>
+              Open Data Lab <ExternalLink size={15} />
+            </ProjectButton>
           </div>
 
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-            <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-              Planning Mindset
-            </p>
-            <h2 className="mt-3 text-3xl font-bold text-white">
-              Research first
-            </h2>
-            <p className="mt-4 text-sm leading-6 text-zinc-400">
-              I compare routes, weather, transit, neighborhoods, timing,
-              closures, costs, and energy levels before locking in a plan.
-            </p>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatBox label="Asia Stops" value={asiaStops.length} accent />
+            <StatBox label="North America" value={northAmericaStops.length} />
+            <StatBox label="Total Cities" value={allStops.length} />
+            <StatBox label="Planning Tools" value="4" />
           </div>
+        </div>
 
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-            <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-              Data Angle
-            </p>
-            <h2 className="mt-3 text-3xl font-bold text-white">
-              Trips become systems
-            </h2>
-            <p className="mt-4 text-sm leading-6 text-zinc-400">
-              Travel naturally creates data: budgets, routes, ratings,
-              timelines, weather, transit options, and decision tradeoffs.
-            </p>
-          </div>
-        </section>
+        <section className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          {travelModes.map((mode) => {
+            const Icon = mode.icon;
+            const active = activeMode === mode.key;
 
-        <section className="mt-20">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-                Highlights
-              </p>
-              <h2 className="mt-3 text-3xl font-bold text-white">
-                Places I have planned, explored, or studied
-              </h2>
-            </div>
-
-            <p className="max-w-xl text-sm leading-6 text-zinc-400">
-              This page keeps travel personal without turning the site into a
-              vacation blog. The goal is to show curiosity, planning ability,
-              and personality alongside technical work.
-            </p>
-          </div>
-
-          <div className="mt-6 grid gap-6 md:grid-cols-2">
-            {travelHighlights.map((item) => (
-              <article
-                key={item.place}
-                className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-[0_0_35px_rgba(34,211,238,0.05)] transition hover:border-cyan-300/50 hover:bg-zinc-900/70"
+            return (
+              <button
+                key={mode.key}
+                type="button"
+                onClick={() => setActiveMode(mode.key)}
+                className={`text-left ${glassCard} p-6 ${
+                  active
+                    ? "border-cyan-300/60 bg-cyan-300/[0.11] shadow-[0_0_30px_rgba(34,211,238,0.12)]"
+                    : ""
+                }`}
               >
-                <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-                  {item.place}
-                </p>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                      {mode.label}
+                    </p>
 
-                <h3 className="mt-3 text-2xl font-bold text-white">
-                  {item.route}
-                </h3>
+                    <h2 className="mt-3 text-2xl font-black text-white">
+                      {mode.title}
+                    </h2>
+                  </div>
 
-                <p className="mt-4 text-sm leading-7 text-zinc-400">
-                  {item.description}
-                </p>
-
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {item.tags.map((tag) => (
-                    <Tag key={tag}>{tag}</Tag>
-                  ))}
+                  <div className="rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-3 text-cyan-200">
+                    <Icon size={24} />
+                  </div>
                 </div>
-              </article>
-            ))}
-          </div>
+
+                <p className="mt-4 text-sm leading-6 text-zinc-300">
+                  {mode.text}
+                </p>
+
+                <div className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-cyan-300">
+                  Open section <ArrowRight size={15} />
+                </div>
+              </button>
+            );
+          })}
         </section>
 
-        <section className="mt-20 rounded-3xl border border-zinc-800 bg-zinc-950 p-6 md:p-8">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-                Transferable Skills
+        {activeMode === "overview" && (
+          <section className="mt-12 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className={`${glassPanel} p-6 md:p-8`}>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                Overview
               </p>
-              <h2 className="mt-3 text-3xl font-bold text-white">
-                What travel shows about how I think
+
+              <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+                More than a travel scrapbook
               </h2>
+
+              <p className="mt-4 text-sm leading-7 text-zinc-300 md:text-base">
+                This page is designed like a route-planning interface. It shows
+                city grouping, travel pacing, trip constraints, and small data
+                tools that turn a personal page into a frontend portfolio piece.
+              </p>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <StatBox label="China Route" value="5 stops" accent />
+                <StatBox label="Japan Route" value="5 stops" />
+                <StatBox label="U.S. Cities" value="4 stops" />
+                <StatBox label="Mexico" value="1 stop" />
+              </div>
             </div>
 
-            <p className="max-w-xl text-sm leading-6 text-zinc-400">
-              Travel planning is basically project planning: constraints,
-              priorities, risks, resources, timing, and execution.
-            </p>
-          </div>
+            <div className={`${glassPanel} p-6 md:p-8`}>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                Portfolio Value
+              </p>
 
-          <div className="mt-6 grid gap-6 md:grid-cols-4">
-            {travelSkills.map((skill) => (
-              <div
-                key={skill.title}
-                className="rounded-2xl border border-zinc-800 bg-black/40 p-5"
-              >
-                <h3 className="text-xl font-bold text-white">{skill.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-zinc-400">
-                  {skill.description}
+              <div className="mt-5 space-y-3">
+                {[
+                  "Responsive card layouts and clean information architecture.",
+                  "Structured city data mapped into reusable UI components.",
+                  "Simple planning models for route pace, budget, time zones, and packing.",
+                  "Personal storytelling that still supports a professional portfolio.",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4 text-sm leading-6 text-zinc-300"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {activeMode === "asia" && (
+          <section className="mt-12">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                  Asia 2026
                 </p>
+
+                <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+                  China and Japan route
+                </h2>
               </div>
-            ))}
-          </div>
-        </section>
 
-        <section className="mt-20 grid gap-6 lg:grid-cols-[1fr_1.2fr]">
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 md:p-8">
-            <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-              Future Project Ideas
-            </p>
+              <p className="max-w-xl text-sm leading-6 text-zinc-400 md:text-right">
+                A larger multi-country itinerary broken into cities, travel
+                notes, and route categories.
+              </p>
+            </div>
 
-            <h2 className="mt-3 text-3xl font-bold text-white">
-              Travel tools I could build
-            </h2>
+            <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {asiaStops.map((stop) => (
+                <StopCard key={`${stop.city}-${stop.country}`} stop={stop} />
+              ))}
+            </div>
+          </section>
+        )}
 
-            <p className="mt-4 text-sm leading-6 text-zinc-400">
-              These are realistic ideas that connect travel with programming,
-              analytics, and dashboards.
-            </p>
-          </div>
+        {activeMode === "northAmerica" && (
+          <section className="mt-12">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                  City Log
+                </p>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            {travelIdeas.map((idea) => (
-              <div
-                key={idea}
-                className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-cyan-300/50 hover:bg-zinc-900/70"
-              >
-                <p className="text-sm font-semibold text-white">{idea}</p>
+                <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+                  U.S. cities and Mexico City
+                </h2>
               </div>
-            ))}
-          </div>
-        </section>
 
-        <section className="mt-20 rounded-3xl border border-cyan-300/30 bg-cyan-300/10 p-8 text-center shadow-[0_0_35px_rgba(34,211,238,0.08)]">
-          <p className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-            Live Demo
+              <p className="max-w-xl text-sm leading-6 text-zinc-400 md:text-right">
+                A cleaner city collection for North America stops and future
+                travel notes.
+              </p>
+            </div>
+
+            <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {northAmericaStops.map((stop) => (
+                <StopCard key={`${stop.city}-${stop.country}`} stop={stop} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {activeMode === "tools" && (
+          <section className="mt-12">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                  Travel Data Logic
+                </p>
+
+                <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+                  Small planning apps
+                </h2>
+              </div>
+
+              <p className="max-w-xl text-sm leading-6 text-zinc-400 md:text-right">
+                These are intentionally simple, portfolio-friendly calculators
+                that show state, derived values, and useful travel logic.
+              </p>
+            </div>
+
+            <div className="mt-8 grid gap-5 lg:grid-cols-2">
+              <ToolCard title="Trip Pace Score" label="Route Planner">
+                <div className="space-y-5">
+                  <RangeInput
+                    label="Trip Days"
+                    value={tripDays}
+                    min={3}
+                    max={45}
+                    onChange={setTripDays}
+                  />
+                  <RangeInput
+                    label="City Count"
+                    value={cityCount}
+                    min={1}
+                    max={18}
+                    onChange={setCityCount}
+                  />
+                  <RangeInput
+                    label="Transit Days"
+                    value={travelDays}
+                    min={0}
+                    max={18}
+                    onChange={setTravelDays}
+                  />
+                  <RangeInput
+                    label="Rest Days"
+                    value={restDays}
+                    min={0}
+                    max={12}
+                    onChange={setRestDays}
+                  />
+                </div>
+
+                <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                  <StatBox
+                    label="Pace Score"
+                    value={`${tripPace.paceScore}/100`}
+                    accent
+                  />
+                  <StatBox label="Pace" value={tripPace.paceLabel} />
+                  <StatBox
+                    label="Nights / City"
+                    value={tripPace.nightsPerCity}
+                  />
+                </div>
+              </ToolCard>
+
+              <ToolCard title="Budget Forecast" label="Cost Model">
+                <div className="space-y-5">
+                  <RangeInput
+                    label="Daily Budget"
+                    value={dailyBudget}
+                    min={40}
+                    max={350}
+                    step={5}
+                    suffix="/day"
+                    onChange={setDailyBudget}
+                  />
+                  <RangeInput
+                    label="Flight / Transit Budget"
+                    value={flightBudget}
+                    min={0}
+                    max={5000}
+                    step={100}
+                    onChange={setFlightBudget}
+                  />
+                  <RangeInput
+                    label="Buffer"
+                    value={bufferPercent}
+                    min={0}
+                    max={40}
+                    suffix="%"
+                    onChange={setBufferPercent}
+                  />
+                </div>
+
+                <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                  <StatBox
+                    label="Forecast"
+                    value={formatMoney(budgetForecast.total)}
+                    accent
+                  />
+                  <StatBox
+                    label="Buffer"
+                    value={formatMoney(budgetForecast.buffer)}
+                  />
+                  <StatBox
+                    label="Avg / Day"
+                    value={formatMoney(budgetForecast.averagePerDayWithFlights)}
+                  />
+                </div>
+              </ToolCard>
+
+              <ToolCard title="Time Zone Call Planner" label="Schedule Logic">
+                <div className="space-y-5">
+                  <RangeInput
+                    label="Home Hour"
+                    value={homeHour}
+                    min={0}
+                    max={23}
+                    suffix=":00"
+                    onChange={setHomeHour}
+                  />
+                  <RangeInput
+                    label="Destination Offset"
+                    value={timezoneOffset}
+                    min={-18}
+                    max={18}
+                    suffix="h"
+                    onChange={setTimezoneOffset}
+                  />
+                </div>
+
+                <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                  <StatBox label="Home" value={formatHour(homeHour)} />
+                  <StatBox
+                    label="Destination"
+                    value={formatHour(timezonePlanner.destinationHour)}
+                    accent
+                  />
+                  <StatBox label="Quality" value={timezonePlanner.callQuality} />
+                </div>
+              </ToolCard>
+
+              <ToolCard title="Packing Load Score" label="Packing Logic">
+                <div className="space-y-5">
+                  <RangeInput
+                    label="Outfits Packed"
+                    value={outfits}
+                    min={2}
+                    max={18}
+                    onChange={setOutfits}
+                  />
+                  <RangeInput
+                    label="Laundry Every"
+                    value={laundryDays}
+                    min={2}
+                    max={14}
+                    suffix=" days"
+                    onChange={setLaundryDays}
+                  />
+                  <RangeInput
+                    label="Souvenir Space"
+                    value={souvenirSpace}
+                    min={0}
+                    max={40}
+                    suffix="%"
+                    onChange={setSouvenirSpace}
+                  />
+                </div>
+
+                <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                  <StatBox
+                    label="Pack Score"
+                    value={`${packingScore.score}/100`}
+                    accent
+                  />
+                  <StatBox label="Load" value={packingScore.label} />
+                  <StatBox label="Souvenir Room" value={`${souvenirSpace}%`} />
+                </div>
+              </ToolCard>
+            </div>
+          </section>
+        )}
+
+        <section className={`${glassPanel} mt-12 p-6 md:p-8`}>
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+            Why this belongs on the portfolio
           </p>
 
-          <h2 className="mt-4 text-3xl font-bold text-white">
-            Weather Activity Analyzer
+          <h2 className="mt-3 text-3xl font-black text-white">
+            Personal page, but built like a data product.
           </h2>
 
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-zinc-300">
-            I added a weather scoring tool in the playground because travel
-            decisions often depend on conditions: temperature, rain, wind,
-            humidity, UV index, visibility, and activity type.
+          <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-300 md:text-base">
+            Travel gives the site personality, while the tools show reusable UI
+            components, structured data, state management, derived metrics, and
+            practical logic. It is not the main career proof, but it makes the
+            portfolio feel more complete and memorable.
           </p>
-
-          <div className="mt-6 flex justify-center">
-            <a
-              href="/playground"
-              className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-black shadow-[0_0_25px_rgba(103,232,249,0.35)] transition hover:bg-cyan-200"
-            >
-              Open Playground
-            </a>
-          </div>
         </section>
 
         <footer className="mt-12 pb-6 text-center text-sm text-zinc-500">
-          Built by Brian Dacell Cabrera.
+          Built by Brian Cabrera. Routes, notes, and experiments.
         </footer>
       </section>
     </main>

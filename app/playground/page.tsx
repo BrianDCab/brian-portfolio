@@ -48,6 +48,11 @@ type HandRecord = {
   playerBust: boolean;
   dealerBust: boolean;
   playerHits: number;
+  doubledDown: boolean;
+  bet: number;
+  payout: number;
+  profit: number;
+  bankrollAfter: number;
 };
 
 type Position = {
@@ -71,15 +76,29 @@ type SnakeRecord = {
 
 type DemoKey = "snake" | "blackjack" | "scoring";
 
+type ReadinessDecision =
+  | "Launch Ready"
+  | "Ready With Warnings"
+  | "Needs Review"
+  | "Rework First";
+
+type RiskLevel = "Low" | "Medium" | "High";
+
 type ScenarioRecord = {
   scenarioNumber: number;
   timestamp: string;
-  userValue: number;
-  businessImpact: number;
-  buildConfidence: number;
-  complexityRisk: number;
+  requirementsClarity: number;
+  dataQuality: number;
+  testingCoverage: number;
+  documentation: number;
+  stakeholderApproval: number;
+  automationReadiness: number;
+  deploymentRisk: number;
+  timelinePressure: number;
   score: number;
-  decision: string;
+  riskLevel: RiskLevel;
+  decision: ReadinessDecision;
+  recommendedActions: string;
 };
 
 const suits = ["♠", "♥", "♦", "♣"];
@@ -99,6 +118,8 @@ const ranks = [
   { rank: "Q", value: 10 },
   { rank: "K", value: 10 },
 ];
+
+const chipValues = [5, 25, 50, 100, 250];
 
 const gridSize = 16;
 
@@ -125,24 +146,28 @@ const demoCards = [
   },
   {
     key: "blackjack" as const,
-    title: "Blackjack Logic",
-    label: "Game Rules",
-    text: "A card simulation with real hand values, ace adjustment, dealer behavior, result tracking, live dashboards, and session export.",
+    title: "Blackjack Simulator",
+    label: "Betting + Analytics",
+    text: "A virtual bankroll simulator with betting, blackjack payouts, double down logic, dealer rules, hand history, and CSV export.",
     button: "Open Blackjack",
     icon: Trophy,
   },
   {
     key: "scoring" as const,
-    title: "Project Readiness",
-    label: "Interactive Sliders",
-    text: "A project scoring model that explains whether an idea is ready to build, needs review, or should be reworked first.",
-    button: "Open Scoring",
+    title: "Launch Readiness",
+    label: "Risk Auditor",
+    text: "A weighted project readiness auditor with risk flags, missing requirement checks, recommended actions, and CSV export.",
+    button: "Open Auditor",
     icon: Calculator,
   },
 ];
 
 function clamp(value: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
+}
+
+function formatMoney(value: number) {
+  return `$${Math.round(value).toLocaleString()}`;
 }
 
 function makeDeck() {
@@ -390,6 +415,40 @@ function CardView({ card, hidden = false }: { card?: Card; hidden?: boolean }) {
   );
 }
 
+function RangeControl({
+  label,
+  value,
+  help,
+  risk = false,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  help: string;
+  risk?: boolean;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="block space-y-2">
+      <span className="flex items-center justify-between gap-3 text-sm font-bold text-zinc-300">
+        <span>{label}</span>
+        <span className={risk ? "text-red-300" : "text-cyan-300"}>{value}</span>
+      </span>
+
+      <p className="text-xs leading-5 text-zinc-500">{help}</p>
+
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className="w-full"
+      />
+    </label>
+  );
+}
+
 export default function PlaygroundPage() {
   const [activeDemo, setActiveDemo] = useState<DemoKey>("snake");
 
@@ -398,10 +457,14 @@ export default function PlaygroundPage() {
   const [dealerHand, setDealerHand] = useState<Card[]>([]);
   const [status, setStatus] = useState<GameStatus>("ready");
   const [message, setMessage] = useState(
-    "Start a new hand to test the blackjack logic."
+    "Choose a virtual bet, then start a new hand."
   );
   const [currentHandHits, setCurrentHandHits] = useState(0);
   const [handHistory, setHandHistory] = useState<HandRecord[]>([]);
+  const [bankroll, setBankroll] = useState(1000);
+  const [selectedBet, setSelectedBet] = useState(25);
+  const [currentBet, setCurrentBet] = useState(0);
+  const [hasDoubledDown, setHasDoubledDown] = useState(false);
 
   const [simulationStats, setSimulationStats] = useState({
     hands: 0,
@@ -424,10 +487,14 @@ export default function PlaygroundPage() {
   const [snakeTurns, setSnakeTurns] = useState(0);
   const [snakeGameHistory, setSnakeGameHistory] = useState<SnakeRecord[]>([]);
 
-  const [userValue, setUserValue] = useState(82);
-  const [businessImpact, setBusinessImpact] = useState(78);
-  const [buildConfidence, setBuildConfidence] = useState(70);
-  const [complexityRisk, setComplexityRisk] = useState(35);
+  const [requirementsClarity, setRequirementsClarity] = useState(82);
+  const [dataQuality, setDataQuality] = useState(76);
+  const [testingCoverage, setTestingCoverage] = useState(64);
+  const [documentation, setDocumentation] = useState(58);
+  const [stakeholderApproval, setStakeholderApproval] = useState(72);
+  const [automationReadiness, setAutomationReadiness] = useState(70);
+  const [deploymentRisk, setDeploymentRisk] = useState(34);
+  const [timelinePressure, setTimelinePressure] = useState(42);
   const [scenarioHistory, setScenarioHistory] = useState<ScenarioRecord[]>([]);
 
   const snakeScoreRef = useRef(0);
@@ -439,7 +506,8 @@ export default function PlaygroundPage() {
 
   const touchStartXRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
-    const sessionStats = useMemo(() => {
+
+  const sessionStats = useMemo(() => {
     const hands = handHistory.length;
     const wins = handHistory.filter((hand) => hand.result === "win").length;
     const losses = handHistory.filter((hand) => hand.result === "loss").length;
@@ -460,6 +528,23 @@ export default function PlaygroundPage() {
       (sum, hand) => sum + hand.playerHits,
       0
     );
+
+    const totalProfit = handHistory.reduce((sum, hand) => sum + hand.profit, 0);
+
+    const totalWagered = handHistory.reduce((sum, hand) => sum + hand.bet, 0);
+
+    const averageBet =
+      hands === 0 ? "--" : formatMoney(totalWagered / hands);
+
+    const biggestWin =
+      hands === 0
+        ? "--"
+        : formatMoney(Math.max(...handHistory.map((hand) => hand.profit)));
+
+    const biggestLoss =
+      hands === 0
+        ? "--"
+        : formatMoney(Math.min(...handHistory.map((hand) => hand.profit)));
 
     const averagePlayerScore =
       hands === 0
@@ -516,6 +601,11 @@ export default function PlaygroundPage() {
       averageDealerScore,
       currentWinStreak,
       bestWinStreak,
+      totalProfit,
+      totalWagered,
+      averageBet,
+      biggestWin,
+      biggestLoss,
     };
   }, [handHistory]);
 
@@ -573,41 +663,97 @@ export default function PlaygroundPage() {
     };
   }, [snakeGameHistory]);
 
-  const lowRiskBonus = 100 - complexityRisk;
+  const readinessScore = useMemo(() => {
+    const deploymentSafety = 100 - deploymentRisk;
+    const scheduleSafety = 100 - timelinePressure;
 
-  const decisionScore = useMemo(() => {
     return Math.round(
       clamp(
-        userValue * 0.35 +
-          businessImpact * 0.3 +
-          buildConfidence * 0.25 +
-          lowRiskBonus * 0.1
+        requirementsClarity * 0.18 +
+          dataQuality * 0.16 +
+          testingCoverage * 0.16 +
+          documentation * 0.12 +
+          stakeholderApproval * 0.12 +
+          automationReadiness * 0.12 +
+          deploymentSafety * 0.08 +
+          scheduleSafety * 0.06
       )
     );
-  }, [userValue, businessImpact, buildConfidence, lowRiskBonus]);
+  }, [
+    requirementsClarity,
+    dataQuality,
+    testingCoverage,
+    documentation,
+    stakeholderApproval,
+    automationReadiness,
+    deploymentRisk,
+    timelinePressure,
+  ]);
 
-  const decisionLabel = useMemo(() => {
-    if (decisionScore >= 80) return "Build Now";
-    if (decisionScore >= 65) return "Good Candidate";
-    if (decisionScore >= 50) return "Needs Review";
+  const readinessDecision: ReadinessDecision = useMemo(() => {
+    if (readinessScore >= 85) return "Launch Ready";
+    if (readinessScore >= 70) return "Ready With Warnings";
+    if (readinessScore >= 55) return "Needs Review";
     return "Rework First";
-  }, [decisionScore]);
+  }, [readinessScore]);
 
-  const decisionRecommendation = useMemo(() => {
-    if (decisionScore >= 80) {
-      return "This is a strong project candidate. The value, impact, and confidence are high enough to justify building it now.";
+  const riskLevel: RiskLevel = useMemo(() => {
+    if (
+      readinessScore < 55 ||
+      deploymentRisk >= 70 ||
+      timelinePressure >= 75 ||
+      testingCoverage < 45
+    ) {
+      return "High";
     }
 
-    if (decisionScore >= 65) {
-      return "This is worth pursuing, but it should be scoped carefully before becoming a major build.";
+    if (
+      readinessScore < 75 ||
+      documentation < 60 ||
+      dataQuality < 60 ||
+      stakeholderApproval < 60
+    ) {
+      return "Medium";
     }
 
-    if (decisionScore >= 50) {
-      return "This idea has potential, but the risk, value, or confidence needs to improve before it becomes a priority.";
+    return "Low";
+  }, [
+    readinessScore,
+    deploymentRisk,
+    timelinePressure,
+    testingCoverage,
+    documentation,
+    dataQuality,
+    stakeholderApproval,
+  ]);
+
+  const recommendedActions = useMemo(() => {
+    const actions: string[] = [];
+
+    if (requirementsClarity < 70) actions.push("Clarify scope and success criteria.");
+    if (dataQuality < 70) actions.push("Audit the input data and business rules.");
+    if (testingCoverage < 70) actions.push("Add validation tests and edge-case checks.");
+    if (documentation < 70) actions.push("Document setup, usage, and handoff notes.");
+    if (stakeholderApproval < 70) actions.push("Confirm stakeholder sign-off.");
+    if (automationReadiness < 70) actions.push("Reduce manual steps before launch.");
+    if (deploymentRisk > 50) actions.push("Prepare a rollback or recovery plan.");
+    if (timelinePressure > 50) actions.push("Cut scope or move risky items later.");
+
+    if (actions.length === 0) {
+      return ["Ready to package, test once more, and launch."];
     }
 
-    return "This should be reworked first. The current score suggests the idea is either too risky, too unclear, or not valuable enough yet.";
-  }, [decisionScore]);
+    return actions;
+  }, [
+    requirementsClarity,
+    dataQuality,
+    testingCoverage,
+    documentation,
+    stakeholderApproval,
+    automationReadiness,
+    deploymentRisk,
+    timelinePressure,
+  ]);
 
   const scenarioAnalytics = useMemo(() => {
     const total = scenarioHistory.length;
@@ -782,14 +928,34 @@ export default function PlaygroundPage() {
     };
   }, [snakeRunning, snakeGameOver, nextDirection, food]);
 
+  function calculateHandMoney(result: GameResult, bet: number, blackjack = false) {
+    if (result === "push") return { payout: bet, profit: 0 };
+    if (result === "loss") return { payout: 0, profit: -bet };
+
+    if (blackjack) {
+      const payout = bet + Math.floor(bet * 1.5);
+      return { payout, profit: payout - bet };
+    }
+
+    return { payout: bet * 2, profit: bet };
+  }
+
   function recordHand(
     result: GameResult,
     finalPlayerHand: Card[],
     finalDealerHand: Card[],
-    playerHits: number
+    playerHits: number,
+    finalBet: number,
+    doubledDown: boolean,
+    finalBankroll: number
   ) {
     const playerScoreNow = getHandValue(finalPlayerHand);
     const dealerScoreNow = getHandValue(finalDealerHand);
+    const money = calculateHandMoney(
+      result,
+      finalBet,
+      isBlackjack(finalPlayerHand)
+    );
 
     setHandHistory((previous) => [
       ...previous,
@@ -806,6 +972,11 @@ export default function PlaygroundPage() {
         playerBust: playerScoreNow > 21,
         dealerBust: dealerScoreNow > 21,
         playerHits,
+        doubledDown,
+        bet: finalBet,
+        payout: money.payout,
+        profit: money.profit,
+        bankrollAfter: finalBankroll,
       },
     ]);
   }
@@ -815,45 +986,92 @@ export default function PlaygroundPage() {
     finalMessage: string,
     finalPlayerHand: Card[],
     finalDealerHand: Card[],
-    playerHits: number
+    playerHits: number,
+    finalBet = currentBet,
+    doubledDown = hasDoubledDown,
+    bankrollBase = bankroll
   ) {
+    const money = calculateHandMoney(
+      result,
+      finalBet,
+      isBlackjack(finalPlayerHand)
+    );
+
+    const finalBankroll = bankrollBase + money.payout;
+
+    setBankroll(finalBankroll);
     setStatus("done");
-    setMessage(finalMessage);
-    recordHand(result, finalPlayerHand, finalDealerHand, playerHits);
+    setMessage(`${finalMessage} Profit/Loss: ${formatMoney(money.profit)}.`);
+    recordHand(
+      result,
+      finalPlayerHand,
+      finalDealerHand,
+      playerHits,
+      finalBet,
+      doubledDown,
+      finalBankroll
+    );
   }
 
   function startGame() {
-    const newDeck = shuffleDeck(makeDeck());
+    if (status === "playing") return;
 
+    const safeBet = clamp(selectedBet, 5, 100000);
+
+    if (bankroll < safeBet) {
+      setMessage("Not enough virtual bankroll for that bet.");
+      return;
+    }
+
+    const newDeck = shuffleDeck(makeDeck());
     const player = [newDeck[0]!, newDeck[2]!];
     const dealer = [newDeck[1]!, newDeck[3]!];
     const remainingDeck = newDeck.slice(4);
+    const bankrollAfterBet = bankroll - safeBet;
 
+    setBankroll(bankrollAfterBet);
+    setCurrentBet(safeBet);
     setDeck(remainingDeck);
     setPlayerHand(player);
     setDealerHand(dealer);
     setCurrentHandHits(0);
+    setHasDoubledDown(false);
 
     const playerBlackjack = isBlackjack(player);
     const dealerBlackjack = isBlackjack(dealer);
 
     if (playerBlackjack && dealerBlackjack) {
-      settleGame("push", "Both sides hit blackjack. Push.", player, dealer, 0);
+      const money = calculateHandMoney("push", safeBet);
+      const finalBankroll = bankrollAfterBet + money.payout;
+      setBankroll(finalBankroll);
+      setStatus("done");
+      setMessage("Both sides hit blackjack. Push. Bet returned.");
+      recordHand("push", player, dealer, 0, safeBet, false, finalBankroll);
       return;
     }
 
     if (playerBlackjack) {
-      settleGame("win", "Blackjack. Player wins.", player, dealer, 0);
+      const money = calculateHandMoney("win", safeBet, true);
+      const finalBankroll = bankrollAfterBet + money.payout;
+      setBankroll(finalBankroll);
+      setStatus("done");
+      setMessage(`Blackjack pays 3:2. Player wins ${formatMoney(money.profit)}.`);
+      recordHand("win", player, dealer, 0, safeBet, false, finalBankroll);
       return;
     }
 
     if (dealerBlackjack) {
-      settleGame("loss", "Dealer has blackjack. Dealer wins.", player, dealer, 0);
+      const money = calculateHandMoney("loss", safeBet);
+      const finalBankroll = bankrollAfterBet + money.payout;
+      setBankroll(finalBankroll);
+      setStatus("done");
+      setMessage(`Dealer has blackjack. Loss: ${formatMoney(money.profit)}.`);
+      recordHand("loss", player, dealer, 0, safeBet, false, finalBankroll);
       return;
     }
 
     setStatus("playing");
-    setMessage("Your move: hit or stand.");
+    setMessage("Bet locked. Your move: hit, stand, or double down.");
   }
 
   function hit() {
@@ -894,21 +1112,26 @@ export default function PlaygroundPage() {
     setMessage(`You drew ${nextCard.rank}${nextCard.suit}. Your move.`);
   }
 
-  function stand() {
+  function stand(
+    overridePlayerHand = playerHand,
+    overrideDeck = deck,
+    overrideHits = currentHandHits,
+    overrideBet = currentBet,
+    overrideDoubledDown = hasDoubledDown,
+    overrideBankrollBase = bankroll
+  ) {
     if (status !== "playing") return;
 
-    const updatedDeck = [...deck];
+    const updatedDeck = [...overrideDeck];
     const updatedDealerHand = [...dealerHand];
 
     while (getHandValue(updatedDealerHand) < 17) {
       const nextCard = updatedDeck.shift();
-
       if (!nextCard) break;
-
       updatedDealerHand.push(nextCard);
     }
 
-    const playerScoreNow = getHandValue(playerHand);
+    const playerScoreNow = getHandValue(overridePlayerHand);
     const dealerScoreNow = getHandValue(updatedDealerHand);
 
     setDeck(updatedDeck);
@@ -918,9 +1141,12 @@ export default function PlaygroundPage() {
       settleGame(
         "win",
         `Dealer busted with ${dealerScoreNow}. Player wins with ${playerScoreNow}.`,
-        playerHand,
+        overridePlayerHand,
         updatedDealerHand,
-        currentHandHits
+        overrideHits,
+        overrideBet,
+        overrideDoubledDown,
+        overrideBankrollBase
       );
       return;
     }
@@ -929,9 +1155,12 @@ export default function PlaygroundPage() {
       settleGame(
         "win",
         `Player wins ${playerScoreNow} to ${dealerScoreNow}.`,
-        playerHand,
+        overridePlayerHand,
         updatedDealerHand,
-        currentHandHits
+        overrideHits,
+        overrideBet,
+        overrideDoubledDown,
+        overrideBankrollBase
       );
       return;
     }
@@ -940,9 +1169,12 @@ export default function PlaygroundPage() {
       settleGame(
         "loss",
         `Dealer wins ${dealerScoreNow} to ${playerScoreNow}.`,
-        playerHand,
+        overridePlayerHand,
         updatedDealerHand,
-        currentHandHits
+        overrideHits,
+        overrideBet,
+        overrideDoubledDown,
+        overrideBankrollBase
       );
       return;
     }
@@ -950,10 +1182,87 @@ export default function PlaygroundPage() {
     settleGame(
       "push",
       `Push. Both sides ended with ${playerScoreNow}.`,
-      playerHand,
+      overridePlayerHand,
       updatedDealerHand,
-      currentHandHits
+      overrideHits,
+      overrideBet,
+      overrideDoubledDown,
+      overrideBankrollBase
     );
+  }
+
+  function doubleDown() {
+    if (status !== "playing") return;
+
+    if (playerHand.length !== 2) {
+      setMessage("Double down is only available on the first two cards.");
+      return;
+    }
+
+    if (bankroll < currentBet) {
+      setMessage("Not enough virtual bankroll to double down.");
+      return;
+    }
+
+    const nextCard = deck[0];
+
+    if (!nextCard) {
+      setMessage("No cards left in the deck.");
+      return;
+    }
+
+    const doubledBet = currentBet * 2;
+    const bankrollAfterDouble = bankroll - currentBet;
+    const updatedDeck = deck.slice(1);
+    const updatedPlayerHand = [...playerHand, nextCard];
+    const updatedHits = currentHandHits + 1;
+    const playerScoreNow = getHandValue(updatedPlayerHand);
+
+    setBankroll(bankrollAfterDouble);
+    setCurrentBet(doubledBet);
+    setHasDoubledDown(true);
+    setDeck(updatedDeck);
+    setPlayerHand(updatedPlayerHand);
+    setCurrentHandHits(updatedHits);
+
+    if (playerScoreNow > 21) {
+      settleGame(
+        "loss",
+        `Double down card was ${nextCard.rank}${nextCard.suit}. You busted with ${playerScoreNow}.`,
+        updatedPlayerHand,
+        dealerHand,
+        updatedHits,
+        doubledBet,
+        true,
+        bankrollAfterDouble
+      );
+      return;
+    }
+
+    window.setTimeout(() => {
+      stand(
+        updatedPlayerHand,
+        updatedDeck,
+        updatedHits,
+        doubledBet,
+        true,
+        bankrollAfterDouble
+      );
+    }, 250);
+  }
+
+  function resetBankroll() {
+    setBankroll(1000);
+    setSelectedBet(25);
+    setCurrentBet(0);
+    setHasDoubledDown(false);
+    setStatus("ready");
+    setMessage("Bankroll reset to $1,000.");
+    setDeck([]);
+    setPlayerHand([]);
+    setDealerHand([]);
+    setCurrentHandHits(0);
+    setHandHistory([]);
   }
 
   function simulateOneHand(): GameResult {
@@ -997,7 +1306,6 @@ export default function PlaygroundPage() {
 
     for (let i = 0; i < 1000; i++) {
       const result = simulateOneHand();
-
       if (result === "win") wins += 1;
       if (result === "loss") losses += 1;
       if (result === "push") pushes += 1;
@@ -1032,6 +1340,11 @@ export default function PlaygroundPage() {
         "Player Bust",
         "Dealer Bust",
         "Player Hits",
+        "Doubled Down",
+        "Bet",
+        "Payout",
+        "Profit",
+        "Bankroll After",
       ],
       handHistory.map((hand) => [
         hand.handNumber,
@@ -1046,6 +1359,11 @@ export default function PlaygroundPage() {
         hand.playerBust,
         hand.dealerBust,
         hand.playerHits,
+        hand.doubledDown,
+        hand.bet,
+        hand.payout,
+        hand.profit,
+        hand.bankrollAfter,
       ])
     );
   }
@@ -1147,7 +1465,8 @@ export default function PlaygroundPage() {
       },
     ]);
   }
-    function exportSnakeCsv() {
+
+  function exportSnakeCsv() {
     if (snakeGameHistory.length === 0) {
       window.alert("Play at least one Snake game before exporting a CSV.");
       return;
@@ -1220,43 +1539,61 @@ export default function PlaygroundPage() {
       {
         scenarioNumber: previous.length + 1,
         timestamp: new Date().toLocaleString(),
-        userValue,
-        businessImpact,
-        buildConfidence,
-        complexityRisk,
-        score: decisionScore,
-        decision: decisionLabel,
+        requirementsClarity,
+        dataQuality,
+        testingCoverage,
+        documentation,
+        stakeholderApproval,
+        automationReadiness,
+        deploymentRisk,
+        timelinePressure,
+        score: readinessScore,
+        riskLevel,
+        decision: readinessDecision,
+        recommendedActions: recommendedActions.join(" | "),
       },
     ]);
   }
 
   function exportScenarioCsv() {
     if (scenarioHistory.length === 0) {
-      window.alert("Save at least one scoring test before exporting a CSV.");
+      window.alert("Save at least one readiness audit before exporting a CSV.");
       return;
     }
 
     downloadCsv(
-      "project-readiness-scenarios.csv",
+      "launch-readiness-audits.csv",
       [
         "Scenario Number",
         "Timestamp",
-        "User Value",
-        "Business Impact",
-        "Build Confidence",
-        "Complexity Risk",
+        "Requirements Clarity",
+        "Data Quality",
+        "Testing Coverage",
+        "Documentation",
+        "Stakeholder Approval",
+        "Automation Readiness",
+        "Deployment Risk",
+        "Timeline Pressure",
         "Score",
+        "Risk Level",
         "Decision",
+        "Recommended Actions",
       ],
       scenarioHistory.map((scenario) => [
         scenario.scenarioNumber,
         scenario.timestamp,
-        scenario.userValue,
-        scenario.businessImpact,
-        scenario.buildConfidence,
-        scenario.complexityRisk,
+        scenario.requirementsClarity,
+        scenario.dataQuality,
+        scenario.testingCoverage,
+        scenario.documentation,
+        scenario.stakeholderApproval,
+        scenario.automationReadiness,
+        scenario.deploymentRisk,
+        scenario.timelinePressure,
         scenario.score,
+        scenario.riskLevel,
         scenario.decision,
+        scenario.recommendedActions,
       ])
     );
   }
@@ -1295,8 +1632,8 @@ export default function PlaygroundPage() {
 
           <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-300 md:text-lg">
             Interactive demos using React state, TypeScript, keyboard input,
-            mobile touch controls, local storage, session analytics, scoring
-            models, and CSV export workflows.
+            mobile touch controls, local storage, session analytics, betting
+            logic, risk scoring, and CSV export workflows.
           </p>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -1355,22 +1692,84 @@ export default function PlaygroundPage() {
                   </p>
 
                   <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
-                    Game logic simulator
+                    Betting simulator with virtual credits
                   </h2>
 
                   <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-300">
-                    The dealer draws to 17, aces adjust between 1 and 11,
-                    results are tracked, and session data can export to CSV.
+                    Portfolio-safe virtual simulator with fake bankroll, locked
+                    bets, 3:2 blackjack payouts, double down, hand history, and
+                    CSV export.
                   </p>
                 </div>
 
-                <GhostButton onClick={startGame}>
+                <GhostButton onClick={startGame} disabled={status === "playing"}>
                   <Play size={16} />
                   New Hand
                 </GhostButton>
               </div>
 
-              <div className="mt-8 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
+              <div className="mt-8 grid gap-4 rounded-3xl border border-cyan-300/15 bg-black/25 p-5 lg:grid-cols-[1fr_1.2fr]">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                    Bankroll
+                  </p>
+
+                  <p className="mt-2 text-4xl font-black text-cyan-200">
+                    {formatMoney(bankroll)}
+                  </p>
+
+                  <p className="mt-2 text-sm text-zinc-400">
+                    Current bet:{" "}
+                    <span className="font-bold text-white">
+                      {currentBet > 0 ? formatMoney(currentBet) : "No active bet"}
+                    </span>
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                    Bet Selector
+                  </p>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {chipValues.map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => setSelectedBet(chip)}
+                        disabled={status === "playing"}
+                        className={`rounded-full px-4 py-2 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                          selectedBet === chip
+                            ? "bg-cyan-400 text-black"
+                            : "border border-cyan-300/25 bg-black/25 text-cyan-200 hover:border-cyan-300/50"
+                        }`}
+                      >
+                        {formatMoney(chip)}
+                      </button>
+                    ))}
+                  </div>
+
+                  <label className="mt-4 block">
+                    <span className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">
+                      Custom Bet
+                    </span>
+
+                    <input
+                      type="number"
+                      min="5"
+                      step="5"
+                      value={selectedBet}
+                      disabled={status === "playing"}
+                      onChange={(event) =>
+                        setSelectedBet(Math.max(5, Number(event.target.value)))
+                      }
+                      className="mt-2 w-full rounded-2xl border border-cyan-300/20 bg-black/35 px-4 py-3 text-sm font-bold text-white outline-none transition focus:border-cyan-300 disabled:opacity-40"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
                 <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
                   Status
                 </p>
@@ -1440,6 +1839,17 @@ export default function PlaygroundPage() {
                   Stand <Trophy size={15} />
                 </GhostButton>
 
+                <GhostButton
+                  onClick={doubleDown}
+                  disabled={
+                    status !== "playing" ||
+                    playerHand.length !== 2 ||
+                    bankroll < currentBet
+                  }
+                >
+                  Double Down <Sparkles size={15} />
+                </GhostButton>
+
                 <GhostButton onClick={runSimulation}>
                   <Sparkles size={15} />
                   Run 1,000 Hands
@@ -1449,21 +1859,34 @@ export default function PlaygroundPage() {
                   <Download size={15} />
                   Export CSV
                 </GhostButton>
+
+                <GhostButton onClick={resetBankroll}>
+                  <RefreshCcw size={15} />
+                  Reset Bankroll
+                </GhostButton>
               </div>
             </div>
 
             <aside className={`${glassPanel} p-6 md:p-8`}>
               <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
-                Live Dashboard
+                Betting Dashboard
               </p>
 
               <div className="mt-6 grid grid-cols-2 gap-4">
+                <StatBox label="Bankroll" value={formatMoney(bankroll)} accent />
+                <StatBox
+                  label="Profit/Loss"
+                  value={formatMoney(sessionStats.totalProfit)}
+                  accent={sessionStats.totalProfit !== 0}
+                />
                 <StatBox label="Hands" value={sessionStats.hands} />
-                <StatBox label="Win Rate" value={sessionStats.winRate} accent />
+                <StatBox label="Win Rate" value={sessionStats.winRate} />
                 <StatBox label="Wins" value={sessionStats.wins} />
                 <StatBox label="Losses" value={sessionStats.losses} />
                 <StatBox label="Pushes" value={sessionStats.pushes} />
-                <StatBox label="Best Streak" value={sessionStats.bestWinStreak} />
+                <StatBox label="Avg Bet" value={sessionStats.averageBet} />
+                <StatBox label="Biggest Win" value={sessionStats.biggestWin} />
+                <StatBox label="Biggest Loss" value={sessionStats.biggestLoss} />
               </div>
             </aside>
 
@@ -1473,39 +1896,21 @@ export default function PlaygroundPage() {
               </p>
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
-                <StatBox
-                  label="Player Blackjacks"
-                  value={sessionStats.playerBlackjacks}
-                />
-                <StatBox
-                  label="Dealer Blackjacks"
-                  value={sessionStats.dealerBlackjacks}
-                />
+                <StatBox label="Player Blackjacks" value={sessionStats.playerBlackjacks} />
+                <StatBox label="Dealer Blackjacks" value={sessionStats.dealerBlackjacks} />
                 <StatBox label="Player Busts" value={sessionStats.playerBusts} />
                 <StatBox label="Dealer Busts" value={sessionStats.dealerBusts} />
                 <StatBox label="Total Hits" value={sessionStats.totalHits} />
-                <StatBox
-                  label="Current Streak"
-                  value={sessionStats.currentWinStreak}
-                />
-                <StatBox
-                  label="Avg Player"
-                  value={sessionStats.averagePlayerScore}
-                />
-                <StatBox
-                  label="Avg Dealer"
-                  value={sessionStats.averageDealerScore}
-                />
+                <StatBox label="Best Streak" value={sessionStats.bestWinStreak} />
+                <StatBox label="Current Streak" value={sessionStats.currentWinStreak} />
+                <StatBox label="Avg Player" value={sessionStats.averagePlayerScore} />
+                <StatBox label="Avg Dealer" value={sessionStats.averageDealerScore} />
                 <StatBox label="Loss Rate" value={sessionStats.lossRate} />
                 <StatBox label="Push Rate" value={sessionStats.pushRate} />
                 <StatBox
                   label="Sim Win Rate"
                   value={simulatedWinRate}
                   accent={simulationStats.hands > 0}
-                />
-                <StatBox
-                  label="Export Ready"
-                  value={handHistory.length === 0 ? "No" : "Yes"}
                 />
               </div>
             </div>
@@ -1594,6 +1999,7 @@ export default function PlaygroundPage() {
 
               <div className="mx-auto mt-6 grid max-w-[280px] grid-cols-3 gap-3">
                 <div />
+
                 <button
                   type="button"
                   onClick={() => changeSnakeDirection("up")}
@@ -1602,6 +2008,7 @@ export default function PlaygroundPage() {
                 >
                   <ArrowUp size={24} />
                 </button>
+
                 <div />
 
                 <button
@@ -1632,6 +2039,7 @@ export default function PlaygroundPage() {
                 </button>
 
                 <div />
+
                 <button
                   type="button"
                   onClick={() => changeSnakeDirection("down")}
@@ -1640,6 +2048,7 @@ export default function PlaygroundPage() {
                 >
                   <ArrowDown size={24} />
                 </button>
+
                 <div />
               </div>
             </div>
@@ -1678,7 +2087,10 @@ export default function PlaygroundPage() {
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
                 <StatBox label="Direction" value={direction.toUpperCase()} />
-                <StatBox label="Games Played" value={snakeAnalytics.gamesPlayed} />
+                <StatBox
+                  label="Games Played"
+                  value={snakeAnalytics.gamesPlayed}
+                />
                 <StatBox
                   label="Best Session"
                   value={snakeAnalytics.bestScore}
@@ -1709,20 +2121,21 @@ export default function PlaygroundPage() {
         )}
 
         {activeDemo === "scoring" && (
-          <section className="mt-12 grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+          <section className="mt-12 grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
             <div className={`${glassPanel} p-6 md:p-8`}>
               <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
-                Project Readiness
+                Launch Readiness Auditor
               </p>
 
               <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
-                Should this project be built?
+                Is this project safe to ship?
               </h2>
 
               <p className="mt-4 text-sm leading-7 text-zinc-300">
-                This model scores whether an idea is ready to build. It rewards
-                user value, business impact, and build confidence while
-                penalizing complexity risk.
+                This weighted model checks whether a project is launch-ready by
+                balancing requirements, data quality, testing, documentation,
+                stakeholder approval, automation readiness, deployment risk, and
+                timeline pressure.
               </p>
 
               <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
@@ -1731,36 +2144,48 @@ export default function PlaygroundPage() {
                 </p>
 
                 <p className="mt-3 text-sm leading-7 text-zinc-300">
-                  Score = User Value × 35% + Business Impact × 30% + Build
-                  Confidence × 25% + Low Risk Bonus × 10%.
-                </p>
-
-                <p className="mt-3 text-sm leading-7 text-zinc-400">
-                  Low Risk Bonus is calculated as 100 minus Complexity Risk, so
-                  higher complexity lowers the final score.
+                  Positive signals raise readiness. Deployment risk and timeline
+                  pressure subtract from the score by using safety bonuses.
                 </p>
               </div>
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <StatBox label="Readiness Score" value={decisionScore} accent />
-                <StatBox label="Decision" value={decisionLabel} />
-                <StatBox label="Saved Tests" value={scenarioAnalytics.total} />
-                <StatBox label="Avg Saved" value={scenarioAnalytics.averageScore} />
+                <StatBox label="Readiness" value={readinessScore} accent />
+                <StatBox label="Decision" value={readinessDecision} />
+                <StatBox label="Risk Level" value={riskLevel} />
+                <StatBox label="Saved Audits" value={scenarioAnalytics.total} />
+                <StatBox
+                  label="Avg Saved"
+                  value={scenarioAnalytics.averageScore}
+                />
+                <StatBox
+                  label="Strongest Saved"
+                  value={scenarioAnalytics.strongestScore}
+                  accent={scenarioHistory.length > 0}
+                />
               </div>
 
               <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
                 <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
-                  Recommendation
+                  Recommended Actions
                 </p>
-                <p className="mt-3 text-sm leading-6 text-zinc-300">
-                  {decisionRecommendation}
-                </p>
+
+                <div className="mt-4 space-y-3">
+                  {recommendedActions.map((action) => (
+                    <div
+                      key={action}
+                      className="rounded-2xl border border-cyan-300/10 bg-black/25 p-4 text-sm leading-6 text-zinc-300"
+                    >
+                      {action}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="mt-6 flex flex-wrap gap-3">
                 <GhostButton onClick={saveScenario}>
                   <BarChart3 size={15} />
-                  Save Test
+                  Save Audit
                 </GhostButton>
 
                 <GhostButton onClick={exportScenarioCsv}>
@@ -1776,131 +2201,91 @@ export default function PlaygroundPage() {
               </p>
 
               <h3 className="mt-3 text-2xl font-black text-white">
-                Move the sliders to test an idea
+                Move the sliders to audit a launch
               </h3>
 
               <div className="mt-8 space-y-6">
-                <label className="block space-y-2">
-                  <span className="text-sm font-bold text-zinc-300">
-                    User Value: {userValue}
-                  </span>
-                  <p className="text-xs leading-5 text-zinc-500">
-                    How useful or meaningful this would be to the person using
-                    it.
-                  </p>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={userValue}
-                    onChange={(event) => setUserValue(Number(event.target.value))}
-                    className="w-full"
-                  />
-                </label>
-
-                <label className="block space-y-2">
-                  <span className="text-sm font-bold text-zinc-300">
-                    Business Impact: {businessImpact}
-                  </span>
-                  <p className="text-xs leading-5 text-zinc-500">
-                    How much this could help the business, team, client, or
-                    portfolio.
-                  </p>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={businessImpact}
-                    onChange={(event) =>
-                      setBusinessImpact(Number(event.target.value))
-                    }
-                    className="w-full"
-                  />
-                </label>
-
-                <label className="block space-y-2">
-                  <span className="text-sm font-bold text-zinc-300">
-                    Build Confidence: {buildConfidence}
-                  </span>
-                  <p className="text-xs leading-5 text-zinc-500">
-                    How confident you are that this can be built cleanly with
-                    the time and tools available.
-                  </p>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={buildConfidence}
-                    onChange={(event) =>
-                      setBuildConfidence(Number(event.target.value))
-                    }
-                    className="w-full"
-                  />
-                </label>
-
-                <label className="block space-y-2">
-                  <span className="text-sm font-bold text-zinc-300">
-                    Complexity Risk: {complexityRisk}
-                  </span>
-                  <p className="text-xs leading-5 text-zinc-500">
-                    How likely this is to become confusing, expensive, buggy, or
-                    too large in scope.
-                  </p>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={complexityRisk}
-                    onChange={(event) =>
-                      setComplexityRisk(Number(event.target.value))
-                    }
-                    className="w-full"
-                  />
-                </label>
-              </div>
-
-              <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                <StatBox label="Low Risk Bonus" value={lowRiskBonus} />
-                <StatBox
-                  label="Strongest Saved"
-                  value={scenarioAnalytics.strongestScore}
-                  accent={scenarioHistory.length > 0}
+                <RangeControl
+                  label="Requirements Clarity"
+                  value={requirementsClarity}
+                  help="How clearly the scope, users, features, and success criteria are defined."
+                  onChange={setRequirementsClarity}
                 />
-                <StatBox
-                  label="Best Decision"
-                  value={scenarioAnalytics.strongestDecision}
+
+                <RangeControl
+                  label="Data Quality"
+                  value={dataQuality}
+                  help="Whether the source data, inputs, or business rules are clean enough to trust."
+                  onChange={setDataQuality}
                 />
-                <StatBox
-                  label="Export Ready"
-                  value={scenarioHistory.length > 0 ? "Yes" : "No"}
+
+                <RangeControl
+                  label="Testing Coverage"
+                  value={testingCoverage}
+                  help="How much validation, edge-case checking, and QA exists before launch."
+                  onChange={setTestingCoverage}
+                />
+
+                <RangeControl
+                  label="Documentation"
+                  value={documentation}
+                  help="Whether another person could understand, maintain, or hand off the project."
+                  onChange={setDocumentation}
+                />
+
+                <RangeControl
+                  label="Stakeholder Approval"
+                  value={stakeholderApproval}
+                  help="Whether the right people have reviewed and approved the direction."
+                  onChange={setStakeholderApproval}
+                />
+
+                <RangeControl
+                  label="Automation Readiness"
+                  value={automationReadiness}
+                  help="How ready the workflow is to run repeatedly without manual cleanup."
+                  onChange={setAutomationReadiness}
+                />
+
+                <RangeControl
+                  label="Deployment Risk"
+                  value={deploymentRisk}
+                  help="How likely release could break something, confuse users, or require rollback."
+                  risk
+                  onChange={setDeploymentRisk}
+                />
+
+                <RangeControl
+                  label="Timeline Pressure"
+                  value={timelinePressure}
+                  help="How rushed the build is. Higher pressure lowers readiness."
+                  risk
+                  onChange={setTimelinePressure}
                 />
               </div>
 
               {scenarioHistory.length > 0 && (
                 <div className="mt-8 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
                   <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
-                    Recent Tests
+                    Recent Audits
                   </p>
 
                   <div className="mt-4 space-y-3">
                     {scenarioHistory.slice(-4).reverse().map((scenario) => (
                       <div
                         key={scenario.scenarioNumber}
-                        className="grid gap-2 rounded-2xl border border-cyan-300/10 bg-black/25 p-4 sm:grid-cols-[90px_1fr_120px]"
+                        className="grid gap-2 rounded-2xl border border-cyan-300/10 bg-black/25 p-4 sm:grid-cols-[90px_1fr_150px]"
                       >
                         <p className="text-sm font-black text-cyan-200">
                           #{scenario.scenarioNumber}
                         </p>
 
                         <p className="text-sm text-zinc-300">
-                          Value {scenario.userValue}, Impact{" "}
-                          {scenario.businessImpact}, Confidence{" "}
-                          {scenario.buildConfidence}, Risk{" "}
-                          {scenario.complexityRisk}
+                          Risk {scenario.riskLevel} • {scenario.decision}
                         </p>
 
                         <p className="text-sm font-black text-white sm:text-right">
-                          {scenario.score} / {scenario.decision}
+                          {scenario.score}/100
                         </p>
                       </div>
                     ))}
@@ -1912,7 +2297,7 @@ export default function PlaygroundPage() {
         )}
 
         <footer className="mt-12 pb-6 text-center text-sm text-zinc-500">
-          Built by Brian Dacell Cabrera.
+          Built by Brian Cabrera.
         </footer>
       </section>
     </main>
