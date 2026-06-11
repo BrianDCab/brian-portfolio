@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Loader2, Save } from "lucide-react";
-import { createClient } from "../../utils/supabase/client";
 
 export default function SaveDemoDataButton() {
   const [loading, setLoading] = useState(false);
@@ -12,49 +11,21 @@ export default function SaveDemoDataButton() {
     setLoading(true);
     setMessage("");
 
-    const supabase = createClient();
+    const response = await fetch("/api/save-demo-data", {
+      method: "POST",
+    });
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      setLoading(false);
-      setMessage("You must be logged in to save data.");
-      return;
-    }
-
-    const { error } = await supabase.from("user_app_data").upsert(
-      {
-        user_id: user.id,
-        app_key: "dashboard",
-        data_key: "first_saved_demo",
-        data: {
-          savedAt: new Date().toISOString(),
-          message: "This row was saved from the protected dashboard.",
-          futureUses: [
-            "Snake high scores",
-            "Blackjack bankroll",
-            "Travel plans",
-            "Security Lab results",
-            "Data Lab reports",
-          ],
-        },
-      },
-      {
-        onConflict: "user_id,app_key,data_key",
-      }
-    );
+    const result = await response.json().catch(() => null);
 
     setLoading(false);
 
-    if (error) {
-      setMessage(error.message);
+    if (!response.ok) {
+      setMessage(result?.error ?? "Could not save data.");
       return;
     }
 
-    setMessage("Saved. Refresh the page to see the row.");
+    setMessage("Saved. Refreshing dashboard...");
+    window.location.reload();
   }
 
   return (
@@ -69,11 +40,7 @@ export default function SaveDemoDataButton() {
         Save demo data
       </button>
 
-      {message && (
-        <p className="mt-3 text-sm leading-6 text-zinc-300">
-          {message}
-        </p>
-      )}
+      {message && <p className="mt-3 text-sm leading-6 text-zinc-300">{message}</p>}
     </div>
   );
 }
