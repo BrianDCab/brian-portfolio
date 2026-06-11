@@ -1835,7 +1835,7 @@ export default function PlaygroundPage() {
                   Hit <Gamepad2 size={15} />
                 </GhostButton>
 
-                <GhostButton onClick={stand} disabled={status !== "playing"}>
+                <GhostButton onClick={() => stand()} disabled={status !== "playing"}>
                   Stand <Trophy size={15} />
                 </GhostButton>
 
