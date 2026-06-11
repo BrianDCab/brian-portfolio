@@ -56,7 +56,7 @@ export default function RegisterPage() {
         },
         emailRedirectTo:
           typeof window !== "undefined"
-            ? `${window.location.origin}/auth/confirm?next=/dashboard`
+            ? `${window.location.origin}/auth/callback?next=/dashboard`
             : undefined,
       },
     });
