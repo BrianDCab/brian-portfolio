@@ -228,13 +228,12 @@ export default async function DashboardPage() {
               </p>
 
               <h2 className="mt-3 text-3xl font-black text-white">
-                This is where your site becomes a real app.
+                User Save Data and Authentication.
               </h2>
 
               <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-300 md:text-base">
-                Users can register, log in, keep a profile, and store app data
-                behind Row Level Security. The next step is wiring individual
-                labs to save their own user-specific data.
+                Users such as yourself can now register, log in, keep a profile, and store app data
+                behind Row Level Security. 
               </p>
             </div>
           </div>
