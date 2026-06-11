@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
-  Code2,
   ExternalLink,
   Eye,
   EyeOff,
@@ -25,6 +24,7 @@ type ToolKey = "password" | "auth" | "secrets" | "permissions";
 type AuthRole = "Guest" | "User" | "Admin";
 type SessionState = "none" | "active" | "expired";
 type RouteKey = "public" | "dashboard" | "admin" | "export";
+type PillTone = "default" | "good" | "warn" | "bad";
 
 type SecretFinding = {
   lineNumber: number;
@@ -234,7 +234,7 @@ function Pill({
   tone = "default",
 }: {
   children: ReactNode;
-  tone?: "default" | "good" | "warn" | "bad";
+  tone?: PillTone;
 }) {
   const styles =
     tone === "good"
@@ -300,7 +300,9 @@ export default function SecurityLab() {
       lower: /[a-z]/.test(password),
       number: /\d/.test(password),
       symbol: /[^A-Za-z0-9]/.test(password),
-      noCommon: !commonPatterns.some((pattern) => lowerPassword.includes(pattern)),
+      noCommon: !commonPatterns.some((pattern) =>
+        lowerPassword.includes(pattern)
+      ),
     };
 
     const varietyScore =
@@ -329,8 +331,14 @@ export default function SecurityLab() {
               ? "Weak"
               : "Very Weak";
 
-    const tone =
-      score >= 85 ? "good" : score >= 65 ? "warn" : password.length === 0 ? "default" : "bad";
+    const tone: PillTone =
+      score >= 85
+        ? "good"
+        : score >= 65
+          ? "warn"
+          : password.length === 0
+            ? "default"
+            : "bad";
 
     return {
       checks,
@@ -363,7 +371,8 @@ export default function SecurityLab() {
       return {
         allowed: false,
         title: "Session expired",
-        reason: "The user should re-authenticate before viewing protected content.",
+        reason:
+          "The user should re-authenticate before viewing protected content.",
       };
     }
 
@@ -371,7 +380,8 @@ export default function SecurityLab() {
       return {
         allowed: false,
         title: "Blocked",
-        reason: "This route requires an Admin role. A normal user should not access it.",
+        reason:
+          "This route requires an Admin role. A normal user should not access it.",
       };
     }
 
@@ -384,13 +394,41 @@ export default function SecurityLab() {
 
   const secretFindings = useMemo<SecretFinding[]>(() => {
     const riskyPatterns = [
-      { label: "API key", regex: /(^|\s)(API_KEY|OPENAI_API_KEY|STRIPE_SECRET_KEY)\s*=/i, severity: "high" as const },
-      { label: "Token", regex: /(^|\s)(TOKEN|ACCESS_TOKEN|REFRESH_TOKEN|JWT_SECRET)\s*=/i, severity: "high" as const },
-      { label: "Secret", regex: /(^|\s)(SECRET|CLIENT_SECRET|SESSION_SECRET)\s*=/i, severity: "high" as const },
-      { label: "Password", regex: /(^|\s)(PASSWORD|DB_PASSWORD)\s*=/i, severity: "high" as const },
-      { label: "Database URL", regex: /(^|\s)(DATABASE_URL|DB_URL)\s*=/i, severity: "medium" as const },
-      { label: "Public env var", regex: /^NEXT_PUBLIC_/i, severity: "low" as const },
-      { label: "Private key", regex: /PRIVATE_KEY|BEGIN\s+(RSA|OPENSSH|PRIVATE)/i, severity: "high" as const },
+      {
+        label: "API key",
+        regex: /(^|\s)(API_KEY|OPENAI_API_KEY|STRIPE_SECRET_KEY)\s*=/i,
+        severity: "high" as const,
+      },
+      {
+        label: "Token",
+        regex: /(^|\s)(TOKEN|ACCESS_TOKEN|REFRESH_TOKEN|JWT_SECRET)\s*=/i,
+        severity: "high" as const,
+      },
+      {
+        label: "Secret",
+        regex: /(^|\s)(SECRET|CLIENT_SECRET|SESSION_SECRET)\s*=/i,
+        severity: "high" as const,
+      },
+      {
+        label: "Password",
+        regex: /(^|\s)(PASSWORD|DB_PASSWORD)\s*=/i,
+        severity: "high" as const,
+      },
+      {
+        label: "Database URL",
+        regex: /(^|\s)(DATABASE_URL|DB_URL)\s*=/i,
+        severity: "medium" as const,
+      },
+      {
+        label: "Public env var",
+        regex: /^NEXT_PUBLIC_/i,
+        severity: "low" as const,
+      },
+      {
+        label: "Private key",
+        regex: /PRIVATE_KEY|BEGIN\s+(RSA|OPENSSH|PRIVATE)/i,
+        severity: "high" as const,
+      },
     ];
 
     return secretInput
@@ -610,7 +648,8 @@ export default function SecurityLab() {
 
               <p className="mt-4 text-sm leading-7 text-zinc-300">
                 Change the user role, session state, and target route to see how
-                a protected app should decide whether to allow access or redirect.
+                a protected app should decide whether to allow access or
+                redirect.
               </p>
 
               <div className="mt-6 grid gap-4">
@@ -618,7 +657,9 @@ export default function SecurityLab() {
                   <span className="text-sm font-bold text-zinc-300">Role</span>
                   <select
                     value={authRole}
-                    onChange={(event) => setAuthRole(event.target.value as AuthRole)}
+                    onChange={(event) =>
+                      setAuthRole(event.target.value as AuthRole)
+                    }
                     className="mt-2 w-full rounded-2xl border border-cyan-300/20 bg-black/35 px-4 py-3 text-sm font-bold text-white outline-none"
                   >
                     <option>Guest</option>
@@ -704,7 +745,10 @@ export default function SecurityLab() {
                         : "Expired"
                   }
                 />
-                <StatBox label="Route" value={routeRules[selectedRoute].label} />
+                <StatBox
+                  label="Route"
+                  value={routeRules[selectedRoute].label}
+                />
               </div>
 
               <div className="mt-6 rounded-2xl border border-cyan-300/15 bg-black/25 p-4 text-sm leading-6 text-zinc-300">
@@ -898,8 +942,9 @@ export default function SecurityLab() {
 
               <div className="mt-6 rounded-2xl border border-cyan-300/15 bg-black/25 p-4 text-sm leading-6 text-zinc-300">
                 Notice that even Admin does not get “view secrets.” In real
-                systems, secrets should be stored and accessed through controlled
-                server-side infrastructure, not casually displayed in dashboards.
+                systems, secrets should be stored and accessed through
+                controlled server-side infrastructure, not casually displayed in
+                dashboards.
               </div>
             </div>
           </section>
