@@ -1,78 +1,102 @@
-﻿import Link from "next/link";
+﻿"use client";
+
+import Link from "next/link";
+import { useState } from "react";
 import { LogIn } from "lucide-react";
-import { loginAction } from "./actions";
+import { createClient } from "../../utils/supabase/client";
 
 const glassPanel =
   "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
 
-export default async function LoginPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ error?: string; message?: string }>;
-}) {
-  const params = searchParams ? await searchParams : {};
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setLoading(true);
+    setMessage("");
+
+    const supabase = createClient();
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (error) {
+      setLoading(false);
+      setMessage(error.message);
+      return;
+    }
+
+    window.location.href = "/dashboard";
+  }
 
   return (
-    <main className="min-h-screen">
-      <section className="mx-auto flex min-h-screen max-w-3xl items-center px-4 py-16 md:px-6">
-        <div className={`${glassPanel} w-full p-6 md:p-10`}>
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">
-            <LogIn size={15} />
-            Login
+    <main className="min-h-screen px-4 py-16 text-white md:px-8">
+      <section className="mx-auto max-w-xl">
+        <div className={glassPanel + " p-8 md:p-10"}>
+          <div className="mb-8 flex items-center gap-3">
+            <div className="rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-3 text-cyan-200">
+              <LogIn size={24} />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300/80">
+                Account
+              </p>
+              <h1 className="text-3xl font-black text-white">Login</h1>
+            </div>
           </div>
 
-          <h1 className="mt-6 text-4xl font-black tracking-tight text-white sm:text-5xl">
-            Welcome back
-          </h1>
-
-          <p className="mt-4 text-sm leading-7 text-zinc-300 md:text-base">
+          <p className="text-sm leading-7 text-zinc-300">
             Log in to access your dashboard and saved portfolio app data.
           </p>
 
-          <form action={loginAction} className="mt-8 space-y-5">
+          <form onSubmit={handleLogin} className="mt-8 space-y-5">
             <label className="block">
               <span className="text-sm font-bold text-zinc-300">Email</span>
               <input
-                name="email"
                 type="email"
                 required
-                autoComplete="email"
-                className="mt-2 w-full rounded-2xl border border-cyan-300/20 bg-black/35 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-cyan-300/60"
+                placeholder="you@example.com"
               />
             </label>
 
             <label className="block">
               <span className="text-sm font-bold text-zinc-300">Password</span>
               <input
-                name="password"
                 type="password"
                 required
-                autoComplete="current-password"
-                className="mt-2 w-full rounded-2xl border border-cyan-300/20 bg-black/35 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-cyan-300/60"
+                placeholder="Your password"
               />
             </label>
 
-            {params?.error && (
-              <div className="rounded-2xl border border-red-300/20 bg-red-300/10 p-4 text-sm text-red-100">
-                {params.error}
-              </div>
-            )}
-
-            {params?.message && (
-              <div className="rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-4 text-sm text-emerald-100">
-                {params.message}
-              </div>
+            {message && (
+              <p className="rounded-2xl border border-red-300/25 bg-red-300/10 px-4 py-3 text-sm text-red-100">
+                {message}
+              </p>
             )}
 
             <button
               type="submit"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:bg-cyan-300"
+              disabled={loading}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-black text-black transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Log in
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-zinc-400">
+          <p className="mt-6 text-sm text-zinc-400">
             Need an account?{" "}
             <Link href="/register" className="font-bold text-cyan-300 hover:text-cyan-200">
               Register
@@ -83,4 +107,3 @@ export default async function LoginPage({
     </main>
   );
 }
-
