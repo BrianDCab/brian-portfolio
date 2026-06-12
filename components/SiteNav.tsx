@@ -1,4 +1,4 @@
-"use client";
+ï»¿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -101,7 +101,7 @@ export default function SiteNav({ username }: { username?: string | null }) {
               BC
             </div>
             <div className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/70">
-              Data • Code • Systems
+              Data â€¢ Code â€¢ Systems
             </div>
           </Link>
 
@@ -188,3 +188,4 @@ export default function SiteNav({ username }: { username?: string | null }) {
     </header>
   );
 }
+

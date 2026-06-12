@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache";
+﻿import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Save } from "lucide-react";
 import { createClient } from "../../utils/supabase/server";
@@ -60,3 +60,4 @@ export default function SaveDemoDataButton() {
     </form>
   );
 }
+
