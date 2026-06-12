@@ -9,18 +9,20 @@ export async function POST(request: NextRequest) {
 
   if (!email || !password) {
     return NextResponse.redirect(
-      new URL("/login?error=Missing email or password", request.url)
+      new URL("/login?error=Missing email or password", request.url),
+      303
     );
   }
 
-  let response = NextResponse.redirect(new URL("/dashboard", request.url), 303);
+  let response = NextResponse.next();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     return NextResponse.redirect(
-      new URL("/login?error=Missing Supabase environment variables", request.url)
+      new URL("/login?error=Missing Supabase environment variables", request.url),
+      303
     );
   }
 
@@ -44,12 +46,21 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     return NextResponse.redirect(
-      new URL("/login?error=" + encodeURIComponent(error.message), request.url)
+      new URL("/login?error=" + encodeURIComponent(error.message), request.url),
+      303
     );
   }
 
-  response.headers.set("Cache-Control", "no-store");
+  const redirectResponse = NextResponse.redirect(
+    new URL("/dashboard", request.url),
+    303
+  );
 
-  return response;
+  response.cookies.getAll().forEach((cookie) => {
+    redirectResponse.cookies.set(cookie);
+  });
+
+  redirectResponse.headers.set("Cache-Control", "no-store");
+
+  return redirectResponse;
 }
-
