@@ -1,52 +1,62 @@
-"use client";
-
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2, Save } from "lucide-react";
-import { saveDemoDataAction } from "./actions";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { Save } from "lucide-react";
+import { createClient } from "../../utils/supabase/server";
 
 export default function SaveDemoDataButton() {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [message, setMessage] = useState("");
+  async function saveDemoData() {
+    "use server";
 
-  function saveDemoData() {
-    setMessage("");
+    const supabase = await createClient();
 
-    startTransition(async () => {
-      const result = await saveDemoDataAction();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-      if (!result.ok) {
-        setMessage(result.error ?? "Could not save data.");
-        return;
+    if (userError || !user) {
+      redirect("/login?redirectedFrom=/dashboard");
+    }
+
+    const { error } = await supabase.from("user_app_data").upsert(
+      {
+        user_id: user.id,
+        app_key: "dashboard",
+        data_key: "first_saved_demo",
+        data: {
+          savedAt: new Date().toISOString(),
+          message: "This row was saved from the protected dashboard.",
+          futureUses: [
+            "Snake high scores",
+            "Blackjack bankroll",
+            "Travel plans",
+            "Security Lab results",
+            "Data Lab reports",
+          ],
+        },
+      },
+      {
+        onConflict: "user_id,app_key,data_key",
       }
+    );
 
-      setMessage("Saved.");
-      router.refresh();
-    });
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    revalidatePath("/dashboard");
+    redirect("/dashboard");
   }
 
   return (
-    <div>
+    <form action={saveDemoData}>
       <button
-        type="button"
-        onClick={saveDemoData}
-        disabled={isPending}
-        className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+        type="submit"
+        className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:bg-cyan-300"
       >
-        {isPending ? (
-          <Loader2 className="animate-spin" size={16} />
-        ) : (
-          <Save size={16} />
-        )}
+        <Save size={16} />
         Save demo data
       </button>
-
-      {message && (
-        <p className="mt-3 text-sm leading-6 text-zinc-300">
-          {message}
-        </p>
-      )}
-    </div>
+    </form>
   );
 }
