@@ -43,7 +43,7 @@ function AuthNavLinks({
   if (isLoggedIn) {
     return (
       <>
-        <Link
+        <a
           href="/dashboard"
           className={
             baseButton +
@@ -53,7 +53,7 @@ function AuthNavLinks({
           }
         >
           @{username}
-        </Link>
+        </a>
 
         <a href="/logout" className={baseButton + " " + logoutButton}>
           Logout
