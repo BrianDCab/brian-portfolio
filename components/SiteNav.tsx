@@ -2,9 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import type { User } from "@supabase/supabase-js";
-import { createClient } from "../utils/supabase/client";
 
 export const siteNavLinks = [
   { label: "Home", href: "/" },
@@ -17,55 +14,15 @@ export const siteNavLinks = [
   { label: "Travel", href: "/travel" },
 ];
 
-function AuthNavLinks({ compact = false }: { compact?: boolean }) {
+function AuthNavLinks({
+  username,
+  compact = false,
+}: {
+  username?: string | null;
+  compact?: boolean;
+}) {
   const pathname = usePathname();
-  const [loading, setLoading] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
-
-  useEffect(() => {
-    const supabase = createClient();
-    let mounted = true;
-
-    async function loadProfile(user: User | null) {
-      if (!mounted) return;
-
-      if (!user) {
-        setIsLoggedIn(false);
-        setUsername(null);
-        setLoading(false);
-        return;
-      }
-
-      setIsLoggedIn(true);
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (!mounted) return;
-
-      setUsername(profile?.username ?? user.email?.split("@")[0] ?? "user");
-      setLoading(false);
-    }
-
-    supabase.auth.getUser().then(({ data }) => {
-      loadProfile(data.user);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      loadProfile(session?.user ?? null);
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
+  const isLoggedIn = Boolean(username);
 
   const baseButton = compact
     ? "inline-flex shrink-0 items-center justify-center rounded-full px-3 py-2 text-xs font-semibold transition"
@@ -83,14 +40,6 @@ function AuthNavLinks({ compact = false }: { compact?: boolean }) {
   const logoutButton =
     "border border-red-300/25 bg-red-300/10 text-red-100 hover:bg-red-300/20";
 
-  if (loading) {
-    return (
-      <Link href="/login" className={baseButton + " " + neutralButton}>
-        Account
-      </Link>
-    );
-  }
-
   if (isLoggedIn) {
     return (
       <>
@@ -103,7 +52,7 @@ function AuthNavLinks({ compact = false }: { compact?: boolean }) {
             " max-w-[170px] truncate"
           }
         >
-          @{username ?? "user"}
+          @{username}
         </Link>
 
         <Link href="/logout" className={baseButton + " " + logoutButton}>
@@ -140,7 +89,7 @@ function AuthNavLinks({ compact = false }: { compact?: boolean }) {
   );
 }
 
-export default function SiteNav() {
+export default function SiteNav({ username }: { username?: string | null }) {
   const pathname = usePathname();
 
   return (
@@ -152,7 +101,7 @@ export default function SiteNav() {
               BC
             </div>
             <div className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/70">
-              Data â€¢ Code â€¢ Systems
+              Data • Code • Systems
             </div>
           </Link>
 
@@ -179,7 +128,7 @@ export default function SiteNav() {
               );
             })}
 
-            <AuthNavLinks />
+            <AuthNavLinks username={username} />
 
             <a
               href="mailto:briandacellcabrera@gmail.com"
@@ -232,7 +181,7 @@ export default function SiteNav() {
               );
             })}
 
-            <AuthNavLinks compact />
+            <AuthNavLinks username={username} compact />
           </nav>
         </div>
       </div>

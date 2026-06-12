@@ -38,20 +38,23 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (request.method !== "GET") {
+    return supabaseResponse;
+  }
+
   const pathname = request.nextUrl.pathname;
-  const isPageRequest = request.method === "GET";
 
   const isProtectedRoute = pathname.startsWith("/dashboard");
   const isAuthRoute = pathname === "/login" || pathname === "/register";
 
-  if (isPageRequest && isProtectedRoute && !user) {
+  if (isProtectedRoute && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirectedFrom", pathname);
     return NextResponse.redirect(url);
   }
 
-  if (isPageRequest && isAuthRoute && user) {
+  if (isAuthRoute && user) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     url.search = "";
