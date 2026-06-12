@@ -34,33 +34,7 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (request.method !== "GET") {
-    return supabaseResponse;
-  }
-
-  const pathname = request.nextUrl.pathname;
-
-  const isProtectedRoute = pathname.startsWith("/dashboard");
-  const isAuthRoute = pathname === "/login" || pathname === "/register";
-
-  if (isProtectedRoute && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("redirectedFrom", pathname);
-    return NextResponse.redirect(url);
-  }
-
-  if (isAuthRoute && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    url.search = "";
-    return NextResponse.redirect(url);
-  }
+  await supabase.auth.getUser();
 
   return supabaseResponse;
 }
-
