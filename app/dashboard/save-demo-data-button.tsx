@@ -1,13 +1,18 @@
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { Save } from "lucide-react";
-import { createClient } from "../../utils/supabase/server";
+"use client";
+
+import { useState } from "react";
+import { Loader2, Save } from "lucide-react";
+import { createClient } from "../../utils/supabase/client";
 
 export default function SaveDemoDataButton() {
-  async function saveDemoData() {
-    "use server";
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
-    const supabase = await createClient();
+  async function saveDemoData() {
+    setLoading(true);
+    setMessage("");
+
+    const supabase = createClient();
 
     const {
       data: { user },
@@ -15,7 +20,9 @@ export default function SaveDemoDataButton() {
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      redirect("/login?redirectedFrom=/dashboard");
+      setLoading(false);
+      setMessage("You must be logged in to save data. Please log out and log back in.");
+      return;
     }
 
     const { error } = await supabase.from("user_app_data").upsert(
@@ -40,23 +47,38 @@ export default function SaveDemoDataButton() {
       }
     );
 
+    setLoading(false);
+
     if (error) {
-      throw new Error(error.message);
+      setMessage(error.message);
+      return;
     }
 
-    revalidatePath("/dashboard");
-    redirect("/dashboard");
+    setMessage("Saved.");
+    window.location.reload();
   }
 
   return (
-    <form action={saveDemoData}>
+    <div>
       <button
-        type="submit"
-        className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:bg-cyan-300"
+        type="button"
+        onClick={saveDemoData}
+        disabled={loading}
+        className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <Save size={16} />
+        {loading ? (
+          <Loader2 className="animate-spin" size={16} />
+        ) : (
+          <Save size={16} />
+        )}
         Save demo data
       </button>
-    </form>
+
+      {message && (
+        <p className="mt-3 text-sm leading-6 text-zinc-300">
+          {message}
+        </p>
+      )}
+    </div>
   );
 }
