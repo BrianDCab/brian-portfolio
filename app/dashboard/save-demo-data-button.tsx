@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, Save } from "lucide-react";
 import { saveDemoDataAction } from "./actions";
 
 export default function SaveDemoDataButton() {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
 
@@ -19,11 +21,8 @@ export default function SaveDemoDataButton() {
         return;
       }
 
-      setMessage("Saved. Refreshing dashboard...");
-
-      window.setTimeout(() => {
-        window.location.reload();
-      }, 600);
+      setMessage("Saved.");
+      router.refresh();
     });
   }
 
