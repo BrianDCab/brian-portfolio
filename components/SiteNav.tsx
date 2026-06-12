@@ -48,11 +48,10 @@ function AuthNavLinks({
           className={
             baseButton +
             " " +
-            (pathname.startsWith("/dashboard") ? activeButton : neutralButton) +
-            " max-w-[170px] truncate"
+            (pathname.startsWith("/dashboard") ? activeButton : neutralButton)
           }
         >
-          @{username}
+          Dashboard
         </a>
 
         <a href="/logout" className={baseButton + " " + logoutButton}>
