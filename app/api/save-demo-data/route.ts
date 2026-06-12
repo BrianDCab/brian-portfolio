@@ -1,78 +1,72 @@
-import { createClient } from "@supabase/supabase-js";
+﻿import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  let response = NextResponse.json({ ok: true });
 
-if (!supabaseUrl || !supabaseAnonKey) {
-return NextResponse.json(
-{ error: "Missing Supabase environment variables." },
-{ status: 500 }
-);
-}
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-const authHeader = request.headers.get("authorization") ?? "";
-const accessToken = authHeader.startsWith("Bearer ")
-? authHeader.slice("Bearer ".length)
-: "";
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json(
+      { ok: false, error: "Missing Supabase environment variables." },
+      { status: 500 }
+    );
+  }
 
-if (!accessToken) {
-return NextResponse.json(
-{ error: "You must be logged in to save data." },
-{ status: 401 }
-);
-}
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options);
+        });
+      },
+    },
+  });
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-auth: {
-persistSession: false,
-autoRefreshToken: false,
-},
-global: {
-headers: {
-Authorization: `Bearer ${accessToken}`,
-},
-},
-});
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-const {
-data: { user },
-error: userError,
-} = await supabase.auth.getUser(accessToken);
+  if (userError || !user) {
+    return NextResponse.json(
+      { ok: false, error: "You must be logged in." },
+      { status: 401 }
+    );
+  }
 
-if (userError || !user) {
-return NextResponse.json(
-{ error: "You must be logged in to save data." },
-{ status: 401 }
-);
-}
+  const { error } = await supabase.from("user_app_data").upsert(
+    {
+      user_id: user.id,
+      app_key: "dashboard",
+      data_key: "first_saved_demo",
+      data: {
+        savedAt: new Date().toISOString(),
+        message: "This row was saved from the protected dashboard.",
+        futureUses: [
+          "Snake high scores",
+          "Blackjack bankroll",
+          "Travel plans",
+          "Security Lab results",
+          "Data Lab reports",
+        ],
+      },
+    },
+    {
+      onConflict: "user_id,app_key,data_key",
+    }
+  );
 
-const { error } = await supabase.from("user_app_data").upsert(
-{
-user_id: user.id,
-app_key: "dashboard",
-data_key: "first_saved_demo",
-data: {
-savedAt: new Date().toISOString(),
-message: "This row was saved from the protected dashboard.",
-futureUses: [
-"Snake high scores",
-"Blackjack bankroll",
-"Travel plans",
-"Security Lab results",
-"Data Lab reports",
-],
-},
-},
-{
-onConflict: "user_id,app_key,data_key",
-}
-);
+  if (error) {
+    return NextResponse.json(
+      { ok: false, error: error.message },
+      { status: 500 }
+    );
+  }
 
-if (error) {
-return NextResponse.json({ error: error.message }, { status: 500 });
-}
-
-return NextResponse.json({ ok: true });
+  return response;
 }

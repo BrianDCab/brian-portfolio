@@ -1,61 +1,55 @@
-﻿import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { Save } from "lucide-react";
-import { createClient } from "../../utils/supabase/server";
+﻿"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2, Save } from "lucide-react";
 
 export default function SaveDemoDataButton() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
   async function saveDemoData() {
-    "use server";
+    setLoading(true);
+    setMessage("");
 
-    const supabase = await createClient();
+    const response = await fetch("/api/save-demo-data", {
+      method: "POST",
+      credentials: "same-origin",
+    });
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const result = await response.json();
 
-    if (!user) {
-      redirect("/login");
+    setLoading(false);
+
+    if (!response.ok || !result.ok) {
+      setMessage(result.error ?? "Could not save data.");
+      return;
     }
 
-    const { error } = await supabase.from("user_app_data").upsert(
-      {
-        user_id: user.id,
-        app_key: "dashboard",
-        data_key: "first_saved_demo",
-        data: {
-          savedAt: new Date().toISOString(),
-          message: "This row was saved from the protected dashboard.",
-          futureUses: [
-            "Snake high scores",
-            "Blackjack bankroll",
-            "Travel plans",
-            "Security Lab results",
-            "Data Lab reports",
-          ],
-        },
-      },
-      {
-        onConflict: "user_id,app_key,data_key",
-      }
-    );
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    revalidatePath("/dashboard");
-    redirect("/dashboard");
+    setMessage("Saved.");
+    router.refresh();
   }
 
   return (
-    <form action={saveDemoData}>
+    <div>
       <button
-        type="submit"
-        className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:bg-cyan-300"
+        type="button"
+        onClick={saveDemoData}
+        disabled={loading}
+        className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <Save size={16} />
+        {loading ? (
+          <Loader2 className="animate-spin" size={16} />
+        ) : (
+          <Save size={16} />
+        )}
         Save demo data
       </button>
-    </form>
+
+      {message && (
+        <p className="mt-3 text-sm leading-6 text-zinc-300">{message}</p>
+      )}
+    </div>
   );
 }
