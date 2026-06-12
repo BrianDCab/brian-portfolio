@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let response = NextResponse.redirect(new URL("/dashboard", request.url));
+  let response = NextResponse.redirect(new URL("/dashboard", request.url), 303);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -52,3 +52,4 @@ export async function POST(request: NextRequest) {
 
   return response;
 }
+
