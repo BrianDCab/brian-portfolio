@@ -139,25 +139,28 @@ const demoCards = [
   {
     key: "snake" as const,
     title: "Snake Game",
-    label: "Touch + Keyboard",
-    text: "A game loop with keyboard controls, swipe controls, visible buttons, high score storage, movement analytics, and CSV export.",
+    label: "Keyboard + Touch",
+    text: "I built a full Snake loop with keyboard controls, swipe controls, phone buttons, saved high scores, session stats, and CSV export.",
     button: "Open Snake",
+    hint: "Use WASD, the arrow keys, swipe on the board, or tap the on screen controls.",
     icon: Gamepad2,
   },
   {
     key: "blackjack" as const,
     title: "Blackjack Simulator",
-    label: "Betting + Analytics",
-    text: "A virtual bankroll simulator with betting, blackjack payouts, double down logic, dealer rules, hand history, and CSV export.",
+    label: "Game Logic + Stats",
+    text: "I built this to test card rules, virtual betting, double down logic, dealer behavior, hand history, and session analytics.",
     button: "Open Blackjack",
+    hint: "Choose a fake bet, deal a hand, and watch the session dashboard update as you play.",
     icon: Trophy,
   },
   {
     key: "scoring" as const,
     title: "Launch Readiness",
-    label: "Risk Auditor",
-    text: "A weighted project readiness auditor with risk flags, missing requirement checks, recommended actions, and CSV export.",
-    button: "Open Auditor",
+    label: "Project Risk Check",
+    text: "I made a project checker that weighs requirements, data quality, testing, documentation, approval, risk, and time pressure.",
+    button: "Open Launch Check",
+    hint: "Move the sliders, compare the result, save a few scenarios, and export the audit history.",
     icon: Calculator,
   },
 ];
@@ -230,7 +233,7 @@ function formatCards(hand: Card[]) {
 }
 
 function formatPercent(value: number, total: number) {
-  if (total === 0) return "--";
+  if (total === 0) return "Not yet";
   return `${((value / total) * 100).toFixed(1)}%`;
 }
 
@@ -307,30 +310,6 @@ function PageButton({ href, children }: { href: string; children: ReactNode }) {
     <a href={href} className={className} target="_blank" rel="noreferrer">
       {children}
     </a>
-  );
-}
-
-function DemoButton({
-  children,
-  onClick,
-  active = false,
-}: {
-  children: ReactNode;
-  onClick: () => void;
-  active?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition ${
-        active
-          ? "bg-cyan-400 text-black shadow-[0_0_20px_rgba(34,211,238,0.28)]"
-          : "border border-cyan-300/25 bg-black/25 text-cyan-200 hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10"
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -534,28 +513,28 @@ export default function PlaygroundPage() {
     const totalWagered = handHistory.reduce((sum, hand) => sum + hand.bet, 0);
 
     const averageBet =
-      hands === 0 ? "--" : formatMoney(totalWagered / hands);
+      hands === 0 ? "Not yet" : formatMoney(totalWagered / hands);
 
     const biggestWin =
       hands === 0
-        ? "--"
+        ? "Not yet"
         : formatMoney(Math.max(...handHistory.map((hand) => hand.profit)));
 
     const biggestLoss =
       hands === 0
-        ? "--"
+        ? "Not yet"
         : formatMoney(Math.min(...handHistory.map((hand) => hand.profit)));
 
     const averagePlayerScore =
       hands === 0
-        ? "--"
+        ? "Not yet"
         : (
             handHistory.reduce((sum, hand) => sum + hand.playerScore, 0) / hands
           ).toFixed(1);
 
     const averageDealerScore =
       hands === 0
-        ? "--"
+        ? "Not yet"
         : (
             handHistory.reduce((sum, hand) => sum + hand.dealerScore, 0) / hands
           ).toFixed(1);
@@ -619,14 +598,14 @@ export default function PlaygroundPage() {
 
     const bestTime =
       gamesPlayed === 0
-        ? "--"
+        ? "Not yet"
         : `${Math.max(
             ...snakeGameHistory.map((game) => game.timeSurvivedSeconds)
           ).toFixed(1)}s`;
 
     const averageTime =
       gamesPlayed === 0
-        ? "--"
+        ? "Not yet"
         : `${(
             snakeGameHistory.reduce(
               (sum, game) => sum + game.timeSurvivedSeconds,
@@ -636,7 +615,7 @@ export default function PlaygroundPage() {
 
     const averageTurns =
       gamesPlayed === 0
-        ? "--"
+        ? "Not yet"
         : (
             snakeGameHistory.reduce((sum, game) => sum + game.turns, 0) /
             gamesPlayed
@@ -732,9 +711,9 @@ export default function PlaygroundPage() {
 
     if (requirementsClarity < 70) actions.push("Clarify scope and success criteria.");
     if (dataQuality < 70) actions.push("Audit the input data and business rules.");
-    if (testingCoverage < 70) actions.push("Add validation tests and edge-case checks.");
+    if (testingCoverage < 70) actions.push("Add validation tests and edge case checks.");
     if (documentation < 70) actions.push("Document setup, usage, and handoff notes.");
-    if (stakeholderApproval < 70) actions.push("Confirm stakeholder sign-off.");
+    if (stakeholderApproval < 70) actions.push("Confirm stakeholder approval.");
     if (automationReadiness < 70) actions.push("Reduce manual steps before launch.");
     if (deploymentRisk > 50) actions.push("Prepare a rollback or recovery plan.");
     if (timelinePressure > 50) actions.push("Cut scope or move risky items later.");
@@ -761,9 +740,9 @@ export default function PlaygroundPage() {
     if (total === 0) {
       return {
         total,
-        averageScore: "--",
-        strongestScore: "--",
-        strongestDecision: "--",
+        averageScore: "Not yet",
+        strongestScore: "Not yet",
+        strongestDecision: "Not yet",
       };
     }
 
@@ -1598,11 +1577,11 @@ export default function PlaygroundPage() {
     );
   }
 
-  const playerScore = playerHand.length > 0 ? getHandValue(playerHand) : "--";
+  const playerScore = playerHand.length > 0 ? getHandValue(playerHand) : "Not yet";
 
   const dealerScore =
     dealerHand.length === 0
-      ? "--"
+      ? "Not yet"
       : status === "playing"
         ? `${getHandValue([dealerHand[0]!])} showing`
         : getHandValue(dealerHand);
@@ -1610,12 +1589,15 @@ export default function PlaygroundPage() {
   const simulatedWinRate =
     simulationStats.hands > 0
       ? `${((simulationStats.wins / simulationStats.hands) * 100).toFixed(1)}%`
-      : "--";
+      : "Not yet";
 
   const snakeCells = Array.from({ length: gridSize * gridSize }, (_, index) => ({
     x: index % gridSize,
     y: Math.floor(index / gridSize),
   }));
+
+  const activeDemoInfo =
+    demoCards.find((demo) => demo.key === activeDemo) ?? demoCards[0]!;
 
   return (
     <main className="min-h-screen">
@@ -1627,13 +1609,14 @@ export default function PlaygroundPage() {
           </div>
 
           <h1 className="mt-6 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
-            Browser experiments for games, logic, and analytics
+            This is where I make ideas playable
           </h1>
 
           <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-300 md:text-lg">
-            Interactive demos using React state, TypeScript, keyboard input,
-            mobile touch controls, local storage, session analytics, betting
-            logic, risk scoring, and CSV export workflows.
+            I use this page to build things you can actually try instead of
+            only reading about them. You can play Snake, run a Blackjack session
+            with fake credits, or test a project with my launch readiness
+            checker. Each demo tracks what happened and can export its results.
           </p>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -1647,14 +1630,47 @@ export default function PlaygroundPage() {
           </div>
         </div>
 
-        <section className="mt-12 grid gap-5 md:grid-cols-3">
+        <section
+          aria-label="Choose a Playground demo"
+          className="mt-12 grid gap-5 md:grid-cols-3"
+        >
           {demoCards.map((demo) => {
             const Icon = demo.icon;
+            const active = activeDemo === demo.key;
 
             return (
-              <div key={demo.key} className={`${glassCard} p-6`}>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-black/25 text-cyan-300">
-                  <Icon size={22} />
+              <button
+                key={demo.key}
+                type="button"
+                onClick={() => setActiveDemo(demo.key)}
+                aria-pressed={active}
+                aria-controls={`demo-${demo.key}`}
+                className={`group relative flex h-full flex-col p-6 text-left ${glassCard} ${
+                  active
+                    ? "border-cyan-200/70 bg-cyan-300/[0.12] shadow-[0_0_34px_rgba(34,211,238,0.16)]"
+                    : ""
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div
+                    className={`flex h-12 w-12 items-center justify-center rounded-2xl border ${
+                      active
+                        ? "border-cyan-200/60 bg-cyan-300/20 text-cyan-100"
+                        : "border-cyan-300/20 bg-black/25 text-cyan-300"
+                    }`}
+                  >
+                    <Icon size={22} />
+                  </div>
+
+                  <span
+                    className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${
+                      active
+                        ? "border-cyan-200/50 bg-cyan-300/20 text-cyan-50"
+                        : "border-cyan-300/15 bg-black/25 text-zinc-400"
+                    }`}
+                  >
+                    {active ? "Currently Open" : "Open Model"}
+                  </span>
                 </div>
 
                 <p className="mt-5 text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
@@ -1665,25 +1681,48 @@ export default function PlaygroundPage() {
                   {demo.title}
                 </h2>
 
-                <p className="mt-3 text-sm leading-6 text-zinc-300">
+                <p className="mt-3 flex-1 text-sm leading-6 text-zinc-300">
                   {demo.text}
                 </p>
 
-                <div className="mt-6">
-                  <DemoButton
-                    active={activeDemo === demo.key}
-                    onClick={() => setActiveDemo(demo.key)}
-                  >
-                    {demo.button} <ExternalLink size={14} />
-                  </DemoButton>
+                <div
+                  className={`mt-6 inline-flex items-center gap-2 text-sm font-bold ${
+                    active ? "text-cyan-100" : "text-cyan-300"
+                  }`}
+                >
+                  {active ? "Currently open" : demo.button}
+                  <ArrowRight
+                    size={15}
+                    className="transition group-hover:translate-x-1"
+                  />
                 </div>
-              </div>
+              </button>
             );
           })}
         </section>
 
+        <div
+          className={`${glassPanel} mt-5 flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between`}
+        >
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-300">
+              Currently open
+            </p>
+            <h2 className="mt-2 text-2xl font-black text-white">
+              {activeDemoInfo.title}
+            </h2>
+          </div>
+
+          <p className="max-w-2xl text-sm leading-6 text-zinc-300 md:text-right">
+            {activeDemoInfo.hint}
+          </p>
+        </div>
+
         {activeDemo === "blackjack" && (
-          <section className="mt-12 grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_420px]">
+          <section
+            id="demo-blackjack"
+            className="mt-12 grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_420px]"
+          >
             <div className={`${glassPanel} p-6 md:p-8`}>
               <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
                 <div>
@@ -1692,13 +1731,14 @@ export default function PlaygroundPage() {
                   </p>
 
                   <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
-                    Betting simulator with virtual credits
+                    Blackjack with fake credits and real session stats
                   </h2>
 
                   <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-300">
-                    Portfolio-safe virtual simulator with fake bankroll, locked
-                    bets, 3:2 blackjack payouts, double down, hand history, and
-                    CSV export.
+                    I built this to work through card rules, state changes,
+                    betting logic, dealer behavior, and data tracking. Every
+                    credit here is fake. There is no real money or account
+                    balance involved.
                   </p>
                 </div>
 
@@ -1918,7 +1958,10 @@ export default function PlaygroundPage() {
         )}
 
         {activeDemo === "snake" && (
-          <section className="mt-12 grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_420px]">
+          <section
+            id="demo-snake"
+            className="mt-12 grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_420px]"
+          >
             <div className={`${glassPanel} p-6 md:p-8`}>
               <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
                 <div>
@@ -1927,13 +1970,14 @@ export default function PlaygroundPage() {
                   </p>
 
                   <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
-                    Touch-friendly game controls
+                    Snake that works with keys, taps, and swipes
                   </h2>
 
                   <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-300">
-                    Play with WASD, arrow keys, swipe, or the visible control
-                    buttons. The game tracks high score, survival time, moves,
-                    turns, and CSV export.
+                    I wanted this one to feel usable on both desktop and phone.
+                    Play with WASD, the arrow keys, a swipe, or the controls
+                    under the board. I also track score, time, moves, turns, and
+                    the final result for export.
                   </p>
                 </div>
 
@@ -2106,7 +2150,7 @@ export default function PlaygroundPage() {
                   label="CSV Games"
                   value={
                     snakeGameHistory.length === 0
-                      ? "--"
+                      ? "Not yet"
                       : snakeGameHistory.length
                   }
                 />
@@ -2121,21 +2165,25 @@ export default function PlaygroundPage() {
         )}
 
         {activeDemo === "scoring" && (
-          <section className="mt-12 grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+          <section
+            id="demo-scoring"
+            className="mt-12 grid gap-5 xl:grid-cols-[0.95fr_1.05fr]"
+          >
             <div className={`${glassPanel} p-6 md:p-8`}>
               <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
                 Launch Readiness Auditor
               </p>
 
               <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
-                Is this project safe to ship?
+                Would I actually ship this project?
               </h2>
 
               <p className="mt-4 text-sm leading-7 text-zinc-300">
-                This weighted model checks whether a project is launch-ready by
-                balancing requirements, data quality, testing, documentation,
-                stakeholder approval, automation readiness, deployment risk, and
-                timeline pressure.
+                I built this because code can work and a project can still be
+                unready. Move the sliders to judge the requirements, data,
+                testing, documentation, approval, automation, release risk, and
+                time pressure. The result changes as you make the situation
+                better or worse.
               </p>
 
               <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
@@ -2144,8 +2192,9 @@ export default function PlaygroundPage() {
                 </p>
 
                 <p className="mt-3 text-sm leading-7 text-zinc-300">
-                  Positive signals raise readiness. Deployment risk and timeline
-                  pressure subtract from the score by using safety bonuses.
+                  Clear requirements, clean data, testing, documentation,
+                  approval, and automation raise the score. Release risk and
+                  time pressure pull it down.
                 </p>
               </div>
 
@@ -2222,7 +2271,7 @@ export default function PlaygroundPage() {
                 <RangeControl
                   label="Testing Coverage"
                   value={testingCoverage}
-                  help="How much validation, edge-case checking, and QA exists before launch."
+                  help="How much validation, edge case checking, and QA exists before launch."
                   onChange={setTestingCoverage}
                 />
 
@@ -2295,6 +2344,50 @@ export default function PlaygroundPage() {
             </div>
           </section>
         )}
+
+        <section className={`${glassPanel} mt-12 p-6 md:p-8`}>
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+            Why I built this page
+          </p>
+
+          <h2 className="mt-3 text-3xl font-black text-white">
+            I wanted the code to do more than sit in a repository
+          </h2>
+
+          <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-300 md:text-base">
+            These demos let me show game rules, responsive controls, state
+            management, local storage, analytics, and CSV exports in one place.
+            Snake focuses on input and movement. Blackjack focuses on rules and
+            session data. The launch check connects my programming work back to
+            the way I think about testing, risk, and real project handoffs.
+          </p>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
+              <p className="text-sm font-black text-white">Playable logic</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-400">
+                The controls, rules, scoring, collisions, and state changes are
+                running in the browser.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
+              <p className="text-sm font-black text-white">Data after the game</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-400">
+                I track each session so the result can be reviewed instead of
+                disappearing as soon as the game ends.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
+              <p className="text-sm font-black text-white">Desktop and phone</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-400">
+                The page supports keyboard input, visible controls, and touch
+                interaction so the demos are not limited to one device.
+              </p>
+            </div>
+          </div>
+        </section>
 
         <footer className="mt-12 pb-6 text-center text-sm text-zinc-500">
           Built by Brian Cabrera.

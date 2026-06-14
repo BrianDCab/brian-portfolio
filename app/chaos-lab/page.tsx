@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -67,54 +67,54 @@ const appCards = [
   {
     key: "bubble" as const,
     title: "Bubble Wrap",
-    label: "Satisfying",
-    short: "Pop bubbles. Find gold.",
-    text: "A soft bubble grid with one hidden golden bubble and confetti.",
+    label: "Micro Interaction",
+    short: "Pop bubbles and find gold.",
+    text: "I used this to test a responsive button grid, instant feedback, confetti, sound, and small state changes that feel immediate.",
     button: "Open Bubble Wrap",
     icon: Gamepad2,
   },
   {
     key: "runaway" as const,
     title: "Runaway Button",
-    label: "Annoying",
-    short: "Tap it. It runs.",
-    text: "A button that dodges taps and complains about it.",
-    button: "Open Runaway",
+    label: "Interaction Experiment",
+    short: "Try to press it.",
+    text: "I wanted to see how far I could push a deliberately annoying control while still making it work on phones and touch screens.",
+    button: "Open Runaway Button",
     icon: MousePointerClick,
   },
   {
     key: "autocorrect" as const,
     title: "Bad Autocorrect",
-    label: "Typing",
-    short: "Type normally. Regret it.",
-    text: "A live text toy that turns normal sentences into cursed nonsense.",
+    label: "Live Text Tool",
+    short: "Type something and watch it break.",
+    text: "This was me experimenting with live text transformation, sliders, visual corruption, copy controls, and immediate output.",
     button: "Open Autocorrect",
     icon: Keyboard,
   },
   {
     key: "notifications" as const,
     title: "Notifications",
-    label: "Popups",
-    short: "Spawn fake alerts.",
-    text: "Modern toast popups you can spawn, stack, and dismiss.",
+    label: "GUI Component",
+    short: "Build and dismiss alerts.",
+    text: "I built a desktop style notification panel with stacked states, dismiss controls, counters, and optional sound.",
     button: "Open Notifications",
     icon: Bell,
   },
   {
     key: "fidget" as const,
     title: "Fidget Board",
-    label: "Controls",
-    short: "Flip switches.",
-    text: "Big toggles, sliders, glow, pulse, wiggle, and calm mode.",
+    label: "Control Panel",
+    short: "Flip switches and move sliders.",
+    text: "I built this like a small GUI settings panel to test toggles, motion, glow, state changes, and touch friendly controls.",
     button: "Open Fidget Board",
     icon: ToggleLeft,
   },
   {
     key: "perfect" as const,
     title: "Perfect Button",
-    label: "Wholesome",
-    short: "It wants the click.",
-    text: "A button that stays still, rewards you, and feels appreciated.",
+    label: "Feedback Design",
+    short: "Give the button a click.",
+    text: "A simple test of positive feedback, streaks, progress, animation, and sound without hiding what the control does.",
     button: "Open Perfect Button",
     icon: CheckCircle2,
   },
@@ -355,22 +355,30 @@ function ModalShell({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const [maximized, setMaximized] = useState(false);
   const activeCard = appCards.find((app) => app.key === activeApp) ?? appCards[0];
 
   return (
     <section
       role="dialog"
       aria-modal="true"
+      aria-label={`${activeCard.title} in Chaos Lab Desktop`}
       className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/70 px-3 py-5 backdrop-blur-md sm:px-4 md:py-8"
     >
       <button
         type="button"
         onClick={onClose}
         className="fixed inset-0 cursor-default"
-        aria-label="Close app"
+        aria-label="Close Chaos Lab app"
       />
 
-      <div className="relative z-10 w-full max-w-6xl overflow-hidden rounded-[1.65rem] border border-cyan-300/25 bg-[#07111c]/95 text-white shadow-[0_0_80px_rgba(34,211,238,0.23)]">
+      <div
+        className={`relative z-10 w-full overflow-hidden border border-cyan-300/25 bg-[#07111c]/95 text-white shadow-[0_0_80px_rgba(34,211,238,0.23)] transition-all ${
+          maximized
+            ? "min-h-[calc(100vh-2rem)] max-w-none rounded-2xl"
+            : "max-w-6xl rounded-[1.65rem]"
+        }`}
+      >
         <div className="sticky top-0 z-20 border-b border-cyan-300/15 bg-[#081522]/95 backdrop-blur-xl">
           <div className="flex items-center justify-between gap-3 px-4 py-3">
             <div className="flex min-w-0 items-center gap-3">
@@ -380,7 +388,7 @@ function ModalShell({
 
               <div className="min-w-0">
                 <p className="truncate text-sm font-black text-cyan-100">
-                  Chaos Lab OS
+                  Chaos Lab Desktop
                 </p>
                 <p className="truncate text-xs text-zinc-500">
                   {activeCard.title} · {activeCard.short}
@@ -391,18 +399,12 @@ function ModalShell({
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className="hidden h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-300 sm:flex"
-                aria-label="Minimize visual only"
+                onClick={() => setMaximized((current) => !current)}
+                className="hidden h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-300 transition hover:border-cyan-300/30 hover:text-cyan-100 sm:flex"
+                aria-label={maximized ? "Restore window size" : "Maximize window"}
+                title={maximized ? "Restore window size" : "Maximize window"}
               >
-                —
-              </button>
-
-              <button
-                type="button"
-                className="hidden h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-300 sm:flex"
-                aria-label="Maximize visual only"
-              >
-                □
+                {maximized ? "❐" : "□"}
               </button>
 
               <button
@@ -417,41 +419,48 @@ function ModalShell({
           </div>
 
           <div className="flex gap-2 overflow-x-auto border-t border-cyan-300/10 px-4 py-3 lg:hidden">
-            {appCards.map((app) => (
-              <button
-                key={app.key}
-                type="button"
-                onClick={() => setActiveApp(app.key)}
-                className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] ${
-                  activeApp === app.key
-                    ? "bg-cyan-300 text-black"
-                    : "border border-cyan-300/20 bg-black/25 text-cyan-200"
-                }`}
-              >
-                {app.title}
-              </button>
-            ))}
+            {appCards.map((app) => {
+              const isActive = activeApp === app.key;
+
+              return (
+                <button
+                  key={app.key}
+                  type="button"
+                  onClick={() => setActiveApp(app.key)}
+                  aria-pressed={isActive}
+                  className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] transition ${
+                    isActive
+                      ? "bg-cyan-300 text-black shadow-[0_0_18px_rgba(34,211,238,0.25)]"
+                      : "border border-cyan-300/20 bg-black/25 text-cyan-200"
+                  }`}
+                >
+                  {isActive ? `${app.title} · Open` : app.title}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[260px_1fr]">
+        <div className="grid lg:grid-cols-[280px_1fr]">
           <aside className="hidden border-r border-cyan-300/15 bg-black/20 p-4 lg:block">
             <p className="mb-4 text-xs font-black uppercase tracking-[0.24em] text-cyan-300">
-              Apps
+              App Switcher
             </p>
 
             <div className="space-y-2">
               {appCards.map((app) => {
                 const Icon = app.icon;
+                const isActive = activeApp === app.key;
 
                 return (
                   <button
                     key={app.key}
                     type="button"
                     onClick={() => setActiveApp(app.key)}
+                    aria-pressed={isActive}
                     className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${
-                      activeApp === app.key
-                        ? "border-cyan-300/50 bg-cyan-300/12 text-white"
+                      isActive
+                        ? "border-cyan-300/55 bg-cyan-300/12 text-white shadow-[0_0_22px_rgba(34,211,238,0.10)]"
                         : "border-white/5 bg-black/20 text-zinc-400 hover:border-cyan-300/25 hover:text-cyan-100"
                     }`}
                   >
@@ -459,11 +468,20 @@ function ModalShell({
                       <Icon size={18} />
                     </span>
 
-                    <span>
-                      <span className="block text-sm font-black">
-                        {app.title}
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="truncate text-sm font-black">
+                          {app.title}
+                        </span>
+
+                        {isActive && (
+                          <span className="shrink-0 rounded-full bg-cyan-300 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-black">
+                            Open
+                          </span>
+                        )}
                       </span>
-                      <span className="block text-xs text-zinc-500">
+
+                      <span className="mt-1 block text-xs leading-5 text-zinc-500">
                         {app.short}
                       </span>
                     </span>
@@ -474,13 +492,18 @@ function ModalShell({
 
             <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-cyan-300/5 p-4">
               <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">
-                Built for touch
+                The GUI experiment
               </p>
               <p className="mt-3 text-sm leading-6 text-zinc-400">
-                Big targets. No hover-only tricks. Sound stays off until the user
-                turns it on.
+                I wanted each toy to feel like its own app while still living
+                inside one browser window. The sidebar, title bar, app switching,
+                and window controls are all part of that experiment.
               </p>
             </div>
+
+            <p className="mt-4 text-xs leading-5 text-zinc-600">
+              Press Escape or use the red close button to leave the desktop.
+            </p>
           </aside>
 
           <div className="min-h-[640px] bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.08),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.08),transparent_35%)] p-4 sm:p-6 md:p-8">
@@ -491,6 +514,7 @@ function ModalShell({
     </section>
   );
 }
+
 function BubbleWrapApp() {
   const bubbleCount = 60;
   const [soundOn, setSoundOn] = useState(false);
@@ -568,7 +592,7 @@ function BubbleWrapApp() {
       <AppHeader
         kicker="Bubble Wrap"
         title="Pop bubbles. Find gold."
-        text="Tap the bubbles one by one. One random golden bubble celebrates with confetti when you find it."
+        text="I made this to test a dense button grid, quick visual feedback, a hidden target, confetti, and optional sound."
         soundOn={soundOn}
         setSoundOn={setSoundOn}
       >
@@ -718,7 +742,7 @@ function RunawayButtonApp() {
       <AppHeader
         kicker="Runaway Button"
         title="Tap it. It runs."
-        text="No hover tricks. The button moves on tap, so it works on phones and touch screens."
+        text="I wanted a deliberately annoying button that still works on touch screens. Every dodge happens after a real tap."
         soundOn={soundOn}
         setSoundOn={setSoundOn}
       >
@@ -892,7 +916,7 @@ function BadAutocorrectApp() {
       <AppHeader
         kicker="Bad Autocorrect"
         title="Type normally. Regret it."
-        text="A live text toy that quietly turns normal sentences into cursed nonsense."
+        text="I used this to test live text transformation, slider driven behavior, copy controls, and instant visual output."
         soundOn={soundOn}
         setSoundOn={setSoundOn}
       >
@@ -1065,7 +1089,7 @@ function NotificationsApp() {
       <AppHeader
         kicker="Notifications"
         title="Spawn fake alerts."
-        text="Modern toast popups you can stack, dismiss, or clear. Big tap targets, no hidden behavior."
+        text="I built this as a small desktop notification GUI with stacked alerts, dismiss controls, counters, and optional sound."
         soundOn={soundOn}
         setSoundOn={setSoundOn}
       >
@@ -1113,7 +1137,7 @@ function NotificationsApp() {
 
           <div className="relative mt-4 min-h-[430px] overflow-hidden rounded-3xl border border-cyan-300/10 bg-gradient-to-br from-slate-950 via-black to-cyan-950/30 p-5">
             <div className="absolute bottom-4 left-4 right-4 rounded-2xl border border-cyan-300/10 bg-black/35 p-4 text-xs text-zinc-500">
-              Fake taskbar · Chaos Lab OS · Notifications enabled
+              Fake taskbar · Chaos Lab Desktop · Notifications on
             </div>
 
             <div className="absolute right-4 top-4 flex w-[min(310px,calc(100%-2rem))] flex-col gap-3">
@@ -1162,13 +1186,13 @@ function NotificationsApp() {
 
         <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
-            Why it feels better
+            What I was testing
           </p>
 
           <div className="mt-4 space-y-4 text-sm leading-6 text-zinc-300">
-            <p>It gives the page annoying popup energy without breaking mobile.</p>
-            <p>Every toast is a big button, so it works fine on touch screens.</p>
-            <p>Sound is optional, so the app stays quiet unless the user turns it on.</p>
+            <p>I wanted the popups to feel like part of a desktop GUI without making the mobile layout fall apart.</p>
+            <p>Each alert is also a large dismiss button, so the interaction stays obvious on touch screens.</p>
+            <p>I kept sound optional so the interface stays quiet until someone chooses otherwise.</p>
           </div>
         </div>
       </div>
@@ -1197,7 +1221,7 @@ function FidgetBoardApp() {
       <AppHeader
         kicker="Fidget Board"
         title="Flip switches."
-        text="Big toggles, sliders, glow, pulse, wiggle, and calm mode. This is the soft control-panel part of the lab."
+        text="This is the control panel side of the GUI experiment. I used it to test toggles, sliders, motion, glow, and immediate state changes."
         soundOn={soundOn}
         setSoundOn={setSoundOn}
       />
@@ -1423,7 +1447,7 @@ function PerfectButtonApp() {
       <AppHeader
         kicker="Perfect Button"
         title="It wants the click."
-        text="The opposite of the runaway button. It stays still, rewards you, celebrates streaks, and is emotionally supportive."
+        text="I made this as the opposite of the runaway button. It stays put and shows how feedback, progress, animation, and sound can make one simple control feel alive."
         soundOn={soundOn}
         setSoundOn={setSoundOn}
       >
@@ -1488,6 +1512,26 @@ function PerfectButtonApp() {
 export default function ChaosLabPage() {
   const [activeApp, setActiveApp] = useState<AppKey | null>(null);
 
+  useEffect(() => {
+    if (!activeApp) return;
+
+    const previousOverflow = document.body.style.overflow;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setActiveApp(null);
+      }
+    }
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [activeApp]);
+
   function renderActiveApp() {
     if (activeApp === "bubble") return <BubbleWrapApp />;
     if (activeApp === "runaway") return <RunawayButtonApp />;
@@ -1504,97 +1548,163 @@ export default function ChaosLabPage() {
         <div className={`${glassPanel} p-6 md:p-10`}>
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">
             <Sparkles size={15} />
-            Chaos Lab
+            GUI and Interaction Experiment
           </div>
 
           <h1 className="mt-6 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
-            A little OS for fidget nonsense
+            I built a tiny browser desktop and filled it with weird apps
           </h1>
 
           <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-300 md:text-lg">
-            Bubble wrap, runaway buttons, bad autocorrect, fake notifications,
-            switches, and one button that actually wants to be clicked.
+            Chaos Lab started as me experimenting with GUI ideas. I wanted one
+            window, an app switcher, desktop style controls, optional sound, and
+            a group of small interactions that all feel different without
+            sending the visitor to another page.
           </p>
 
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-<PageButton href="/playground">
-  <ArrowLeft size={16} />
-  Back to Playground
-</PageButton>
+          <div className="mt-6 rounded-2xl border border-cyan-300/15 bg-black/25 p-4 text-sm leading-6 text-zinc-300">
+            Click anywhere on an app card below. It opens inside the same GUI
+            shell. Once you are inside, use the sidebar or the mobile tabs to
+            switch between apps.
+          </div>
 
-<PageButton href="/gravity-lab">
-  Next: Gravity Lab
-  <ArrowRight size={16} />
-</PageButton>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <PageButton href="/playground">
+              <ArrowLeft size={16} />
+              Back to Playground
+            </PageButton>
+
+            <PageButton href="/gravity-lab">
+              Next: Gravity Lab
+              <ArrowRight size={16} />
+            </PageButton>
           </div>
         </div>
 
-        <section className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {appCards.map((app) => {
-            const Icon = app.icon;
+        <section className="mt-12">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+                Choose an app
+              </p>
+              <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+                Six small GUI experiments
+              </h2>
+            </div>
 
-            return (
-              <div key={app.key} className={`${glassCard} p-6`}>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-black/25 text-cyan-300">
-                  <Icon size={22} />
-                </div>
+            <p className="max-w-xl text-sm leading-6 text-zinc-400 md:text-right">
+              The whole card is clickable. Every app opens inside the same
+              desktop style window.
+            </p>
+          </div>
 
-                <p className="mt-5 text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
-                  {app.label}
-                </p>
+          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {appCards.map((app) => {
+              const Icon = app.icon;
 
-                <h2 className="mt-4 text-2xl font-black text-white">
-                  {app.title}
-                </h2>
+              return (
+                <button
+                  key={app.key}
+                  type="button"
+                  onClick={() => setActiveApp(app.key)}
+                  aria-label={`Open ${app.title} in Chaos Lab Desktop`}
+                  className={`${glassCard} group flex h-full w-full flex-col p-6 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-black/25 text-cyan-300 transition group-hover:border-cyan-300/50 group-hover:bg-cyan-300/10">
+                      <Icon size={22} />
+                    </div>
 
-                <p className="mt-3 text-sm leading-6 text-zinc-300">
-                  {app.text}
-                </p>
+                    <span className="rounded-full border border-cyan-300/20 bg-black/25 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">
+                      GUI App
+                    </span>
+                  </div>
 
-                <div className="mt-6">
-                  <AppButton
-                    active={activeApp === app.key}
-                    onClick={() => setActiveApp(app.key)}
-                  >
+                  <p className="mt-5 text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                    {app.label}
+                  </p>
+
+                  <h3 className="mt-4 text-2xl font-black text-white">
+                    {app.title}
+                  </h3>
+
+                  <p className="mt-3 flex-1 text-sm leading-6 text-zinc-300">
+                    {app.text}
+                  </p>
+
+                  <div className="mt-6 inline-flex items-center gap-2 text-sm font-black text-cyan-300 transition group-hover:translate-x-1 group-hover:text-cyan-100">
                     {app.button}
-                  </AppButton>
-                </div>
-              </div>
-            );
-          })}
+                    <ArrowRight size={15} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </section>
 
-        <section className="mt-12 grid gap-5 md:grid-cols-3">
+        <section className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           <div className={`${glassCard} p-6`}>
             <Gamepad2 className="text-cyan-300" size={24} />
             <h3 className="mt-4 text-xl font-black text-white">
-              Actually playful
+              Desktop style shell
             </h3>
             <p className="mt-3 text-sm leading-6 text-zinc-300">
-              It is silly on purpose: tap, pop, switch, type, dismiss, repeat.
+              I wanted to see how a title bar, app switcher, window controls,
+              and separate tools could feel inside one browser interface.
             </p>
           </div>
 
           <div className={`${glassCard} p-6`}>
             <Zap className="text-cyan-300" size={24} />
             <h3 className="mt-4 text-xl font-black text-white">
-              Touch safe
+              Built around state
             </h3>
             <p className="mt-3 text-sm leading-6 text-zinc-300">
-              No hover-only tricks. The buttons are big enough for mobile.
+              Each app keeps track of its own clicks, toggles, messages,
+              counters, sliders, and visual feedback.
+            </p>
+          </div>
+
+          <div className={`${glassCard} p-6`}>
+            <MousePointerClick className="text-cyan-300" size={24} />
+            <h3 className="mt-4 text-xl font-black text-white">
+              Made for touch
+            </h3>
+            <p className="mt-3 text-sm leading-6 text-zinc-300">
+              I kept the main controls large and visible. Nothing important
+              depends on hovering with a mouse.
             </p>
           </div>
 
           <div className={`${glassCard} p-6`}>
             <Volume2 className="text-cyan-300" size={24} />
             <h3 className="mt-4 text-xl font-black text-white">
-              Quiet by default
+              Sound is optional
             </h3>
             <p className="mt-3 text-sm leading-6 text-zinc-300">
-              Every app has its own sound toggle, so the page only makes noise
-              when someone turns it on.
+              Every app starts quiet and has its own sound control. The visitor
+              decides whether the interface makes noise.
             </p>
           </div>
+        </section>
+
+        <section className={`${glassPanel} mt-12 p-6 md:p-8`}>
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+            Why I made this
+          </p>
+
+          <h2 className="mt-3 text-3xl font-black text-white">
+            I wanted to practice GUI behavior without building another normal
+            dashboard
+          </h2>
+
+          <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-300 md:text-base">
+            This page gave me a place to experiment with window layouts, app
+            switching, touch targets, sound controls, live state, feedback, and
+            intentionally strange interaction design. It is playful, but the
+            same frontend ideas carry over to real tools and desktop style web
+            applications.
+          </p>
         </section>
       </section>
 

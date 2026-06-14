@@ -142,6 +142,25 @@ type MetricOption = {
   description: string;
 };
 
+type CorrelationMetric = {
+  key: string;
+  label: string;
+  format: MetricFormat;
+};
+
+type CorrelationPair = {
+  left: CorrelationMetric;
+  right: CorrelationMetric;
+  value: number;
+};
+
+type InterpretationFinding = {
+  label: string;
+  value: string;
+  text: string;
+  trend?: "up" | "down" | "neutral";
+};
+
 const glassPanel =
   "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
 
@@ -1038,6 +1057,70 @@ const weatherMetricOptions: MetricOption[] = [
   },
 ];
 
+const offerInterpretationMetrics: CorrelationMetric[] = [
+  { key: "NetADT", label: "Net ADT", format: "money" },
+  { key: "TripsMonth", label: "Trips This Month", format: "number" },
+  {
+    key: "DaysSinceLastTrip",
+    label: "Days Since Last Trip",
+    format: "number",
+  },
+  { key: "MonthlyTheo", label: "Monthly Theo", format: "money" },
+  { key: "OfferFSP", label: "Offer FSP", format: "money" },
+  { key: "OfferTG", label: "Offer TG", format: "money" },
+  { key: "OfferFood", label: "Offer Food", format: "money" },
+  {
+    key: "TotalRedeemedValue",
+    label: "Redeemed Value",
+    format: "money",
+  },
+  {
+    key: "PostOfferTrips",
+    label: "Post-Offer Trips",
+    format: "number",
+  },
+  {
+    key: "PostOfferTheo",
+    label: "Post-Offer Theo",
+    format: "money",
+  },
+];
+
+const weatherInterpretationMetrics: CorrelationMetric[] = [
+  {
+    key: "WeatherRiskScore",
+    label: "Weather Risk",
+    format: "number",
+  },
+  { key: "TempHigh", label: "Temperature High", format: "number" },
+  { key: "RainChance", label: "Rain Chance", format: "percent" },
+  { key: "WindMPH", label: "Wind Speed", format: "number" },
+  { key: "ExpectedTrips", label: "Expected Trips", format: "number" },
+  { key: "ActualTrips", label: "Actual Trips", format: "number" },
+  {
+    key: "TripDeltaPercent",
+    label: "Trip Delta Percent",
+    format: "percent",
+  },
+  {
+    key: "FSPRedemptions",
+    label: "FSP Redemptions",
+    format: "number",
+  },
+  {
+    key: "HotelBookings",
+    label: "Hotel Bookings",
+    format: "number",
+  },
+  {
+    key: "FoodRedemptions",
+    label: "Food Redemptions",
+    format: "number",
+  },
+  { key: "TheoWin", label: "Theo Win", format: "money" },
+  { key: "ActualWin", label: "Actual Win", format: "money" },
+];
+
 const offerSchemaGroups = [
   {
     title: "Identity",
@@ -1491,6 +1574,137 @@ function getMetricStats(rows: object[], metric: MetricOption) {
   return { values, total, average, median, min, max };
 }
 
+function averageValues(values: number[]) {
+  if (values.length === 0) return 0;
+
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function calculateCorrelation(
+  rows: object[],
+  leftKey: string,
+  rightKey: string
+) {
+  const pairs = rows
+    .map((row) => ({
+      left: getMetricNumber(row, leftKey),
+      right: getMetricNumber(row, rightKey),
+    }))
+    .filter(
+      (pair) => Number.isFinite(pair.left) && Number.isFinite(pair.right)
+    );
+
+  if (pairs.length < 3) return null;
+
+  const leftMean = averageValues(pairs.map((pair) => pair.left));
+  const rightMean = averageValues(pairs.map((pair) => pair.right));
+
+  const numerator = pairs.reduce(
+    (sum, pair) =>
+      sum + (pair.left - leftMean) * (pair.right - rightMean),
+    0
+  );
+
+  const leftVariance = pairs.reduce(
+    (sum, pair) => sum + (pair.left - leftMean) ** 2,
+    0
+  );
+
+  const rightVariance = pairs.reduce(
+    (sum, pair) => sum + (pair.right - rightMean) ** 2,
+    0
+  );
+
+  const denominator = Math.sqrt(leftVariance * rightVariance);
+
+  if (denominator === 0) return null;
+
+  return Math.max(-1, Math.min(1, numerator / denominator));
+}
+
+function buildCorrelationPairs(
+  rows: object[],
+  metrics: CorrelationMetric[]
+): CorrelationPair[] {
+  const pairs: CorrelationPair[] = [];
+
+  for (let leftIndex = 0; leftIndex < metrics.length; leftIndex += 1) {
+    for (
+      let rightIndex = leftIndex + 1;
+      rightIndex < metrics.length;
+      rightIndex += 1
+    ) {
+      const left = metrics[leftIndex];
+      const right = metrics[rightIndex];
+
+      if (!left || !right) continue;
+
+      const value = calculateCorrelation(rows, left.key, right.key);
+
+      if (value === null) continue;
+
+      pairs.push({ left, right, value });
+    }
+  }
+
+  return pairs.sort(
+    (first, second) => Math.abs(second.value) - Math.abs(first.value)
+  );
+}
+
+function correlationStrength(value: number) {
+  const absoluteValue = Math.abs(value);
+
+  if (absoluteValue >= 0.8) return "Very strong";
+  if (absoluteValue >= 0.6) return "Strong";
+  if (absoluteValue >= 0.4) return "Moderate";
+  if (absoluteValue >= 0.2) return "Weak";
+  return "Little or no";
+}
+
+function correlationDirection(value: number) {
+  if (value > 0) return "positive";
+  if (value < 0) return "negative";
+  return "neutral";
+}
+
+function formatCorrelation(value: number) {
+  return `${value > 0 ? "+" : ""}${value.toFixed(2)}`;
+}
+
+function describeCorrelation(pair: CorrelationPair) {
+  const direction = correlationDirection(pair.value);
+  const movement =
+    pair.value >= 0
+      ? "higher values generally appear alongside higher values"
+      : "higher values generally appear alongside lower values";
+
+  return `${correlationStrength(pair.value)} ${direction} relationship: ${movement} in the currently loaded rows.`;
+}
+
+function describeDistribution(
+  stats: ReturnType<typeof getMetricStats>,
+  metric: MetricOption
+) {
+  if (stats.values.length === 0) {
+    return `No values are loaded for ${metric.label}.`;
+  }
+
+  const comparisonBase = Math.max(Math.abs(stats.median), 1);
+  const averageMedianGap =
+    Math.abs(stats.average - stats.median) / comparisonBase;
+
+  if (averageMedianGap < 0.1) {
+    return `${metric.label} is fairly balanced around its center because the average and median are close.`;
+  }
+
+  if (stats.average > stats.median) {
+    return `${metric.label} is pulled upward by larger values because the average is above the median.`;
+  }
+
+  return `${metric.label} is pulled downward by smaller values because the average is below the median.`;
+}
+
 function buildHistogramBins(values: number[], metric: MetricOption) {
   if (values.length === 0) return [];
 
@@ -1900,6 +2114,222 @@ function HistogramCard({
     </div>
   );
 }
+function CorrelationSummaryCard({
+  title,
+  pair,
+  icon,
+}: {
+  title: string;
+  pair?: CorrelationPair;
+  icon: ReactNode;
+}) {
+  if (!pair) {
+    return (
+      <div className="rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
+        <div className="flex items-center gap-2 text-cyan-300">
+          {icon}
+          <p className="text-xs font-black uppercase tracking-[0.2em]">
+            {title}
+          </p>
+        </div>
+
+        <p className="mt-4 text-sm leading-6 text-zinc-400">
+          Not enough variation exists in the loaded rows to calculate this
+          relationship.
+        </p>
+      </div>
+    );
+  }
+
+  const isPositive = pair.value >= 0;
+
+  return (
+    <div className="rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
+      <div className="flex items-center gap-2 text-cyan-300">
+        {icon}
+        <p className="text-xs font-black uppercase tracking-[0.2em]">{title}</p>
+      </div>
+
+      <div className="mt-4 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="break-words text-lg font-black text-white">
+            {pair.left.label} ↔ {pair.right.label}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">
+            {describeCorrelation(pair)}
+          </p>
+        </div>
+
+        <span
+          className={`shrink-0 rounded-full border px-3 py-1 text-sm font-black ${
+            isPositive
+              ? "border-green-300/30 bg-green-400/10 text-green-200"
+              : "border-red-300/30 bg-red-400/10 text-red-200"
+          }`}
+        >
+          {formatCorrelation(pair.value)}
+        </span>
+      </div>
+
+      <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/5">
+        <div
+          className={`h-full rounded-full ${
+            isPositive ? "bg-green-300" : "bg-red-300"
+          }`}
+          style={{
+            width: `${Math.max(4, Math.abs(pair.value) * 100)}%`,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function DataInterpretationPanel({
+  title,
+  summary,
+  rowCount,
+  correlations,
+  findings,
+}: {
+  title: string;
+  summary: string;
+  rowCount: number;
+  correlations: CorrelationPair[];
+  findings: InterpretationFinding[];
+}) {
+  const strongestPositive = [...correlations]
+    .filter((pair) => pair.value > 0)
+    .sort((first, second) => second.value - first.value)[0];
+
+  const strongestNegative = [...correlations]
+    .filter((pair) => pair.value < 0)
+    .sort((first, second) => first.value - second.value)[0];
+
+  const topRelationships = correlations.slice(0, 6);
+
+  return (
+    <section className={`${glassPanel} p-6 md:p-8`}>
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-cyan-200">
+            <Sparkles size={14} />
+            What the Data Says
+          </div>
+
+          <h3 className="mt-5 text-3xl font-black text-white md:text-4xl">
+            {title}
+          </h3>
+
+          <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-300 md:text-base">
+            {summary}
+          </p>
+        </div>
+
+        <div className="rounded-3xl border border-cyan-300/20 bg-black/25 px-5 py-4 text-right">
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">
+            Rows Interpreted
+          </p>
+          <p className="mt-2 text-3xl font-black text-white">{rowCount}</p>
+          <p className="mt-1 text-xs text-zinc-500">
+            Updates automatically after CSV import.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-7 grid gap-4 lg:grid-cols-2">
+        <CorrelationSummaryCard
+          title="Strongest Positive Relationship"
+          pair={strongestPositive}
+          icon={<TrendingUp size={16} />}
+        />
+
+        <CorrelationSummaryCard
+          title="Strongest Negative Relationship"
+          pair={strongestNegative}
+          icon={<TrendingDown size={16} />}
+        />
+      </div>
+
+      <div className="mt-7">
+        <div className="flex items-center gap-2">
+          <BarChart3 size={17} className="text-cyan-300" />
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+            Top Measured Relationships
+          </p>
+        </div>
+
+        {topRelationships.length === 0 ? (
+          <div className="mt-4 rounded-3xl border border-cyan-300/15 bg-black/25 p-5 text-sm leading-6 text-zinc-400">
+            Add at least three varied rows to calculate correlations.
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {topRelationships.map((pair) => (
+              <div
+                key={`${pair.left.key}-${pair.right.key}`}
+                className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-black leading-5 text-white">
+                    {pair.left.label} ↔ {pair.right.label}
+                  </p>
+                  <span
+                    className={
+                      pair.value >= 0
+                        ? "text-sm font-black text-green-300"
+                        : "text-sm font-black text-red-300"
+                    }
+                  >
+                    {formatCorrelation(pair.value)}
+                  </span>
+                </div>
+
+                <p className="mt-2 text-xs leading-5 text-zinc-400">
+                  {correlationStrength(pair.value)}{" "}
+                  {correlationDirection(pair.value)} association.
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-7">
+        <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+          Notable Findings
+        </p>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {findings.map((finding) => (
+            <StatBox
+              key={finding.label}
+              label={finding.label}
+              value={finding.value}
+              trend={finding.trend}
+              description={finding.text}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-7 rounded-3xl border border-yellow-300/20 bg-yellow-300/10 p-5">
+        <p className="text-xs font-black uppercase tracking-[0.22em] text-yellow-300">
+          Interpretation Note
+        </p>
+
+        <p className="mt-3 text-sm leading-7 text-yellow-50/85">
+          Correlation measures association, not causation. Small samples,
+          missing values, outliers, promotions, holidays, and operational
+          decisions can all influence the relationships shown here. Treat this
+          section as a decision-support summary rather than proof of cause and
+          effect.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function OfferExportModel() {
   const [rows, setRows] = useState<PlayerOfferRow[]>(offerRowsDefault);
   const [importMessage, setImportMessage] = useState(
@@ -1927,6 +2357,102 @@ function OfferExportModel() {
       appEligible: rows.filter((row) => row.AppEligibleFlag === "Y").length,
     };
   }, [rows]);
+
+  const interpretation = useMemo(() => {
+    const metricStats = getMetricStats(rows, selectedMetric);
+    const correlations = buildCorrelationPairs(
+      rows,
+      offerInterpretationMetrics
+    );
+
+    const passRate =
+      rows.length === 0 ? 0 : (stats.passRows / rows.length) * 100;
+
+    const appEligibleRate =
+      rows.length === 0 ? 0 : (stats.appEligible / rows.length) * 100;
+
+    const totalOfferCost = rows.reduce(
+      (sum, row) => sum + row.OfferCost,
+      0
+    );
+
+    const redemptionRate =
+      totalOfferCost === 0
+        ? 0
+        : (stats.totalRedeemed / totalOfferCost) * 100;
+
+    const missingIdentityRows = rows.filter(
+      (row) => row.MissingIDFlag === "Y" || !row.UniversalID
+    ).length;
+
+    const inactiveRows = rows.filter(
+      (row) => row.ActiveInactive === "Inactive"
+    ).length;
+
+    const summary = `${rows.length} player rows are loaded. ${passRate.toFixed(
+      1
+    )}% pass validation and ${appEligibleRate.toFixed(
+      1
+    )}% are app eligible. The selected ${selectedMetric.label} metric has an average of ${formatMetricValue(
+      metricStats.average,
+      selectedMetric.format
+    )} and a median of ${formatMetricValue(
+      metricStats.median,
+      selectedMetric.format
+    )}. ${describeDistribution(metricStats, selectedMetric)}`;
+
+    const findings: InterpretationFinding[] = [
+      {
+        label: "Validation Ready",
+        value: `${passRate.toFixed(1)}%`,
+        text: `${stats.passRows} of ${rows.length} rows currently pass validation.`,
+        trend: passRate >= 80 ? "up" : passRate >= 60 ? "neutral" : "down",
+      },
+      {
+        label: "App Eligible",
+        value: `${appEligibleRate.toFixed(1)}%`,
+        text: `${stats.appEligible} rows can currently be used for app delivery.`,
+        trend:
+          appEligibleRate >= 80
+            ? "up"
+            : appEligibleRate >= 60
+              ? "neutral"
+              : "down",
+      },
+      {
+        label: "Offer Utilization",
+        value:
+          totalOfferCost === 0 ? "No Cost Data" : `${redemptionRate.toFixed(1)}%`,
+        text:
+          totalOfferCost === 0
+            ? "Add OfferCost values to compare assigned cost with redeemed value."
+            : `${formatMoney(stats.totalRedeemed)} redeemed against ${formatMoney(
+                totalOfferCost
+              )} of recorded offer cost.`,
+        trend:
+          totalOfferCost === 0
+            ? "neutral"
+            : redemptionRate >= 70
+              ? "up"
+              : redemptionRate >= 40
+                ? "neutral"
+                : "down",
+      },
+      {
+        label: "Rows Needing Attention",
+        value: formatNumber(
+          stats.reviewRows + stats.failRows + missingIdentityRows
+        ),
+        text: `${stats.reviewRows} review, ${stats.failRows} fail, ${missingIdentityRows} missing identity signals, and ${inactiveRows} inactive rows.`,
+        trend:
+          stats.reviewRows + stats.failRows + missingIdentityRows === 0
+            ? "up"
+            : "down",
+      },
+    ];
+
+    return { summary, correlations, findings };
+  }, [rows, selectedMetric, stats]);
 
   async function importOfferCsv(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -2102,6 +2628,14 @@ function OfferExportModel() {
           ))}
         </div>
       </div>
+
+      <DataInterpretationPanel
+        title="Offer quality, player value, and response signals"
+        summary={interpretation.summary}
+        rowCount={rows.length}
+        correlations={interpretation.correlations}
+        findings={interpretation.findings}
+      />
     </div>
   );
 }
@@ -2148,6 +2682,135 @@ function WeatherTrafficModel() {
       ),
     };
   }, [rows]);
+
+  const interpretation = useMemo(() => {
+    const metricStats = getMetricStats(rows, selectedMetric);
+    const correlations = buildCorrelationPairs(
+      rows,
+      weatherInterpretationMetrics
+    );
+
+    const highRiskRows = rows.filter(
+      (row) => row.WeatherRiskScore >= 60
+    );
+
+    const lowRiskRows = rows.filter(
+      (row) => row.WeatherRiskScore <= 30
+    );
+
+    const eventRows = rows.filter((row) => row.EventFlag === "Y");
+    const nonEventRows = rows.filter((row) => row.EventFlag === "N");
+
+    const highRiskAverageDelta = averageValues(
+      highRiskRows.map((row) => row.TripDeltaPercent)
+    );
+
+    const lowRiskAverageDelta = averageValues(
+      lowRiskRows.map((row) => row.TripDeltaPercent)
+    );
+
+    const eventAverageTrips = averageValues(
+      eventRows.map((row) => row.ActualTrips)
+    );
+
+    const nonEventAverageTrips = averageValues(
+      nonEventRows.map((row) => row.ActualTrips)
+    );
+
+    const eventLift =
+      nonEventAverageTrips === 0
+        ? 0
+        : ((eventAverageTrips - nonEventAverageTrips) /
+            nonEventAverageTrips) *
+          100;
+
+    const riskTrafficCorrelation =
+      calculateCorrelation(rows, "WeatherRiskScore", "TripDeltaPercent") ?? 0;
+
+    const summary = `${rows.length} daily rows are loaded. Actual traffic is ${Math.abs(
+      stats.totalTripDeltaPercent
+    ).toFixed(1)}% ${
+      stats.totalTripDeltaPercent >= 0 ? "above" : "below"
+    } the expected baseline overall, while average weather risk is ${
+      stats.averageRisk
+    }/100. The selected ${selectedMetric.label} metric averages ${formatMetricValue(
+      metricStats.average,
+      selectedMetric.format
+    )} with a median of ${formatMetricValue(
+      metricStats.median,
+      selectedMetric.format
+    )}. ${describeDistribution(metricStats, selectedMetric)}`;
+
+    const findings: InterpretationFinding[] = [
+      {
+        label: "Traffic vs Baseline",
+        value: formatPercent(stats.totalTripDeltaPercent),
+        text: `${formatNumber(
+          Math.abs(stats.totalTripDelta)
+        )} trips separate actual traffic from the expected total.`,
+        trend: stats.totalTripDeltaPercent >= 0 ? "up" : "down",
+      },
+      {
+        label: "High-Risk Day Delta",
+        value:
+          highRiskRows.length === 0
+            ? "No High-Risk Days"
+            : formatPercent(highRiskAverageDelta),
+        text:
+          highRiskRows.length === 0
+            ? "No rows currently meet the 60+ weather-risk threshold."
+            : `${highRiskRows.length} high-risk days average this trip variance.`,
+        trend:
+          highRiskRows.length === 0
+            ? "neutral"
+            : highRiskAverageDelta >= 0
+              ? "up"
+              : "down",
+      },
+      {
+        label: "Low-Risk Day Delta",
+        value:
+          lowRiskRows.length === 0
+            ? "No Low-Risk Days"
+            : formatPercent(lowRiskAverageDelta),
+        text:
+          lowRiskRows.length === 0
+            ? "No rows currently meet the 30-or-lower weather-risk threshold."
+            : `${lowRiskRows.length} low-risk days average this trip variance.`,
+        trend:
+          lowRiskRows.length === 0
+            ? "neutral"
+            : lowRiskAverageDelta >= 0
+              ? "up"
+              : "down",
+      },
+      {
+        label: "Event-Day Lift",
+        value:
+          eventRows.length === 0 || nonEventRows.length === 0
+            ? "Need Both Groups"
+            : formatPercent(eventLift),
+        text:
+          eventRows.length === 0 || nonEventRows.length === 0
+            ? "Include both event and non-event days for a comparison."
+            : `${formatNumber(
+                eventAverageTrips
+              )} average trips on event days versus ${formatNumber(
+                nonEventAverageTrips
+              )} on non-event days. Risk-to-trip-delta correlation is ${formatCorrelation(
+                riskTrafficCorrelation
+              )}.`,
+        trend:
+          eventRows.length === 0 || nonEventRows.length === 0
+            ? "neutral"
+            : eventLift >= 0
+              ? "up"
+              : "down",
+      },
+    ];
+
+    return { summary, correlations, findings };
+  }, [rows, selectedMetric, stats]);
 
   async function importWeatherCsv(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -2360,6 +3023,14 @@ function WeatherTrafficModel() {
           ))}
         </div>
       </div>
+
+      <DataInterpretationPanel
+        title="Weather, traffic, and demand relationships"
+        summary={interpretation.summary}
+        rowCount={rows.length}
+        correlations={interpretation.correlations}
+        findings={interpretation.findings}
+      />
     </div>
   );
 }

@@ -1,15 +1,18 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   BarChart3,
-  Code2,
   Database,
   ExternalLink,
   Gamepad2,
+  Globe2,
   Plane,
   Shield,
   Smartphone,
   Sparkles,
+  UserRoundCheck,
 } from "lucide-react";
 
 type ProjectLink = {
@@ -47,13 +50,23 @@ const featuredProjects: ProjectItem[] = [
     button: "View on Steam",
   },
   {
+    title: "Brian Cabrera Portfolio Platform",
+    href: "/",
+    label: "Full-Stack Web Platform",
+    status: "Live",
+    text: "A custom Next.js portfolio built as a connected application rather than a static résumé. It combines responsive navigation, interactive labs, data tools, game systems, deployment workflows, Supabase integration, and ongoing full-stack feature development.",
+    icon: Globe2,
+    tags: ["Next.js", "TypeScript", "Tailwind", "Vercel", "Supabase"],
+    button: "View Live Platform",
+  },
+  {
     title: "Data Lab",
     href: "/data-lab",
     label: "Analytics Tool",
     status: "Live",
-    text: "Interactive data tools for CSV review, data quality checks, charts, scoring ideas, and analyst-style workflows.",
+    text: "Interactive data tools for CSV review, data quality checks, charts, scoring ideas, analyst-style workflows, correlation analysis, and plain-English interpretation of what the data suggests.",
     icon: BarChart3,
-    tags: ["CSV", "Charts", "Data QA", "Analytics"],
+    tags: ["CSV", "Charts", "Data QA", "Analytics", "Correlation"],
     button: "Open Data Lab",
   },
   {
@@ -140,6 +153,16 @@ const professionalWork: WorkItem[] = [
 
 const labProjects: ProjectItem[] = [
   {
+    title: "User Accounts & Dashboard",
+    href: "/dashboard",
+    label: "Full-Stack Feature",
+    status: "WIP",
+    text: "An active work-in-progress for registration, email confirmation, login, logout, user profiles, protected dashboard routes, and account-specific saved data. The feature is intentionally labeled WIP while session handling and persistence are being hardened.",
+    icon: UserRoundCheck,
+    tags: ["Supabase Auth", "Profiles", "Sessions", "Protected Routes", "RLS"],
+    button: "View Dashboard WIP",
+  },
+  {
     title: "Gravity Lab",
     href: "/gravity-lab",
     label: "Phone / Sensor Demo",
@@ -162,19 +185,19 @@ const labProjects: ProjectItem[] = [
   {
     title: "Security Lab",
     href: "/security-lab",
-    label: "Planned Build",
+    label: "Security Engineering Lab",
     status: "WIP",
-    text: "Planned demo for registration, login, protected routes, sessions, and server-side secrets. Kept clearly labeled so it does not look accidentally unfinished.",
+    text: "A work-in-progress security area focused on secure authentication patterns, password recovery, session visibility, protected routes, Row Level Security, safe environment variables, and practical account-security checks.",
     icon: Shield,
-    tags: ["Auth", "Sessions", "Security", "Server Secrets"],
-    button: "View Planned Build",
+    tags: ["Auth Security", "RLS", "Password Reset", "Sessions", "Secrets"],
+    button: "Open Security Lab",
   },
   {
     title: "Travel",
     href: "/travel",
     label: "Personal / UI",
-    status: "Next Cleanup",
-    text: "A travel log page being turned into a polished timeline for Asia 2026, U.S. cities, Mexico City, and trip planning notes.",
+    status: "Live",
+    text: "A responsive travel timeline covering Asia 2026, U.S. cities, Mexico City, and interactive trip-planning ideas.",
     icon: Plane,
     tags: ["Timeline", "Cards", "Responsive UI", "Personal"],
     button: "Open Travel",
@@ -209,6 +232,22 @@ const glassPanel =
 
 const glassCard =
   "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-cyan-300/[0.07]";
+
+function getStatusClass(status: string) {
+  if (status === "Released" || status === "Live") {
+    return "border-emerald-300/30 bg-emerald-300/10 text-emerald-200";
+  }
+
+  if (status === "WIP" || status === "Next Cleanup") {
+    return "border-yellow-300/35 bg-yellow-300/10 text-yellow-100";
+  }
+
+  if (status === "Prototype") {
+    return "border-fuchsia-300/30 bg-fuchsia-300/10 text-fuchsia-200";
+  }
+
+  return "border-cyan-300/20 bg-black/25 text-cyan-200";
+}
 
 function ProjectButton({
   href,
@@ -266,7 +305,11 @@ function ProjectCard({ project }: { project: ProjectItem }) {
         </div>
 
         {project.status && (
-          <span className="rounded-full border border-cyan-300/20 bg-black/25 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-cyan-200">
+          <span
+            className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] ${getStatusClass(
+              project.status
+            )}`}
+          >
             {project.status}
           </span>
         )}
@@ -323,14 +366,14 @@ export default function ProjectsPage() {
           </p>
 
           <h1 className="mt-5 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
-            Data automation, shipped games, and interactive builds
+            Data automation, shipped games, and full-stack interactive builds
           </h1>
 
           <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-300 md:text-lg">
             A focused collection of professional data workflows, gameplay work,
-            analytics tools, mobile-first experiments, and browser builds. Every
-            card has a clear action so the page feels intentional instead of
-            unfinished.
+            analytics tools, mobile-first experiments, and the portfolio
+            platform itself. Live work is separated clearly from prototypes and
+            active work-in-progress systems.
           </p>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -342,8 +385,8 @@ export default function ProjectsPage() {
               Open Data Lab <ExternalLink size={15} />
             </ProjectButton>
 
-            <ProjectButton href="/gravity-lab" subtle>
-              Open Gravity Lab <ExternalLink size={15} />
+            <ProjectButton href="/" subtle>
+              View Portfolio Platform <ExternalLink size={15} />
             </ProjectButton>
           </div>
         </div>
@@ -361,12 +404,13 @@ export default function ProjectsPage() {
             </div>
 
             <p className="max-w-xl text-sm leading-6 text-zinc-400 md:text-right">
-              Shipped game work, live analytics tools, interactive demos, and a
-              phone-first lab that proves mobile frontend capability.
+              Shipped game work, live analytics tools, a custom full-stack
+              portfolio platform, interactive demos, and phone-first frontend
+              development.
             </p>
           </div>
 
-          <div className="mt-8 grid gap-5 md:grid-cols-2">
+          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {featuredProjects.map((project) => (
               <ProjectCard key={project.title} project={project} />
             ))}
@@ -437,9 +481,15 @@ export default function ProjectsPage() {
             <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
               More interactive portfolio areas
             </h2>
+
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-400">
+              Work-in-progress labels are intentional. They show what is
+              currently functional, what is being hardened, and which systems
+              are still under active development.
+            </p>
           </div>
 
-          <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {labProjects.map((project) => (
               <ProjectCard key={project.title} project={project} />
             ))}
@@ -470,14 +520,16 @@ export default function ProjectsPage() {
           </p>
 
           <h2 className="mt-3 text-3xl font-black text-white">
-            I build practical tools, playable systems, and phone-ready web apps.
+            I build practical tools, playable systems, and full-stack web
+            experiences.
           </h2>
 
           <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-300 md:text-base">
             My work sits between software engineering, analytics, automation,
-            mobile frontend development, and game development. The portfolio is
-            organized to show business value, technical execution, and
-            interactive proof without exposing confidential workplace data.
+            mobile frontend development, game development, and full-stack web
+            architecture. The portfolio itself is part of that proof: a live,
+            deployed application with interactive tools, external integrations,
+            responsive design, and an actively developing account system.
           </p>
         </section>
       </section>

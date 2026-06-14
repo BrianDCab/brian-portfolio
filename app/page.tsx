@@ -6,77 +6,126 @@ import {
   Code2,
   ExternalLink,
   Gamepad2,
+  Globe2,
   Mail,
+  Smartphone,
 } from "lucide-react";
+
+type FeaturedProject = {
+  title: string;
+  href: string;
+  label: string;
+  text: string;
+  status: string;
+  external?: boolean;
+};
+
+type SkillGroup = {
+  title: string;
+  skills: string[];
+};
 
 const strengths = [
   {
-    title: "SQL & Reporting",
-    text: "Clean queries, exports, audits, and reporting workflows.",
+    title: "Data Systems & Reporting",
+    text: "SQL reporting, segmentation, campaign validation, exports, and data-quality workflows.",
   },
   {
-    title: "Python & Automation",
-    text: "Scripts that reduce manual work and catch mistakes earlier.",
+    title: "Automation & Quality Control",
+    text: "Python and VBA tools that reduce repetitive work and catch errors before launch.",
   },
   {
-    title: "Business Analytics",
-    text: "Dashboards and summaries that turn messy data into decisions.",
+    title: "Interactive Software",
+    text: "Next.js applications, browser tools, mobile-first experiments, and gameplay systems.",
   },
 ];
 
-const featuredProjects = [
+const proofPoints = [
+  {
+    value: "100K+",
+    label: "Records handled in large reporting and segmentation workflows",
+  },
+  {
+    value: "400+",
+    label: "Player and campaign groups reviewed across complex exports",
+  },
+  {
+    value: "30+",
+    label: "Validation combinations supported through audit logic",
+  },
+  {
+    value: "1",
+    label: "Steam-published team game project",
+  },
+];
+
+const featuredProjects: FeaturedProject[] = [
+  {
+    title: "An Eternity Gone By",
+    href: "https://store.steampowered.com/app/2735110/An_Eternity_Gone_By/",
+    label: "Steam-Published Game",
+    status: "Released",
+    external: true,
+    text: "A shipped team game project showing gameplay development, production collaboration, and experience working on released software.",
+  },
   {
     title: "Data Lab",
     href: "/data-lab",
-    label: "Analytics Playground",
-    text: "Upload data, inspect quality, chart patterns, and test scoring ideas.",
+    label: "Analytics Application",
+    status: "Live",
+    text: "Import CSV data, inspect quality, analyze distributions and correlations, and turn the results into plain-English findings.",
   },
   {
-    title: "Security Lab",
-    href: "/security-lab",
-    label: "Auth & Safe Keys",
-    text: "Planned demo for login, protected routes, server-side secrets, and safe handling patterns.",
-  },
-  {
-    title: "Projects",
+    title: "Portfolio Platform",
     href: "/projects",
-    label: "Portfolio Work",
-    text: "A focused view of my technical, data, programming, and automation projects.",
+    label: "Full-Stack Web Project",
+    status: "Live + Evolving",
+    text: "The site itself is one of my projects: a Next.js platform combining data tools, games, responsive interfaces, mobile experiments, deployment, and Supabase development.",
   },
   {
-    title: "Playground",
-    href: "/playground",
-    label: "Interactive Builds",
-    text: "Small browser experiments built with React state, game logic, and UI behavior.",
+    title: "Gravity Lab",
+    href: "/gravity-lab",
+    label: "Mobile Web Development",
+    status: "Live",
+    text: "A phone-first experiment using device motion, touch controls, browser audio, calibration, and responsive UI.",
   },
 ];
 
-const skills = [
-  "Python",
-  "JavaScript",
-  "TypeScript",
-  "Java",
-  "C++",
-  "C#",
-  "SQL",
-  "HTML",
-  "CSS",
-  "React",
-  "Next.js",
-  "Tailwind",
-  "Excel",
-  "VBA",
-  "Git",
-  "GitHub",
-  "Dashboards",
-  "Automation",
-  "Data Cleaning",
-  "QA Checks",
-  "Reporting",
-  "CSV Workflows",
-  "Web Interfaces",
-  "Desktop App Concepts",
-  "Mobile-Responsive UI",
+const skillGroups: SkillGroup[] = [
+  {
+    title: "Data & Analytics",
+    skills: [
+      "SQL",
+      "SQL Server",
+      "Excel",
+      "Dashboards",
+      "Reporting",
+      "Data Cleaning",
+      "QA Checks",
+      "Segmentation",
+    ],
+  },
+  {
+    title: "Automation",
+    skills: ["Python", "VBA", "CSV Workflows", "Process Automation", "Audit Logic"],
+  },
+  {
+    title: "Web Development",
+    skills: [
+      "React",
+      "Next.js",
+      "TypeScript",
+      "JavaScript",
+      "Tailwind",
+      "HTML",
+      "CSS",
+      "Responsive UI",
+    ],
+  },
+  {
+    title: "Programming & Tools",
+    skills: ["Java", "C++", "C#", "Git", "GitHub", "Supabase", "Vercel"],
+  },
 ];
 
 const glassPanel =
@@ -89,16 +138,19 @@ function PrimaryButton({
   href,
   children,
   icon,
+  subtle = false,
 }: {
   href: string;
   children: ReactNode;
   icon?: ReactNode;
+  subtle?: boolean;
 }) {
   const isInternal = href.startsWith("/");
   const isEmail = href.startsWith("mailto:");
 
-  const className =
-    "inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300";
+  const className = subtle
+    ? "inline-flex items-center justify-center gap-2 rounded-full border border-cyan-300/25 bg-black/25 px-5 py-3 text-sm font-bold text-cyan-100 transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10"
+    : "inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300";
 
   if (isInternal) {
     return (
@@ -131,6 +183,53 @@ function SoftCard({ title, text }: { title: string; text: string }) {
   );
 }
 
+function FeaturedProjectCard({ project }: { project: FeaturedProject }) {
+  const content = (
+    <>
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+          {project.label}
+        </p>
+
+        <span className="shrink-0 rounded-full border border-cyan-300/20 bg-black/25 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">
+          {project.status}
+        </span>
+      </div>
+
+      <h3 className="mt-4 text-2xl font-black text-white">{project.title}</h3>
+
+      <p className="mt-3 flex-1 text-sm leading-6 text-zinc-300">
+        {project.text}
+      </p>
+
+      <div className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-cyan-300 transition group-hover:text-cyan-200">
+        Open <ExternalLink size={14} />
+      </div>
+    </>
+  );
+
+  const className = `${glassCard} group flex h-full flex-col p-6`;
+
+  if (project.external) {
+    return (
+      <a
+        href={project.href}
+        target="_blank"
+        rel="noreferrer"
+        className={className}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={project.href} className={className}>
+      {content}
+    </Link>
+  );
+}
+
 export default function Home() {
   return (
     <main className="min-h-screen">
@@ -145,11 +244,14 @@ export default function Home() {
           </h1>
 
           <p className="mt-5 max-w-4xl text-base leading-7 text-zinc-300 md:text-xl md:leading-9">
-            I build data tools, reports, dashboards, and automation workflows
-            that make business work cleaner and easier to trust.
+            I’m a data analyst and programmer who builds SQL reporting, Python
+            and VBA automation, data-quality checks, and interactive web tools.
+            My experience includes large-scale player segmentation, campaign
+            validation, audit workflows, game development, and full-stack
+            portfolio projects.
           </p>
 
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <PrimaryButton href="/projects" icon={<ExternalLink size={16} />}>
               View Projects
             </PrimaryButton>
@@ -159,17 +261,40 @@ export default function Home() {
             </PrimaryButton>
 
             <PrimaryButton
+              href="https://www.linkedin.com/in/briandacellcabrera/"
+              icon={<BriefcaseBusiness size={16} />}
+              subtle
+            >
+              LinkedIn
+            </PrimaryButton>
+
+            <PrimaryButton
               href="https://github.com/BrianDCab"
               icon={<Code2 size={16} />}
+              subtle
             >
               GitHub
             </PrimaryButton>
+          </div>
+
+          <div className="mt-9 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {proofPoints.map((item) => (
+              <div
+                key={item.label}
+                className="min-w-0 rounded-2xl border border-cyan-300/15 bg-black/25 p-4"
+              >
+                <p className="text-3xl font-black text-cyan-200">{item.value}</p>
+                <p className="mt-2 text-xs leading-5 text-zinc-400">
+                  {item.label}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
         <div className={`${glassPanel} mt-8 p-5 md:p-7`}>
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">
-            Current Focus
+            What I Do
           </p>
 
           <div className="mt-5 grid gap-4 md:grid-cols-3">
@@ -188,38 +313,19 @@ export default function Home() {
             </p>
 
             <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
-              Interactive portfolio projects
+              Projects worth opening first
             </h2>
           </div>
 
           <p className="max-w-xl text-sm leading-6 text-zinc-400 md:text-right">
-            Live, visual, and interactive pieces someone can test directly.
+            Shipped software, live analytics tools, mobile experiments, and the
+            portfolio platform itself.
           </p>
         </div>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 grid gap-5 md:grid-cols-2">
           {featuredProjects.map((project) => (
-            <Link
-              key={project.title}
-              href={project.href}
-              className={`${glassCard} group p-6`}
-            >
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
-                {project.label}
-              </p>
-
-              <h3 className="mt-4 text-2xl font-black text-white">
-                {project.title}
-              </h3>
-
-              <p className="mt-3 text-sm leading-6 text-zinc-300">
-                {project.text}
-              </p>
-
-              <div className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-cyan-300 transition group-hover:text-cyan-200">
-                Open <ExternalLink size={14} />
-              </div>
-            </Link>
+            <FeaturedProjectCard key={project.title} project={project} />
           ))}
         </div>
       </section>
@@ -234,22 +340,33 @@ export default function Home() {
           </p>
 
           <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
-            My Skills & Tools
+            Skills & tools
           </h2>
 
           <p className="mt-4 max-w-3xl text-sm leading-6 text-zinc-400 md:text-base">
-            Programming, analytics, reporting, automation, and interface work
-            across data-focused and web-focused projects.
+            The main tools I use across data work, automation, software
+            development, and interactive portfolio projects.
           </p>
 
-          <div className="mt-7 flex flex-wrap gap-3">
-            {skills.map((skill) => (
-              <span
-                key={skill}
-                className="rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-sm font-semibold text-zinc-200 backdrop-blur-sm"
+          <div className="mt-7 grid gap-4 md:grid-cols-2">
+            {skillGroups.map((group) => (
+              <div
+                key={group.title}
+                className="rounded-3xl border border-cyan-300/15 bg-black/25 p-5"
               >
-                {skill}
-              </span>
+                <h3 className="text-lg font-black text-white">{group.title}</h3>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {group.skills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-xs font-semibold text-zinc-200"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -268,8 +385,19 @@ export default function Home() {
           <p className="mt-5 text-sm leading-7 text-zinc-300 md:text-base">
             My work sits between business data and technical execution. I like
             building tools that make reporting faster, reduce manual cleanup,
-            and make results easier to explain.
+            catch bad data earlier, and make the final result easier to explain.
           </p>
+
+          <p className="mt-4 text-sm leading-7 text-zinc-400">
+            This website is also one of those projects. I built it to show the
+            work directly instead of only describing it on a résumé.
+          </p>
+
+          <div className="mt-7">
+            <PrimaryButton href="/projects" icon={<Globe2 size={16} />} subtle>
+              See How the Site Was Built
+            </PrimaryButton>
+          </div>
         </div>
 
         <div id="contact" className={`${glassPanel} p-6 md:p-8`}>
@@ -282,7 +410,7 @@ export default function Home() {
           </h2>
 
           <p className="mt-5 text-sm leading-7 text-zinc-300 md:text-base">
-            Open to data analyst, programmer, automation, reporting, and
+            I’m open to data analyst, programmer, automation, reporting, and
             technical operations opportunities.
           </p>
 
@@ -304,6 +432,7 @@ export default function Home() {
             <PrimaryButton
               href="https://github.com/BrianDCab"
               icon={<Code2 size={16} />}
+              subtle
             >
               GitHub
             </PrimaryButton>
@@ -311,6 +440,7 @@ export default function Home() {
             <PrimaryButton
               href="https://briancabrera.itch.io/"
               icon={<Gamepad2 size={16} />}
+              subtle
             >
               itch.io
             </PrimaryButton>

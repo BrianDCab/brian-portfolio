@@ -70,28 +70,28 @@ const experimentCards = [
     key: "liquid" as const,
     title: "Liquid Cup",
     label: "Tilt + Pour",
-    text: "A glass cup that sloshes with tilt and plays a small pour cue when it tips too far.",
+    text: "I used this one to test whether a simple interface could feel physical when the phone moves.",
     icon: Droplets,
   },
   {
     key: "hourglass" as const,
     title: "Tilt Hourglass",
     label: "Flip Logic",
-    text: "Sand transfers between chambers and triggers a sound when the gravity direction flips.",
+    text: "This was my test for direction changes, calibration, and turning raw tilt into a clear visual state.",
     icon: Hourglass,
   },
   {
     key: "marble" as const,
     title: "Gravity Marble",
     label: "Physics Loop",
-    text: "A marble rolls with tilt, bounces off walls, and tracks collision events.",
+    text: "I built a small motion loop here so the marble can accelerate, slow down, and bounce off the edges.",
     icon: Circle,
   },
   {
     key: "readout" as const,
     title: "Motion Readout",
     label: "Sensor Values",
-    text: "A clean dashboard for raw tilt, calibrated tilt, source mode, and strength.",
+    text: "This is the less flashy view where I can see the raw sensor values and what the app is actually using.",
     icon: Gauge,
   },
 ];
@@ -308,7 +308,7 @@ export default function GravityLabPage() {
   const [ball, setBall] = useState<BallState>({ x: 50, y: 50 });
 
   const [statusMessage, setStatusMessage] = useState(
-    "Choose an experiment. Each mini app has its own motion and sound toggles."
+    "Pick an experiment below. On a phone, you can enable the motion sensor. On desktop, the sliders do the same job."
   );
 
   const [pourCount, setPourCount] = useState(0);
@@ -675,13 +675,15 @@ export default function GravityLabPage() {
               </div>
 
               <h1 className="mt-6 max-w-4xl text-5xl font-black tracking-tight md:text-7xl">
-                Motion experiments split into mini apps.
+                I wanted to see how much a browser could do with phone motion.
               </h1>
 
               <p className="mt-6 max-w-3xl text-base leading-8 text-zinc-300 md:text-lg">
-                A mobile-first playground for phone tilt, fallback sliders,
-                browser-generated sound, motion toggles, calibration, and
-                physics-style UI experiments.
+                Gravity Lab started as me experimenting with the
+                DeviceOrientation API and trying to turn raw phone tilt into
+                something people could actually see and play with. I added
+                desktop sliders too, so the page still works without a motion
+                sensor.
               </p>
             </div>
 
@@ -702,13 +704,25 @@ export default function GravityLabPage() {
             </div>
           </div>
 
-          <div className="mt-7 rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
-              Status
-            </p>
-            <p className="mt-2 text-sm leading-6 text-zinc-300">
-              {statusMessage}
-            </p>
+          <div className="mt-7 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+                Status
+              </p>
+              <p className="mt-2 text-sm leading-6 text-zinc-300">
+                {statusMessage}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-4">
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-200">
+                Sensor Privacy
+              </p>
+              <p className="mt-2 text-sm leading-6 text-zinc-300">
+                The motion values stay in your browser. I am not saving or
+                sending the sensor data anywhere.
+              </p>
+            </div>
           </div>
 
           <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -739,6 +753,7 @@ export default function GravityLabPage() {
               <button
                 key={experiment.key}
                 type="button"
+                aria-pressed={isActive}
                 onClick={() => setActiveExperiment(experiment.key)}
                 className={`text-left ${glassCard} p-6 ${
                   isActive
@@ -747,7 +762,7 @@ export default function GravityLabPage() {
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
                       {experiment.label}
                     </p>
@@ -761,8 +776,16 @@ export default function GravityLabPage() {
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-3 text-cyan-200">
-                    <Icon size={24} />
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <div className="rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-3 text-cyan-200">
+                      <Icon size={24} />
+                    </div>
+
+                    {isActive && (
+                      <span className="rounded-full bg-cyan-300 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-black">
+                        Currently Open
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -778,6 +801,59 @@ export default function GravityLabPage() {
               </button>
             );
           })}
+        </section>
+
+        <div className="mt-5 rounded-3xl border border-cyan-300/25 bg-cyan-300/10 p-5">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-200">
+            Currently Open
+          </p>
+          <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <p className="text-xl font-black text-white">
+              {activeCard?.title ?? "Gravity Lab"}
+            </p>
+            <p className="text-sm text-zinc-300">
+              Source: <span className="font-bold text-cyan-200">{sourceLabel}</span>
+            </p>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">
+            Click any experiment card to switch. The full card is the button, so
+            you do not have to aim for a small link.
+          </p>
+        </div>
+
+        <section className="mt-8 grid gap-5 md:grid-cols-3">
+          <div className={`${glassCard} p-6`}>
+            <Smartphone className="text-cyan-300" size={24} />
+            <h2 className="mt-4 text-xl font-black text-white">
+              Try it on a phone
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-zinc-300">
+              Tap Phone Sensor, allow motion access if your browser asks, then
+              hold the phone in a comfortable position and press Calibrate.
+            </p>
+          </div>
+
+          <div className={`${glassCard} p-6`}>
+            <SlidersHorizontal className="text-cyan-300" size={24} />
+            <h2 className="mt-4 text-xl font-black text-white">
+              Desktop still works
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-zinc-300">
+              The manual sliders feed the same experiments, so you can test the
+              page with a mouse even when no motion sensor is available.
+            </p>
+          </div>
+
+          <div className={`${glassCard} p-6`}>
+            <Gauge className="text-cyan-300" size={24} />
+            <h2 className="mt-4 text-xl font-black text-white">
+              Calibration matters
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-zinc-300">
+              I added calibration because every device starts at a slightly
+              different angle. The current position becomes the new neutral.
+            </p>
+          </div>
         </section>
 
         <div className="mt-8">
@@ -930,14 +1006,19 @@ export default function GravityLabPage() {
 
                 <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
                   <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-300">
-                    Mobile Note
+                    What I am reading
                   </p>
 
                   <p className="mt-3 text-sm leading-7 text-zinc-400">
+                    Gamma is left and right tilt, beta is forward and back, and
+                    alpha is the device heading. I subtract the calibration
+                    angle before the experiments use those values.
+                  </p>
+
+                  <p className="mt-3 text-sm leading-7 text-zinc-500">
                     This works best on a real phone over HTTPS. iPhone usually
                     asks for permission first. Android often starts after the
-                    sensor button tap. Each app can still turn its own motion or
-                    sound off.
+                    sensor button tap.
                   </p>
                 </div>
               </div>
@@ -966,23 +1047,57 @@ export default function GravityLabPage() {
 
         <section className={`${glassPanel} mt-10 p-6 md:p-8`}>
           <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
-            Portfolio Value
+            Why I Built This
           </p>
 
           <h2 className="mt-3 text-3xl font-black text-white">
-            This is a mobile-first frontend experiment.
+            I wanted the phone itself to become part of the interface.
           </h2>
 
-          <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-400 md:text-base">
-            Gravity Lab demonstrates the DeviceOrientation API, permission
-            handling, mobile motion input, per-app motion and sound controls,
-            browser-generated audio, physics-like movement, animation, React
-            state, refs, timers, calibration, and responsive UI design.
+          <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-300 md:text-base">
+            Most of my web projects are controlled with clicks, taps, or text
+            input. Here I wanted to work with a different kind of input and see
+            how device motion could control a visual interface in real time.
           </p>
+
+          <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-400 md:text-base">
+            Building it made me work through browser permissions, sensor
+            differences, calibration, desktop fallbacks, animation loops,
+            sound, and physics-style movement. It is still a playful page, but
+            the real experiment is making hardware input feel understandable
+            inside a normal website.
+          </p>
+
+          <div className="mt-7 grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
+              <p className="text-sm font-black text-white">Input</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-400">
+                Phone orientation, permission handling, manual fallback, and
+                calibration.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
+              <p className="text-sm font-black text-white">Behavior</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-400">
+                Pour thresholds, direction changes, marble velocity, friction,
+                and wall collisions.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
+              <p className="text-sm font-black text-white">Interface</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-400">
+                Touch-friendly controls, clear status messages, optional sound,
+                and responsive layouts.
+              </p>
+            </div>
+          </div>
         </section>
 
         <footer className="mt-12 pb-6 text-center text-sm text-zinc-500">
-          Built by Brian Cabrera. Tilt responsibly.
+          Built by Brian Cabrera while figuring out how far phone sensors could
+          push a browser interface.
         </footer>
       </section>
     </main>

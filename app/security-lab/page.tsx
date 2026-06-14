@@ -49,30 +49,49 @@ const tools = [
   {
     key: "password" as const,
     title: "Password Auditor",
-    label: "Form Validation",
-    text: "A local-only password checker that scores length, variety, reuse risk, and missing safeguards.",
+    label: "Credential Safety",
+    text: "I built this to show how I would give someone useful password feedback without storing or transmitting what they type.",
     icon: KeyRound,
   },
   {
     key: "auth" as const,
     title: "Auth Flow Visualizer",
-    label: "Route Protection",
-    text: "A simple model for public routes, protected dashboards, admin routes, session state, and redirects.",
+    label: "Broken Access Control",
+    text: "Use this to test whether a route should open, redirect, or fail closed based on the session and role.",
     icon: Route,
   },
   {
     key: "secrets" as const,
-    title: "Secret Safety Checker",
-    label: "Environment Safety",
-    text: "Paste fake .env-style text and detect risky client-side secret patterns without sending data anywhere.",
+    title: "Secret Exposure Scanner",
+    label: "Leak Prevention",
+    text: "Paste fake environment-variable text and I will flag secret-like names, public exposure risks, and values that should stay server-side.",
     icon: Server,
   },
   {
     key: "permissions" as const,
     title: "Permissions Matrix",
     label: "Least Privilege",
-    text: "A role-based access control demo showing what guests, users, and admins should be allowed to do.",
+    text: "This models how I separate normal users, guests, and administrators instead of trusting the frontend to decide access.",
     icon: UserCog,
+  },
+];
+
+const securityPrinciples = [
+  {
+    title: "Deny by default",
+    text: "If the session, role, or route requirement is unclear, I would rather block the action than guess and expose something.",
+  },
+  {
+    title: "Enforce it on the server",
+    text: "Hiding a button is not security. Protected reads, writes, exports, and role checks still need server-side enforcement.",
+  },
+  {
+    title: "Keep secrets out of the browser",
+    text: "Public environment variables are visible to users. Private keys, service credentials, and tokens belong behind a server boundary.",
+  },
+  {
+    title: "Give every role only what it needs",
+    text: "The smaller the permission set, the smaller the damage if an account or session is misused.",
   },
 ];
 
@@ -159,6 +178,17 @@ function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
+function redactSecretLine(line: string) {
+  const separatorIndex = line.indexOf("=");
+
+  if (separatorIndex === -1) {
+    return line.length > 52 ? `${line.slice(0, 52)}...` : line;
+  }
+
+  const key = line.slice(0, separatorIndex).trim();
+  return `${key}=••••••••`;
+}
+
 function ProjectButton({
   href,
   children,
@@ -206,7 +236,7 @@ function StatBox({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-4 ${
+      className={`min-w-0 overflow-hidden rounded-2xl border p-4 ${
         accent
           ? "border-cyan-300/40 bg-cyan-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
           : "border-cyan-300/15 bg-black/25"
@@ -219,8 +249,8 @@ function StatBox({
       <p
         className={
           accent
-            ? "mt-2 text-3xl font-black text-cyan-200"
-            : "mt-2 text-2xl font-black text-white"
+            ? "mt-2 break-words text-3xl font-black leading-tight text-cyan-200"
+            : "mt-2 break-words text-2xl font-black leading-tight text-white"
         }
       >
         {value}
@@ -420,6 +450,11 @@ export default function SecurityLab() {
         severity: "medium" as const,
       },
       {
+        label: "Publicly exposed secret-like variable",
+        regex: /^NEXT_PUBLIC_.*(SECRET|KEY|TOKEN|PASSWORD|DATABASE_URL)/i,
+        severity: "high" as const,
+      },
+      {
         label: "Public env var",
         regex: /^NEXT_PUBLIC_/i,
         severity: "low" as const,
@@ -443,8 +478,7 @@ export default function SecurityLab() {
             lineNumber: index + 1,
             label: pattern.label,
             severity: pattern.severity,
-            preview:
-              trimmed.length > 52 ? `${trimmed.slice(0, 52)}...` : trimmed,
+            preview: redactSecretLine(trimmed),
           }));
       });
   }, [secretInput]);
@@ -479,13 +513,15 @@ export default function SecurityLab() {
           </div>
 
           <h1 className="mt-6 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
-            Safer app patterns, auth logic, and secret boundaries
+            Here is how I think through common web security mistakes
           </h1>
 
           <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-300 md:text-lg">
-            A defensive security UX lab focused on building safer apps:
-            password validation, protected route logic, environment variable
-            safety, role permissions, and server-side boundary thinking.
+            I built this page to make my security thinking visible instead of
+            just listing “authentication” or “secure coding” as skills. You can
+            test password feedback, route decisions, secret handling, and role
+            permissions to see where I draw the line between normal frontend
+            behavior and security that must be enforced on the server.
           </p>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -499,12 +535,43 @@ export default function SecurityLab() {
           </div>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatBox label="Security Tools" value="4" accent />
-            <StatBox label="Focus" value="Defensive" />
-            <StatBox label="Secrets Stored" value="No" />
-            <StatBox label="Mode" value="Client Demo" />
+            <StatBox label="Hands-On Demos" value="4" accent />
+            <StatBox label="Approach" value="Defensive" />
+            <StatBox label="Real Secrets Stored" value="Never" />
+            <StatBox label="Default Decision" value="Deny" />
           </div>
         </div>
+
+        <section className="mt-12">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              What I am trying to prevent
+            </p>
+
+            <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+              The failures behind these demos
+            </h2>
+
+            <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-400 md:text-base">
+              These are not random widgets. Each one maps to a real class of
+              mistake: weak credential guidance, broken access control, leaked
+              secrets, and accounts with more power than they need.
+            </p>
+          </div>
+
+          <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {securityPrinciples.map((principle) => (
+              <div key={principle.title} className={`${glassCard} p-5`}>
+                <h3 className="text-lg font-black text-white">
+                  {principle.title}
+                </h3>
+                <p className="mt-3 text-sm leading-6 text-zinc-300">
+                  {principle.text}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <section className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {tools.map((tool) => {
@@ -558,12 +625,14 @@ export default function SecurityLab() {
               </p>
 
               <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
-                Local-only password quality check
+                I can score the input without ever keeping it
               </h2>
 
               <p className="mt-4 text-sm leading-7 text-zinc-300">
-                This demonstrates form validation and safety messaging. It does
-                not save, send, or store the password.
+                Type a sample password and the checks run entirely in your
+                browser. I do not send it to an API, save it, log it, or place it
+                in local storage. This is the kind of feedback I would use to
+                guide a user without collecting more sensitive data than I need.
               </p>
 
               <label className="mt-6 block">
@@ -628,8 +697,10 @@ export default function SecurityLab() {
               </div>
 
               <div className="mt-6 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4 text-sm leading-6 text-amber-100">
-                <strong>Portfolio note:</strong> Real apps should hash passwords
-                server-side and never store plain text passwords.
+                <strong>My rule:</strong> the application should never store a
+                plain-text password. A real system should use a proven auth
+                provider or a slow password-hashing algorithm, plus rate limits
+                and breach-aware protections around the login endpoint.
               </div>
             </div>
           </section>
@@ -643,13 +714,14 @@ export default function SecurityLab() {
               </p>
 
               <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
-                Route protection logic
+                Test whether the request should be trusted
               </h2>
 
               <p className="mt-4 text-sm leading-7 text-zinc-300">
-                Change the user role, session state, and target route to see how
-                a protected app should decide whether to allow access or
-                redirect.
+                Change the role, session state, and route. I use the same basic
+                questions when protecting an application: Is the session valid?
+                Does this role belong here? If either answer is no, the request
+                should be blocked or redirected before sensitive data is read.
               </p>
 
               <div className="mt-6 grid gap-4">
@@ -752,9 +824,9 @@ export default function SecurityLab() {
               </div>
 
               <div className="mt-6 rounded-2xl border border-cyan-300/15 bg-black/25 p-4 text-sm leading-6 text-zinc-300">
-                Real applications should enforce this on the server. Frontend
-                route checks are useful for UX, but they are not enough by
-                themselves.
+                I would still enforce this on the server. A hidden link or a
+                client-side redirect can improve the experience, but neither one
+                prevents someone from calling the route directly.
               </div>
             </div>
           </section>
@@ -768,13 +840,14 @@ export default function SecurityLab() {
               </p>
 
               <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
-                Detect risky .env-style patterns
+                Catch secret exposure before it reaches a repository
               </h2>
 
               <p className="mt-4 text-sm leading-7 text-zinc-300">
-                This checker runs locally in the browser and is meant for fake
-                demo text. It highlights keys, tokens, database URLs, and public
-                environment variable patterns.
+                Use fake text only. I scan the variable names locally, flag
+                values that look private, warn when a secret-like name is marked
+                public, and redact the value in the findings panel so the tool
+                does not repeat sensitive text back onto the screen.
               </p>
 
               <textarea
@@ -855,8 +928,10 @@ export default function SecurityLab() {
 
               <div className="mt-6 rounded-2xl border border-red-300/20 bg-red-300/10 p-4 text-sm leading-6 text-red-100">
                 <AlertTriangle className="mb-2" size={18} />
-                Do not paste real secrets into portfolio demos, screenshots, or
-                public repositories.
+                Do not paste a real key here. If a secret has already appeared
+                in a public repository, screenshot, build log, or browser
+                bundle, hiding the file later is not enough—the credential
+                should be rotated.
               </div>
             </div>
           </section>
@@ -870,12 +945,13 @@ export default function SecurityLab() {
               </p>
 
               <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
-                Role-based access control
+                Give the account only the access it actually needs
               </h2>
 
               <p className="mt-4 text-sm leading-7 text-zinc-300">
-                Pick a role and see what actions should be allowed under a basic
-                least-privilege model.
+                Pick a role and compare what it can do. I intentionally keep the
+                normal user narrow, reserve destructive operations for admins,
+                and keep direct secret access outside the dashboard entirely.
               </p>
 
               <div className="mt-6 flex flex-wrap gap-3">
@@ -941,10 +1017,11 @@ export default function SecurityLab() {
               </div>
 
               <div className="mt-6 rounded-2xl border border-cyan-300/15 bg-black/25 p-4 text-sm leading-6 text-zinc-300">
-                Notice that even Admin does not get “view secrets.” In real
-                systems, secrets should be stored and accessed through
-                controlled server-side infrastructure, not casually displayed in
-                dashboards.
+                Even the Admin role does not get “view secrets.” Administrative
+                power should not automatically mean unrestricted access to
+                infrastructure credentials. Those values should stay in
+                controlled server-side systems with separate auditing and access
+                rules.
               </div>
             </div>
           </section>
@@ -952,18 +1029,21 @@ export default function SecurityLab() {
 
         <section className={`${glassPanel} mt-12 p-6 md:p-8`}>
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
-            Portfolio Value
+            Why I built this
           </p>
 
           <h2 className="mt-3 text-3xl font-black text-white">
-            This page shows defensive security thinking.
+            I wanted to show the decisions behind the code, not just a list of
+            security buzzwords.
           </h2>
 
           <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-300 md:text-base">
-            Security Lab demonstrates safer UI decisions, auth-flow reasoning,
-            environment variable awareness, validation logic, role permissions,
-            and the difference between frontend convenience and server-side
-            enforcement.
+            This lab shows how I think about credentials, sessions, route
+            protection, secret exposure, and least privilege. It is still a
+            portfolio demo and not just a penetration testing suite. However, the rules behind
+            it are the same ones I would carry into a real application: collect
+            less, expose less, verify on the server, and deny access when the
+            state is uncertain.
           </p>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -978,7 +1058,7 @@ export default function SecurityLab() {
         </section>
 
         <footer className="mt-12 pb-6 text-center text-sm text-zinc-500">
-          Built by Brian Cabrera. Defensive demos only.
+          Built by Brian Cabrera. Everything here is defensive and uses local demo data only.
         </footer>
       </section>
     </main>
