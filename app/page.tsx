@@ -6,9 +6,11 @@ import {
   BriefcaseBusiness,
   Code2,
   ExternalLink,
+  FileText,
   Gamepad2,
   Globe2,
   Mail,
+  MapPinned,
 } from "lucide-react";
 
 type FeaturedProject = {
@@ -86,11 +88,11 @@ const featuredProjects: FeaturedProject[] = [
     text: "The site itself is one of my projects: a Next.js platform combining data tools, games, responsive interfaces, mobile experiments, deployment, and Supabase development.",
   },
   {
-    title: "Gravity Lab",
-    href: "/gravity-lab",
-    label: "Mobile Web Development",
-    status: "Live",
-    text: "A phone-first experiment using device motion, touch controls, browser audio, calibration, and responsive UI.",
+    title: "Geo Lab",
+    href: "/geo-lab",
+    label: "ArcGIS & Geospatial Analysis",
+    status: "Live + Evolving",
+    text: "An interactive ArcGIS project with 3D terrain, elevation readings, address search, browser location consent, geofence testing, and CSV snapshot export.",
   },
 ];
 
@@ -130,6 +132,19 @@ const skillGroups: SkillGroup[] = [
       "HTML",
       "CSS",
       "Responsive UI",
+    ],
+  },
+  {
+    title: "Geospatial & Mapping",
+    skills: [
+      "ArcGIS",
+      "GIS",
+      "3D Terrain",
+      "Geospatial Analysis",
+      "Browser Geolocation",
+      "Geofencing",
+      "Elevation Data",
+      "Map-Based UI",
     ],
   },
   {
@@ -184,6 +199,23 @@ function PrimaryButton({
   );
 }
 
+function ResumeButton() {
+  return (
+    <a
+      href="/Brian_Cabrera_Resume.pdf"
+      target="_blank"
+      rel="noreferrer"
+      className="group inline-flex items-center justify-center gap-2 rounded-full border border-rose-400/60 bg-rose-500/15 px-5 py-3 text-sm font-black text-rose-100 shadow-[0_0_28px_rgba(244,63,94,0.30)] transition duration-300 hover:-translate-y-0.5 hover:border-rose-300 hover:bg-rose-500 hover:text-white hover:shadow-[0_0_42px_rgba(244,63,94,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+    >
+      <FileText
+        size={16}
+        className="transition-transform duration-300 group-hover:-rotate-3 group-hover:scale-110"
+      />
+      View Resume
+    </a>
+  );
+}
+
 function SoftCard({ title, text }: { title: string; text: string }) {
   return (
     <div className={`${glassCard} p-5 md:p-6`}>
@@ -234,7 +266,11 @@ function FeaturedProjectCard({ project }: { project: FeaturedProject }) {
   }
 
   return (
-    <Link href={project.href} className={className}>
+    <Link
+      href={project.href}
+      prefetch={project.href === "/geo-lab" ? false : undefined}
+      className={className}
+    >
       {content}
     </Link>
   );
@@ -265,6 +301,8 @@ export default function Home() {
             <PrimaryButton href="/projects" icon={<ExternalLink size={16} />}>
               View Projects
             </PrimaryButton>
+
+            <ResumeButton />
 
             <PrimaryButton href="/data-lab" icon={<BarChart3 size={16} />}>
               Open Data Lab
@@ -341,8 +379,8 @@ export default function Home() {
           </div>
 
           <p className="max-w-xl text-sm leading-6 text-zinc-400 md:text-right">
-            Shipped software, live analytics tools, mobile experiments, and the
-            portfolio platform itself.
+            Shipped software, live analytics tools, geospatial experiments,
+            and the portfolio platform itself.
           </p>
         </div>
 
@@ -368,7 +406,7 @@ export default function Home() {
 
           <p className="mt-4 max-w-3xl text-sm leading-6 text-zinc-400 md:text-base">
             The main tools I use across data work, automation, software
-            development, and interactive portfolio projects.
+            development, geospatial mapping, and interactive portfolio projects.
           </p>
 
           <div className="mt-7 grid gap-4 md:grid-cols-2">
@@ -413,12 +451,19 @@ export default function Home() {
 
           <p className="mt-4 text-sm leading-7 text-zinc-400">
             This website is also one of those projects. I built it to show the
-            work directly instead of only describing it on a résumé.
+            work directly instead of only describing it on a résumé. Geo Lab is
+            one example of that approach because it combines ArcGIS, 3D terrain,
+            browser permissions, location data, and geofence logic in something
+            a visitor can actually test.
           </p>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <PrimaryButton href="/projects" icon={<Globe2 size={16} />} subtle>
               See How the Site Was Built
+            </PrimaryButton>
+
+            <PrimaryButton href="/geo-lab" icon={<MapPinned size={16} />} subtle>
+              Open Geo Lab
             </PrimaryButton>
 
             <PrimaryButton
@@ -475,6 +520,10 @@ export default function Home() {
             >
               itch.io
             </PrimaryButton>
+
+            <div className="sm:col-span-2">
+              <ResumeButton />
+            </div>
           </div>
         </div>
       </section>

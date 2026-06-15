@@ -23,6 +23,7 @@ import {
   Waves,
 } from "lucide-react";
 import {
+  useDeferredValue,
   useEffect,
   useMemo,
   useRef,
@@ -32,12 +33,15 @@ import {
 } from "react";
 
 type ConsentState = "not-asked" | "accepted" | "declined";
+
 type GeofenceState =
   | "No boundary"
   | "Waiting for location"
   | "Inside"
   | "Approaching"
-  | "Outside";
+  | "Outside"
+  | "Uncertain";
+
 type BasemapChoice = "satellite" | "topo-vector" | "streets-3d";
 
 type SelectedLocation = {
@@ -53,6 +57,12 @@ type DeviceLocation = {
   accuracyMeters: number;
   timestamp: number;
 };
+
+type ElevationState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "success"; meters: number }
+  | { status: "error"; message: string };
 
 type GeofenceEvent = {
   id: string;
@@ -84,6 +94,150 @@ const demoLocation: SelectedLocation = {
   source: "Demo",
 };
 
+const METERS_PER_MILE = 1609.344;
+
+type ArcGISRequire = (
+  modules: string[],
+  onLoad: (...loadedModules: any[]) => void,
+  onError?: (error: unknown) => void
+) => void;
+
+type ArcGISRuntime = {
+  esriConfig: any;
+  ArcGISMap: any;
+  SceneView: any;
+  GraphicsLayer: any;
+  Graphic: any;
+  Point: any;
+  Circle: any;
+  locator: any;
+};
+
+const ARCGIS_VERSION = "4.32";
+const ARCGIS_SCRIPT_ID = "arcgis-runtime-script";
+const ARCGIS_CSS_ID = "arcgis-runtime-css";
+
+let arcGISRuntimePromise: Promise<ArcGISRuntime> | null = null;
+
+function getArcGISRequire() {
+  return (window as typeof window & { require?: ArcGISRequire }).require;
+}
+
+function loadArcGISCssOnce() {
+  if (document.getElementById(ARCGIS_CSS_ID)) return;
+
+  const link = document.createElement("link");
+  link.id = ARCGIS_CSS_ID;
+  link.rel = "stylesheet";
+  link.href = `https://js.arcgis.com/${ARCGIS_VERSION}/esri/themes/dark/main.css`;
+  document.head.appendChild(link);
+}
+
+function requireArcGISModules(): Promise<ArcGISRuntime> {
+  return new Promise((resolve, reject) => {
+    const arcGISRequire = getArcGISRequire();
+
+    if (!arcGISRequire) {
+      reject(new Error("The ArcGIS runtime loaded without an AMD module loader."));
+      return;
+    }
+
+    arcGISRequire(
+      [
+        "esri/config",
+        "esri/Map",
+        "esri/views/SceneView",
+        "esri/layers/GraphicsLayer",
+        "esri/Graphic",
+        "esri/geometry/Point",
+        "esri/geometry/Circle",
+        "esri/rest/locator",
+      ],
+      (
+        esriConfig,
+        ArcGISMap,
+        SceneView,
+        GraphicsLayer,
+        Graphic,
+        Point,
+        Circle,
+        locator
+      ) => {
+        resolve({
+          esriConfig,
+          ArcGISMap,
+          SceneView,
+          GraphicsLayer,
+          Graphic,
+          Point,
+          Circle,
+          locator,
+        });
+      },
+      reject
+    );
+  });
+}
+
+function loadArcGISRuntime(): Promise<ArcGISRuntime> {
+  if (arcGISRuntimePromise) return arcGISRuntimePromise;
+
+  arcGISRuntimePromise = new Promise<ArcGISRuntime>((resolve, reject) => {
+    if (typeof window === "undefined") {
+      reject(new Error("ArcGIS can only load in the browser."));
+      return;
+    }
+
+    loadArcGISCssOnce();
+
+    const loadModules = () => {
+      void requireArcGISModules().then(resolve).catch(reject);
+    };
+
+    if (getArcGISRequire()) {
+      loadModules();
+      return;
+    }
+
+    const existingScript = document.getElementById(
+      ARCGIS_SCRIPT_ID
+    ) as HTMLScriptElement | null;
+
+    if (existingScript) {
+      existingScript.addEventListener("load", loadModules, { once: true });
+      existingScript.addEventListener(
+        "error",
+        () => {
+          existingScript.remove();
+          reject(new Error("The ArcGIS CDN script failed to load."));
+        },
+        { once: true }
+      );
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = ARCGIS_SCRIPT_ID;
+    script.src = `https://js.arcgis.com/${ARCGIS_VERSION}/`;
+    script.async = true;
+    script.addEventListener("load", loadModules, { once: true });
+    script.addEventListener(
+      "error",
+      () => {
+        script.remove();
+        reject(new Error("The ArcGIS CDN script failed to load."));
+      },
+      { once: true }
+    );
+    document.head.appendChild(script);
+  }).catch((error) => {
+    arcGISRuntimePromise = null;
+    throw error;
+  });
+
+  return arcGISRuntimePromise;
+}
+
 function formatCoordinates(value: number) {
   return value.toFixed(5);
 }
@@ -94,10 +248,14 @@ function formatMiles(value: number | null) {
   return `${value.toFixed(2)} miles`;
 }
 
-function formatElevation(value: number | null) {
-  if (value === null) return "Loading terrain";
-  const feet = value * 3.28084;
-  return `${Math.round(value).toLocaleString()} m  •  ${Math.round(
+function formatElevation(elevation: ElevationState) {
+  if (elevation.status === "idle") return "Not selected";
+  if (elevation.status === "loading") return "Loading terrain";
+  if (elevation.status === "error") return "Unavailable";
+
+  const feet = elevation.meters * 3.28084;
+
+  return `${Math.round(elevation.meters).toLocaleString()} m • ${Math.round(
     feet
   ).toLocaleString()} ft`;
 }
@@ -123,7 +281,9 @@ function haversineMiles(
       Math.cos(secondLatitudeRadians) *
       Math.sin(longitudeDifference / 2) ** 2;
 
-  return 2 * earthRadiusMiles * Math.asin(Math.sqrt(a));
+  const clampedA = Math.min(1, Math.max(0, a));
+
+  return 2 * earthRadiusMiles * Math.asin(Math.sqrt(clampedA));
 }
 
 function Button({
@@ -142,7 +302,8 @@ function Button({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition ${
+      aria-pressed={active}
+      className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
         active
           ? "bg-cyan-400 text-black shadow-[0_0_22px_rgba(34,211,238,0.28)]"
           : "border border-cyan-300/25 bg-black/25 text-cyan-100 hover:border-cyan-300/55 hover:bg-cyan-300/10"
@@ -240,7 +401,7 @@ export default function GeoLabPage() {
   const [mapReady, setMapReady] = useState(false);
   const [mapLoading, setMapLoading] = useState(false);
   const [mapMessage, setMapMessage] = useState(
-    "The ArcGIS map is paused until you choose to load it."
+    "ArcGIS is fully paused. No map runtime, map CSS, scene, or map service is loaded until activation."
   );
   const [basemap, setBasemap] = useState<BasemapChoice>("satellite");
   const [clickSelectionEnabled, setClickSelectionEnabled] = useState(false);
@@ -250,7 +411,9 @@ export default function GeoLabPage() {
 
   const [selectedLocation, setSelectedLocation] =
     useState<SelectedLocation | null>(null);
-  const [elevationMeters, setElevationMeters] = useState<number | null>(null);
+  const [elevation, setElevation] = useState<ElevationState>({
+    status: "idle",
+  });
 
   const [consentState, setConsentState] =
     useState<ConsentState>("not-asked");
@@ -262,6 +425,7 @@ export default function GeoLabPage() {
   const [liveTracking, setLiveTracking] = useState(false);
 
   const [geofenceRadiusMiles, setGeofenceRadiusMiles] = useState(1);
+  const deferredGeofenceRadiusMiles = useDeferredValue(geofenceRadiusMiles);
   const [eventLog, setEventLog] = useState<GeofenceEvent[]>([]);
 
   const apiKey = process.env.NEXT_PUBLIC_ARCGIS_API_KEY;
@@ -281,42 +445,26 @@ export default function GeoLabPage() {
 
       if (!apiKey) {
         setMapMessage(
-          "The ArcGIS API key is missing. Add NEXT_PUBLIC_ARCGIS_API_KEY before loading the map."
+          "The ArcGIS API key is missing. Add NEXT_PUBLIC_ARCGIS_API_KEY before activating the map."
         );
         setMapLoading(false);
+        setMapRequested(false);
         return;
       }
 
       try {
-        const [
-          configModule,
-          mapModule,
-          sceneViewModule,
-          graphicsLayerModule,
-          graphicModule,
-          pointModule,
-          circleModule,
-          locatorModule,
-        ] = await Promise.all([
-          import("@arcgis/core/config.js"),
-          import("@arcgis/core/Map.js"),
-          import("@arcgis/core/views/SceneView.js"),
-          import("@arcgis/core/layers/GraphicsLayer.js"),
-          import("@arcgis/core/Graphic.js"),
-          import("@arcgis/core/geometry/Point.js"),
-          import("@arcgis/core/geometry/Circle.js"),
-          import("@arcgis/core/rest/locator.js"),
-        ]);
+        const {
+          esriConfig,
+          ArcGISMap,
+          SceneView,
+          GraphicsLayer,
+          Graphic,
+          Point,
+          Circle,
+          locator,
+        } = await loadArcGISRuntime();
 
         if (cancelled || !mapContainerRef.current) return;
-
-        const esriConfig = configModule.default;
-        const ArcGISMap = mapModule.default;
-        const SceneView = sceneViewModule.default;
-        const GraphicsLayer = graphicsLayerModule.default;
-        const Graphic = graphicModule.default;
-        const Point = pointModule.default;
-        const Circle = circleModule.default;
 
         esriConfig.apiKey = apiKey;
         esriConfig.applicationName = "BrianCabrera.io Geo Lab";
@@ -324,7 +472,7 @@ export default function GeoLabPage() {
         ArcGISPointRef.current = Point;
         ArcGISCircleRef.current = Circle;
         ArcGISGraphicRef.current = Graphic;
-        locatorRef.current = locatorModule;
+        locatorRef.current = locator;
 
         const graphicsLayer = new GraphicsLayer({
           title: "Geo Lab graphics",
@@ -342,7 +490,9 @@ export default function GeoLabPage() {
         const view = new SceneView({
           container: mapContainerRef.current,
           map,
-          qualityProfile: "medium",
+          qualityProfile: window.matchMedia("(max-width: 768px)").matches
+            ? "low"
+            : "medium",
           camera: {
             position: {
               longitude: -117.2297,
@@ -384,32 +534,33 @@ export default function GeoLabPage() {
             label,
             source,
           });
-          setElevationMeters(null);
 
-          if (selectedGraphicRef.current) {
-            graphicsLayer.remove(selectedGraphicRef.current);
-          }
+          setElevation({ status: "loading" });
 
           const selectedPoint = new Point({
             latitude,
             longitude,
           });
 
-          const selectedGraphic = new Graphic({
-            geometry: selectedPoint,
-            symbol: {
-              type: "simple-marker",
-              color: [34, 211, 238, 1],
-              size: 13,
-              outline: {
-                color: [255, 255, 255, 1],
-                width: 2,
+          if (selectedGraphicRef.current) {
+            selectedGraphicRef.current.geometry = selectedPoint;
+          } else {
+            const selectedGraphic = new Graphic({
+              geometry: selectedPoint,
+              symbol: {
+                type: "simple-marker",
+                color: [34, 211, 238, 1],
+                size: 13,
+                outline: {
+                  color: [255, 255, 255, 1],
+                  width: 2,
+                },
               },
-            },
-          });
+            });
 
-          selectedGraphicRef.current = selectedGraphic;
-          graphicsLayer.add(selectedGraphic);
+            selectedGraphicRef.current = selectedGraphic;
+            graphicsLayer.add(selectedGraphic);
+          }
 
           await view.goTo(
             {
@@ -423,15 +574,21 @@ export default function GeoLabPage() {
             }
           );
 
+          let elevationFound = false;
+
           for (let attempt = 0; attempt < 8; attempt += 1) {
             const sampler = view.groundView?.elevationSampler;
 
             if (sampler) {
               const elevatedPoint = sampler.queryElevation(selectedPoint);
-              const elevation = Number(elevatedPoint?.z);
+              const elevationMeters = Number(elevatedPoint?.z);
 
-              if (Number.isFinite(elevation)) {
-                setElevationMeters(elevation);
+              if (Number.isFinite(elevationMeters)) {
+                setElevation({
+                  status: "success",
+                  meters: elevationMeters,
+                });
+                elevationFound = true;
                 break;
               }
             }
@@ -439,8 +596,15 @@ export default function GeoLabPage() {
             await new Promise((resolve) => window.setTimeout(resolve, 250));
           }
 
+          if (!elevationFound) {
+            setElevation({
+              status: "error",
+              message: "Elevation was unavailable for this point.",
+            });
+          }
+
           setMapMessage(
-            `${label} is selected. The map is tilted so the terrain surface is easier to see.`
+            `${label} is selected. The scene is tilted so the terrain surface is easier to inspect.`
           );
         };
 
@@ -463,7 +627,7 @@ export default function GeoLabPage() {
         setMapReady(true);
         setMapLoading(false);
         setMapMessage(
-          "The terrain view is ready. Search an address, choose the demo point, or select a point directly on the map."
+          "Geo Lab is active. Search an address, use the demo point, or select directly on the map."
         );
 
         await selectionHandlerRef.current?.(
@@ -476,10 +640,12 @@ export default function GeoLabPage() {
         );
       } catch (error) {
         console.error(error);
+
         if (!cancelled) {
           setMapLoading(false);
+          setMapRequested(false);
           setMapMessage(
-            "The map could not start. Check the ArcGIS package, API key, and browser console."
+            "The map could not start. Check the ArcGIS key, allowed referrers, connection, and browser console."
           );
         }
       }
@@ -498,11 +664,14 @@ export default function GeoLabPage() {
 
       viewRef.current?.destroy();
       viewRef.current = null;
+      mapRef.current = null;
+      graphicsLayerRef.current = null;
     };
   }, [apiKey, mapRequested]);
 
   useEffect(() => {
     if (
+      !mapReady ||
       !selectedLocation ||
       !graphicsLayerRef.current ||
       !ArcGISCircleRef.current ||
@@ -523,35 +692,41 @@ export default function GeoLabPage() {
     const circle = new Circle({
       center: [selectedLocation.longitude, selectedLocation.latitude],
       geodesic: true,
-      radius: geofenceRadiusMiles,
+      radius: deferredGeofenceRadiusMiles,
       radiusUnit: "miles",
-      numberOfPoints: 120,
+      numberOfPoints: 72,
     });
 
-    const graphic = new Graphic({
-      geometry: circle,
-      symbol: {
-        type: "simple-fill",
-        color: [34, 211, 238, 0.11],
-        outline: {
-          color: [34, 211, 238, 0.95],
-          width: 2,
+    if (geofenceGraphicRef.current) {
+      geofenceGraphicRef.current.geometry = circle;
+    } else {
+      const graphic = new Graphic({
+        geometry: circle,
+        symbol: {
+          type: "simple-fill",
+          color: [34, 211, 238, 0.11],
+          outline: {
+            color: [34, 211, 238, 0.95],
+            width: 2,
+          },
         },
-      },
-    });
+      });
 
-    geofenceGraphicRef.current = graphic;
-    graphicsLayer.add(graphic);
+      geofenceGraphicRef.current = graphic;
+      graphicsLayer.add(graphic);
+    }
 
     previousGeofenceStateRef.current = null;
   }, [
+    mapReady,
     selectedLocation?.latitude,
     selectedLocation?.longitude,
-    geofenceRadiusMiles,
+    deferredGeofenceRadiusMiles,
   ]);
 
   useEffect(() => {
     if (
+      !mapReady ||
       !deviceLocation ||
       !graphicsLayerRef.current ||
       !ArcGISPointRef.current ||
@@ -562,10 +737,6 @@ export default function GeoLabPage() {
 
     const graphicsLayer = graphicsLayerRef.current;
 
-    if (deviceGraphicRef.current) {
-      graphicsLayer.remove(deviceGraphicRef.current);
-    }
-
     const Point = ArcGISPointRef.current;
     const Graphic = ArcGISGraphicRef.current;
 
@@ -574,22 +745,26 @@ export default function GeoLabPage() {
       longitude: deviceLocation.longitude,
     });
 
-    const graphic = new Graphic({
-      geometry: point,
-      symbol: {
-        type: "simple-marker",
-        color: [74, 222, 128, 1],
-        size: 12,
-        outline: {
-          color: [255, 255, 255, 1],
-          width: 2,
+    if (deviceGraphicRef.current) {
+      deviceGraphicRef.current.geometry = point;
+    } else {
+      const graphic = new Graphic({
+        geometry: point,
+        symbol: {
+          type: "simple-marker",
+          color: [74, 222, 128, 1],
+          size: 12,
+          outline: {
+            color: [255, 255, 255, 1],
+            width: 2,
+          },
         },
-      },
-    });
+      });
 
-    deviceGraphicRef.current = graphic;
-    graphicsLayer.add(graphic);
-  }, [deviceLocation]);
+      deviceGraphicRef.current = graphic;
+      graphicsLayer.add(graphic);
+    }
+  }, [deviceLocation, mapReady]);
 
   const distanceFromBoundaryCenter = useMemo(() => {
     if (!selectedLocation || !deviceLocation) return null;
@@ -604,15 +779,22 @@ export default function GeoLabPage() {
 
   const geofenceState = useMemo<GeofenceState>(() => {
     if (!selectedLocation) return "No boundary";
+
     if (!deviceLocation || distanceFromBoundaryCenter === null) {
       return "Waiting for location";
     }
 
-    if (distanceFromBoundaryCenter <= geofenceRadiusMiles) return "Inside";
+    const radiusMeters = geofenceRadiusMiles * METERS_PER_MILE;
+    const distanceMeters = distanceFromBoundaryCenter * METERS_PER_MILE;
+    const distanceFromEdgeMeters = Math.abs(distanceMeters - radiusMeters);
 
-    if (distanceFromBoundaryCenter <= geofenceRadiusMiles * 1.25) {
-      return "Approaching";
+    if (deviceLocation.accuracyMeters >= distanceFromEdgeMeters) {
+      return "Uncertain";
     }
+
+    if (distanceMeters <= radiusMeters) return "Inside";
+
+    if (distanceMeters <= radiusMeters * 1.25) return "Approaching";
 
     return "Outside";
   }, [
@@ -655,34 +837,42 @@ export default function GeoLabPage() {
       return "Choose a point before interpreting the terrain.";
     }
 
-    if (elevationMeters === null) {
+    if (elevation.status === "loading") {
       return "The scene is showing the terrain surface, but the point elevation is still loading.";
     }
 
-    const feet = elevationMeters * 3.28084;
+    if (elevation.status === "error") {
+      return elevation.message;
+    }
+
+    if (elevation.status !== "success") {
+      return "No elevation has been read yet.";
+    }
+
+    const feet = elevation.meters * 3.28084;
 
     if (feet >= 5000) {
-      return `The selected point is about ${Math.round(
+      return `This point is about ${Math.round(
         feet
-      ).toLocaleString()} feet above sea level. That is a high elevation setting, so road grade, weather, emergency access, and seasonal conditions deserve a closer look. Elevation by itself does not tell us whether the land is safe to build on.`;
+      ).toLocaleString()} feet above sea level. High elevation can affect weather, road grade, emergency access, and seasonal conditions.`;
     }
 
     if (feet >= 1500) {
-      return `The selected point is about ${Math.round(
+      return `This point is about ${Math.round(
         feet
-      ).toLocaleString()} feet above sea level. The tilted scene can help reveal surrounding ridges and valleys. I would compare this with slope, road, drainage, and fire hazard layers before making a planning decision.`;
+      ).toLocaleString()} feet above sea level. The tilted scene can help reveal nearby ridges, valleys, and access challenges.`;
     }
 
     if (feet >= 300) {
-      return `The selected point is about ${Math.round(
+      return `This point is about ${Math.round(
         feet
-      ).toLocaleString()} feet above sea level. This gives useful context for the surrounding terrain, but elevation alone does not prove whether the site is flat, flood prone, or easy to access.`;
+      ).toLocaleString()} feet above sea level. Elevation helps with context, but slope, drainage, roads, and hazards still matter.`;
     }
 
-    return `The selected point is about ${Math.round(
+    return `This point is about ${Math.round(
       feet
-    ).toLocaleString()} feet above sea level. Lower elevation does not automatically mean higher flood risk. A proper review would still need flood zones, drainage, slope, and nearby water data.`;
-  }, [selectedLocation, elevationMeters]);
+    ).toLocaleString()} feet above sea level. Low elevation does not automatically mean flood risk, but flood zones and drainage would be important follow-up layers.`;
+  }, [selectedLocation, elevation]);
 
   const geofenceExplanation = useMemo(() => {
     if (!selectedLocation) {
@@ -692,11 +882,19 @@ export default function GeoLabPage() {
     if (!deviceLocation || distanceFromBoundaryCenter === null) {
       return `A ${geofenceRadiusMiles.toFixed(
         1
-      )} mile geofence is drawn around the selected point. Device location is still off, so the page cannot compare the visitor with the boundary.`;
+      )} mile boundary is drawn around the selected point. Device location is off, so the page cannot compare the visitor with the boundary.`;
+    }
+
+    if (geofenceState === "Uncertain") {
+      return `The device reading is ${formatMiles(
+        distanceFromBoundaryCenter
+      )} from the center, but the browser reports about ${Math.round(
+        deviceLocation.accuracyMeters
+      )} meters of possible error. The reading is too close to the boundary edge to call confidently.`;
     }
 
     if (geofenceState === "Inside") {
-      return `The current device reading is ${formatMiles(
+      return `The device reading is ${formatMiles(
         distanceFromBoundaryCenter
       )} from the center, which places it inside the ${geofenceRadiusMiles.toFixed(
         1
@@ -704,12 +902,12 @@ export default function GeoLabPage() {
     }
 
     if (geofenceState === "Approaching") {
-      return `The current device reading is ${formatMiles(
+      return `The device reading is ${formatMiles(
         distanceFromBoundaryCenter
       )} from the center. It is outside the boundary but close enough to be treated as approaching.`;
     }
 
-    return `The current device reading is ${formatMiles(
+    return `The device reading is ${formatMiles(
       distanceFromBoundaryCenter
     )} from the center, which places it outside the ${geofenceRadiusMiles.toFixed(
       1
@@ -724,6 +922,11 @@ export default function GeoLabPage() {
 
   async function searchAddress(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!mapReady) {
+      setMapMessage("Activate Geo Lab before using ArcGIS search.");
+      return;
+    }
 
     if (!searchText.trim()) {
       setMapMessage("Enter an address, city, landmark, or place name.");
@@ -754,7 +957,7 @@ export default function GeoLabPage() {
 
       if (!firstCandidate?.location) {
         setMapMessage(
-          "No matching place was found. Try a more complete address or a nearby landmark."
+          "No matching place was found. Try a more complete address or nearby landmark."
         );
         return;
       }
@@ -775,7 +978,7 @@ export default function GeoLabPage() {
   }
 
   async function useDemoPoint() {
-    if (!ArcGISPointRef.current) return;
+    if (!mapReady || !ArcGISPointRef.current) return;
 
     const Point = ArcGISPointRef.current;
 
@@ -808,7 +1011,7 @@ export default function GeoLabPage() {
   function handleLocationError(error: GeolocationPositionError) {
     const message =
       error.code === error.PERMISSION_DENIED
-        ? "Location permission was denied. Address search, map selection, and the demo point still work."
+        ? "Location permission was denied. Search, demo point, and manual map selection still work."
         : error.code === error.POSITION_UNAVAILABLE
           ? "The device could not provide a location right now."
           : "The location request timed out. Try again or use the map manually.";
@@ -823,6 +1026,11 @@ export default function GeoLabPage() {
   }
 
   function requestOneTimeLocation() {
+    if (!mapReady) {
+      setLocationMessage("Activate Geo Lab before using device location.");
+      return;
+    }
+
     setConsentState("accepted");
 
     if (!navigator.geolocation) {
@@ -861,7 +1069,7 @@ export default function GeoLabPage() {
         );
 
         setMapMessage(
-          "The green marker shows the device reading. The cyan geofence center stayed where you selected it so the page can compare the two locations."
+          "The green marker shows the device reading. The cyan marker remains the selected geofence center."
         );
       },
       handleLocationError,
@@ -882,6 +1090,11 @@ export default function GeoLabPage() {
   }
 
   function startLiveTracking() {
+    if (!mapReady) {
+      setLocationMessage("Activate Geo Lab before starting live tracking.");
+      return;
+    }
+
     if (!selectedLocation) {
       setLocationMessage(
         "Choose a geofence center before starting live tracking."
@@ -890,9 +1103,7 @@ export default function GeoLabPage() {
     }
 
     if (!navigator.geolocation) {
-      setLocationMessage(
-        "This browser does not support live device location."
-      );
+      setLocationMessage("This browser does not support live device location.");
       return;
     }
 
@@ -904,7 +1115,7 @@ export default function GeoLabPage() {
     setLiveTracking(true);
     previousGeofenceStateRef.current = null;
     setLocationMessage(
-      "Live geofence tracking is active while this page stays open. The first valid reading is logged, then another entry is added only when the status changes between outside, approaching, and inside."
+      "Live tracking is active while this page stays open. A new entry is added only when the boundary status changes."
     );
 
     watchIdRef.current = navigator.geolocation.watchPosition(
@@ -927,7 +1138,7 @@ export default function GeoLabPage() {
     setLiveTracking(false);
     previousGeofenceStateRef.current = null;
     setLocationMessage(
-      "Live tracking is off. The last reading stays visible only in this page state until the page is refreshed or closed."
+      "Live tracking is off. The last reading stays visible only until the page refreshes or closes."
     );
   }
 
@@ -937,22 +1148,22 @@ export default function GeoLabPage() {
 
     const demoEvents: GeofenceEvent[] = [
       {
-        id: `${now + 2}-demo-inside`,
-        time: new Date(now + 2000).toLocaleTimeString(),
+        id: `${now}-demo-inside`,
+        time: new Date(now).toLocaleTimeString(),
         state: "Inside",
         distanceMiles: Math.max(0.02, radius * 0.65),
         source: "Demo",
       },
       {
-        id: `${now + 1}-demo-approaching`,
-        time: new Date(now + 1000).toLocaleTimeString(),
+        id: `${now - 10000}-demo-approaching`,
+        time: new Date(now - 10000).toLocaleTimeString(),
         state: "Approaching",
         distanceMiles: radius * 1.12,
         source: "Demo",
       },
       {
-        id: `${now}-demo-outside`,
-        time: new Date(now).toLocaleTimeString(),
+        id: `${now - 20000}-demo-outside`,
+        time: new Date(now - 20000).toLocaleTimeString(),
         state: "Outside",
         distanceMiles: radius * 1.6,
         source: "Demo",
@@ -961,7 +1172,7 @@ export default function GeoLabPage() {
 
     setEventLog((current) => [...demoEvents, ...current].slice(0, 12));
     setLocationMessage(
-      "Three simulated entries were added so you can confirm that the event log display works. Live entries still require location permission and an actual boundary status change."
+      "Three simulated entries were added so you can confirm the event log display works."
     );
   }
 
@@ -991,7 +1202,7 @@ export default function GeoLabPage() {
 
     setMapRequested(true);
     setMapMessage(
-      "Loading ArcGIS only for this page. The first load can take a moment because the three dimensional mapping tools are large."
+      "Activating Geo Lab now. The ArcGIS browser runtime, map CSS, services, and 3D scene start only after this click."
     );
   }
 
@@ -1021,7 +1232,7 @@ export default function GeoLabPage() {
     );
 
     setMapMessage(
-      "Terrain view switched to satellite imagery, zoomed to the selected point, and tilted the camera to 70 degrees. Drag the scene to inspect ridges, valleys, and elevation changes."
+      "Terrain view switched to satellite imagery and tilted the camera to reveal surface shape."
     );
   }
 
@@ -1049,7 +1260,7 @@ export default function GeoLabPage() {
     );
 
     setMapMessage(
-      "Overhead view is active. This is useful for reading distance and boundary shape without the terrain angle."
+      "Overhead view is active. This is useful for reading distance and boundary shape."
     );
   }
 
@@ -1064,9 +1275,56 @@ export default function GeoLabPage() {
     setLocationMessage(
       "Location is off. I do not request it until you press a location button."
     );
+
     if (mapReady) {
       void useDemoPoint();
+    } else {
+      setSelectedLocation(null);
+      setElevation({ status: "idle" });
     }
+  }
+
+  function exportSnapshot() {
+    const rows = [
+      ["field", "value"],
+      ["selected_label", selectedLocation?.label ?? ""],
+      ["latitude", selectedLocation?.latitude ?? ""],
+      ["longitude", selectedLocation?.longitude ?? ""],
+      [
+        "elevation_meters",
+        elevation.status === "success" ? elevation.meters : "",
+      ],
+      [
+        "elevation_feet",
+        elevation.status === "success" ? elevation.meters * 3.28084 : "",
+      ],
+      ["geofence_radius_miles", geofenceRadiusMiles],
+      ["device_latitude", deviceLocation?.latitude ?? ""],
+      ["device_longitude", deviceLocation?.longitude ?? ""],
+      ["device_accuracy_meters", deviceLocation?.accuracyMeters ?? ""],
+      ["device_distance_miles", distanceFromBoundaryCenter ?? ""],
+      ["boundary_status", geofenceState],
+      ["captured_at", new Date().toISOString()],
+    ];
+
+    const csv = rows
+      .map((row) =>
+        row
+          .map((cell) => `"${String(cell).replaceAll('"', '""')}"`)
+          .join(",")
+      )
+      .join("\n");
+
+    const blob = new Blob([csv], {
+      type: "text/csv;charset=utf-8",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "geo-lab-site-snapshot.csv";
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   const geofenceTone =
@@ -1076,7 +1334,9 @@ export default function GeoLabPage() {
         ? "border-yellow-300/30 bg-yellow-300/10 text-yellow-100"
         : geofenceState === "Outside"
           ? "border-red-300/30 bg-red-300/10 text-red-100"
-          : "border-cyan-300/20 bg-black/25 text-cyan-100";
+          : geofenceState === "Uncertain"
+            ? "border-orange-300/30 bg-orange-300/10 text-orange-100"
+            : "border-cyan-300/20 bg-black/25 text-cyan-100";
 
   return (
     <main className="min-h-screen">
@@ -1100,19 +1360,15 @@ export default function GeoLabPage() {
               </div>
 
               <h1 className="mt-6 max-w-5xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
-                A three dimensional map for terrain, location, and geofence
-                testing
+                Terrain, location, and geofence testing in one interactive map
               </h1>
 
               <p className="mt-5 max-w-4xl text-base leading-8 text-zinc-300 md:text-lg">
-                Most of my data work has involved rows, exports, reporting, and
-                segmentation. I built this page because I wanted to work with
-                the same kind of questions geographically. I wanted to see what
-                a place looks like, read its elevation, draw a boundary around
-                it, and compare a device location with that boundary. This is
-                still an active build, so I am testing browser behavior,
-                location accuracy, and additional public map layers before I
-                call it finished.
+                I built this Geo Lab to connect map data, browser location,
+                terrain elevation, and boundary logic. ArcGIS stays completely
+                unloaded until the visitor activates the lab. The mapping SDK
+                is fetched from the ArcGIS CDN at runtime instead of being
+                bundled into the rest of my portfolio.
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -1127,12 +1383,12 @@ export default function GeoLabPage() {
                 {mapReady ? (
                   <Button onClick={focusTerrain}>
                     <Mountain size={16} />
-                    Tilt to Show Terrain
+                    Tilt Terrain
                   </Button>
                 ) : (
                   <Button onClick={requestMapLoad} disabled={mapLoading}>
                     <Mountain size={16} />
-                    {mapLoading ? "Loading Map" : "Load Interactive Map"}
+                    {mapLoading ? "Activating Lab" : "Activate Geo Lab"}
                   </Button>
                 )}
 
@@ -1140,21 +1396,11 @@ export default function GeoLabPage() {
                   <RefreshCcw size={16} />
                   Reset Demo
                 </Button>
-              </div>
 
-              <div className="mt-5 flex max-w-4xl items-start gap-3 rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
-                <Mountain className="mt-0.5 shrink-0 text-cyan-300" size={19} />
-                <p className="text-sm leading-7 text-zinc-400">
-                  <span className="font-black text-cyan-100">
-                    What the terrain button does:
-                  </span>{" "}
-                  the map stays unloaded until you choose to open it. After it
-                  loads, this control switches to satellite imagery, moves the
-                  camera to the selected point, and tilts the view so the ArcGIS
-                  elevation surface is easier to see. It does not create new
-                  terrain data. It changes the camera angle used to inspect the
-                  terrain that is already loaded.
-                </p>
+                <Button onClick={exportSnapshot}>
+                  <Activity size={16} />
+                  Export Snapshot
+                </Button>
               </div>
             </div>
           </div>
@@ -1170,22 +1416,19 @@ export default function GeoLabPage() {
               </p>
 
               <h2 className="mt-3 text-2xl font-black text-white md:text-3xl">
-                Location stays off until the visitor chooses to use it
+                Nothing location-related starts on page load
               </h2>
 
               <p className="mt-4 max-w-5xl text-sm leading-7 text-zinc-300 md:text-base">
-                This page does not request device location when it loads. It
-                does not read, display, or save an IP address. A location
-                request only starts after the visitor presses a location
-                button. Device coordinates are kept in browser memory for the
-                current page session and are not written to my database.
+                My application code does not request device location, download
+                the ArcGIS runtime, or create the 3D scene until the visitor
+                chooses to activate the lab. Device coordinates stay in
+                temporary page state and are not sent to my own database.
               </p>
 
               <p className="mt-3 max-w-5xl text-sm leading-7 text-zinc-400">
-                ArcGIS still receives the normal map, imagery, elevation, and
-                address search requests needed to run the map. My code does not
-                create a location history or attach coordinates to an account.
-                Closing or refreshing the page clears the React state.
+                After activation, ArcGIS receives the normal map, imagery,
+                elevation, and address-search requests required to run the map.
               </p>
             </div>
           </div>
@@ -1199,8 +1442,7 @@ export default function GeoLabPage() {
                   ArcGIS Scene
                 </p>
                 <p className="mt-2 text-sm leading-6 text-zinc-400">
-                  Satellite imagery is placed over the ArcGIS world elevation
-                  surface so hills, valleys, and ridges have real depth.
+                  The 3D map appears only after activation.
                 </p>
               </div>
 
@@ -1238,7 +1480,7 @@ export default function GeoLabPage() {
               />
 
               {!mapReady && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-6 text-center">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/85 p-6 text-center">
                   <div className="max-w-lg">
                     {mapLoading ? (
                       <Activity
@@ -1251,11 +1493,15 @@ export default function GeoLabPage() {
 
                     <h3 className="mt-4 text-2xl font-black text-white">
                       {mapLoading
-                        ? "Loading the interactive terrain map"
-                        : "Load the interactive ArcGIS map when you are ready"}
+                        ? "Activating the interactive terrain map"
+                        : "ArcGIS is currently unloaded"}
                     </h3>
 
-                    <p className="mt-3 text-sm leading-7 text-zinc-300">
+                    <p
+                      role="status"
+                      aria-live="polite"
+                      className="mt-3 text-sm leading-7 text-zinc-300"
+                    >
                       {mapMessage}
                     </p>
 
@@ -1263,10 +1509,10 @@ export default function GeoLabPage() {
                       <button
                         type="button"
                         onClick={requestMapLoad}
-                        className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-black text-black transition hover:bg-cyan-300"
+                        className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-black text-black transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                       >
                         <Mountain size={16} />
-                        Load Interactive Map
+                        Activate Geo Lab
                       </button>
                     )}
                   </div>
@@ -1274,17 +1520,16 @@ export default function GeoLabPage() {
               )}
             </div>
 
-            <div className="mt-4 rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
+            <div
+              role="status"
+              aria-live="polite"
+              className="mt-4 rounded-2xl border border-cyan-300/15 bg-black/25 p-4"
+            >
               <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">
                 Map status
               </p>
               <p className="mt-2 text-sm leading-6 text-zinc-300">
                 {mapMessage}
-              </p>
-              <p className="mt-2 text-xs leading-5 text-zinc-500">
-                The ArcGIS SDK and three dimensional scene are loaded only after
-                you press the map button. This keeps the rest of the portfolio
-                lighter and avoids using the browser GPU before the map is needed.
               </p>
             </div>
 
@@ -1359,23 +1604,21 @@ export default function GeoLabPage() {
               <div className="flex items-center gap-2 text-cyan-300">
                 <LocateFixed size={18} />
                 <p className="text-xs font-black uppercase tracking-[0.24em]">
-                  Device location consent
+                  Device location
                 </p>
               </div>
 
               <p className="mt-4 text-sm leading-7 text-zinc-300">
-                Pressing the button below tells the browser to ask for one
-                location reading. I use that reading to place the green device
-                marker and compare it with the cyan geofence center. The
-                geofence center does not move onto the device. I do not request
-                an IP address and I do not save the coordinates.
+                This requests one browser location reading, places the green
+                device marker, and compares it with the selected boundary.
               </p>
 
               <div className="mt-5 flex flex-col gap-3">
                 <button
                   type="button"
                   onClick={requestOneTimeLocation}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-4 py-3 text-sm font-black text-black transition hover:bg-cyan-300"
+                  disabled={!mapReady}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-4 py-3 text-sm font-black text-black transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Crosshair size={15} />
                   Use My Location Once
@@ -1403,15 +1646,13 @@ export default function GeoLabPage() {
               <div className="flex items-center gap-2 text-cyan-300">
                 <Radio size={18} />
                 <p className="text-xs font-black uppercase tracking-[0.24em]">
-                  Live geofence consent
+                  Live geofence
                 </p>
               </div>
 
               <p className="mt-4 text-sm leading-7 text-zinc-300">
-                Live tracking is a separate choice. It requests updated device
-                readings while this page stays open so the boundary status can
-                change from outside to approaching or inside. Press Stop
-                tracking at any time or close the page to end it.
+                Live tracking requests updated readings only while this page is
+                open. Stop tracking at any time.
               </p>
 
               <div className="mt-5">
@@ -1428,10 +1669,11 @@ export default function GeoLabPage() {
                   <button
                     type="button"
                     onClick={startLiveTracking}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-green-300/30 bg-green-300/10 px-4 py-3 text-sm font-black text-green-100 transition hover:bg-green-300/20"
+                    disabled={!mapReady}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-green-300/30 bg-green-300/10 px-4 py-3 text-sm font-black text-green-100 transition hover:bg-green-300/20 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Navigation size={16} />
-                    I Agree, Start Live Tracking
+                    Start Live Tracking
                   </button>
                 )}
               </div>
@@ -1446,8 +1688,8 @@ export default function GeoLabPage() {
         <section className={`${glassPanel} mt-10 p-6 md:p-8`}>
           <SectionHeading
             eyebrow="Selected location"
-            title="What the map knows about this point"
-            text="The selected point becomes the center for terrain reading and geofence analysis. The cyan marker shows the selected point. The green marker shows the device reading after permission is granted."
+            title="Site snapshot"
+            text="The selected point becomes the center for terrain reading and geofence analysis. Cyan marks the selected point. Green marks the device reading after permission."
           />
 
           <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -1474,7 +1716,7 @@ export default function GeoLabPage() {
             />
             <StatBox
               label="Terrain Elevation"
-              value={formatElevation(elevationMeters)}
+              value={formatElevation(elevation)}
             />
           </div>
 
@@ -1483,7 +1725,7 @@ export default function GeoLabPage() {
               <Mountain className="mt-1 shrink-0 text-cyan-300" size={21} />
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
-                  What the terrain reading means
+                  Terrain reading
                 </p>
                 <p className="mt-3 text-sm leading-7 text-zinc-300">
                   {terrainExplanation}
@@ -1498,7 +1740,7 @@ export default function GeoLabPage() {
             <SectionHeading
               eyebrow="Geofence demo"
               title="Draw a boundary and compare the device with it"
-              text="The selected map point is the center. The radius controls the size of the boundary. This is browser based boundary detection while the page is open. It is not background tracking and it does not send notifications after the page closes."
+              text="The selected map point is the center. The radius controls the boundary. GPS accuracy is considered before the page calls a result confidently inside or outside."
             />
 
             <label className="mt-7 block">
@@ -1542,7 +1784,7 @@ export default function GeoLabPage() {
 
             <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
-                What this result means
+                Result
               </p>
               <p className="mt-3 text-sm leading-7 text-zinc-300">
                 {geofenceExplanation}
@@ -1555,21 +1797,18 @@ export default function GeoLabPage() {
               <CircleDot className="text-cyan-300" size={22} />
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
-                  Geofence event log
+                  Event log
                 </p>
                 <h3 className="mt-2 text-2xl font-black text-white">
-                  Status changes during live tracking
+                  Boundary status changes
                 </h3>
               </div>
             </div>
 
             <div className="mt-5 rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
               <p className="text-sm leading-7 text-zinc-300">
-                The live log does not add a row for every GPS reading. It adds
-                the first valid result, then adds another row only when the
-                device changes between outside, approaching, and inside. A
-                desktop computer often reports one fixed location, so the
-                status may never change while you sit still.
+                The log adds the first live result, then another entry only when
+                the status changes.
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2">
@@ -1583,11 +1822,6 @@ export default function GeoLabPage() {
                   Clear Log
                 </Button>
               </div>
-
-              <p className="mt-3 text-xs leading-6 text-zinc-500">
-                Test Event Log creates clearly labeled sample entries. It does
-                not pretend that the device moved.
-              </p>
             </div>
 
             <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-cyan-300/15 bg-black/25 px-4 py-3">
@@ -1607,8 +1841,8 @@ export default function GeoLabPage() {
 
             {eventLog.length === 0 ? (
               <div className="mt-4 rounded-3xl border border-cyan-300/15 bg-black/25 p-5 text-sm leading-7 text-zinc-400">
-                No events have been recorded yet. Start live tracking for real
-                readings or press Test Event Log to confirm the display.
+                No events recorded yet. Start live tracking or press Test Event
+                Log.
               </div>
             ) : (
               <div className="mt-4 space-y-3">
@@ -1647,31 +1881,41 @@ export default function GeoLabPage() {
 
         <section className={`${glassPanel} mt-10 p-6 md:p-8`}>
           <SectionHeading
-            eyebrow="What the map says"
-            title="A map gives context, not a final decision"
-            text="The page can show where a point is, what the surrounding terrain looks like, its approximate elevation, and whether a device reading falls inside a chosen boundary. That is useful evidence, but it is not enough to decide whether land is safe, buildable, accessible, or suitable for a specific use."
+            eyebrow="How I built it"
+            title="ArcGIS map, browser permissions, and spatial calculations"
+            text="This page downloads the ArcGIS browser runtime only after activation, then uses React state to manage selected points, terrain readings, location permission, distance calculation, and event logging. ArcGIS is not bundled into the main Next.js build."
           />
 
-          <div className="mt-7 grid gap-4 md:grid-cols-2">
+          <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {[
               {
-                title: "What I can reasonably say",
-                text: "I can describe the selected elevation, the visible terrain shape, the boundary radius, and the current inside or outside result.",
+                title: "Runtime only loading",
+                text: "ArcGIS JavaScript and CSS come from the ArcGIS CDN only after activation. The main Next.js build no longer has to compile the entire mapping SDK.",
                 icon: CheckCircle2,
               },
               {
-                title: "What I would check next",
-                text: "For a real land review I would add parcel boundaries, zoning, slope, flood zones, fire hazard, roads, utilities, public facilities, and the date and source of each layer.",
-                icon: Compass,
+                title: "3D terrain",
+                text: "SceneView uses satellite imagery with world elevation so the selected location can be inspected in context.",
+                icon: Mountain,
               },
               {
-                title: "What I should not assume",
-                text: "A high point is not automatically unsafe. A low point is not automatically a flood zone. Being near a road does not prove legal access. The next layer needs to answer the next question.",
+                title: "Location consent",
+                text: "One-time location and live tracking are separate actions, with tracking stopped when the page closes or resets.",
                 icon: ShieldCheck,
               },
               {
-                title: "How geofencing could be used",
-                text: "The same boundary logic could support arrival checks, service areas, field inspections, asset monitoring, delivery zones, or a reminder that only runs while the user has actively enabled tracking.",
+                title: "Geofence logic",
+                text: "The page calculates distance with the Haversine formula and accounts for reported GPS accuracy near the boundary edge.",
+                icon: Compass,
+              },
+              {
+                title: "Snapshot export",
+                text: "The selected point, elevation, device reading, distance, accuracy, and boundary result can be exported as CSV.",
+                icon: Activity,
+              },
+              {
+                title: "Future layers",
+                text: "The next useful layers would be parcel boundaries, zoning, flood risk, fire hazard, roads, utilities, and slope.",
                 icon: Waves,
               },
             ].map((item) => {
@@ -1693,68 +1937,6 @@ export default function GeoLabPage() {
               );
             })}
           </div>
-        </section>
-
-        <section className={`${glassPanel} mt-10 p-6 md:p-8`}>
-          <SectionHeading
-            eyebrow="How I made this page"
-            title="The map is ArcGIS, but the workflow and interface are mine"
-            text="I built the page as a Next.js client component because the map, camera, browser location, and live controls need to run in the browser. The ArcGIS Maps SDK is now loaded only after the visitor presses the map button. That keeps the rest of the site lighter, then creates a SceneView with satellite imagery and the ArcGIS world elevation surface only when it is actually needed."
-          />
-
-          <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {[
-              {
-                title: "Three dimensional terrain",
-                text: "ArcGIS SceneView renders the map in three dimensions. The world elevation ground layer gives the surface height, while the camera tilt makes terrain changes visible instead of flattening everything into a normal overhead map. I use the medium quality profile to balance detail with browser performance.",
-              },
-              {
-                title: "Address search",
-                text: "The search box sends the visitor's typed place name to the ArcGIS World Geocoding Service. I take the best returned point, place a cyan marker, move the camera, and update the interpretation section.",
-              },
-              {
-                title: "Device location",
-                text: "The page uses the browser Geolocation API only after a visitor presses a consent button. One button requests a single reading. A separate button starts repeated readings for the live geofence demo.",
-              },
-              {
-                title: "Geofence drawing",
-                text: "The cyan boundary is an ArcGIS Circle geometry centered on the selected point. The radius slider rebuilds the circle so the visitor can see exactly how the boundary changes.",
-              },
-              {
-                title: "Inside and outside logic",
-                text: "I calculate the distance between the selected center and the device reading, then compare that distance with the chosen radius. React state updates the status and the event log when the result changes.",
-              },
-              {
-                title: "Privacy choices",
-                text: "I left location off by default, added one time and live consent separately, included a Stop tracking control, avoided IP collection, and kept the coordinates out of my database.",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="rounded-3xl border border-cyan-300/15 bg-black/25 p-5"
-              >
-                <h3 className="text-xl font-black text-white">{item.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-zinc-300">
-                  {item.text}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className={`${glassPanel} mt-10 p-6 md:p-8`}>
-          <SectionHeading
-            eyebrow="Why I built this"
-            title="I wanted to move beyond rows and charts"
-            text="Data Lab works with columns, distributions, validation rules, and correlations. Geo Lab asks a different set of questions. Where is the point? What is around it? What does the ground look like? What falls inside a boundary? How should the result be explained without pretending the map proves more than it actually does?"
-          />
-
-          <p className="mt-5 max-w-5xl text-sm leading-7 text-zinc-400 md:text-base">
-            I also wanted to show that I can connect a large third party SDK to
-            the same design system as the rest of my site, manage browser
-            permissions responsibly, keep the interface understandable, and
-            turn raw spatial output into language a normal person can use.
-          </p>
         </section>
       </section>
     </main>

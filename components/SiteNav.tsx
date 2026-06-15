@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { FileText } from "lucide-react";
 
 export const siteNavLinks = [
   { label: "Home", href: "/" },
@@ -14,6 +15,27 @@ export const siteNavLinks = [
   { label: "Gravity Lab", href: "/gravity-lab" },
   { label: "Travel", href: "/travel" },
 ];
+
+function ResumeNavButton({ compact = false }: { compact?: boolean }) {
+  const className = compact
+    ? "group inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-rose-400/60 bg-rose-500/15 px-3 py-2 text-xs font-black text-rose-100 shadow-[0_0_22px_rgba(244,63,94,0.25)] transition duration-300 hover:border-rose-300 hover:bg-rose-500 hover:text-white hover:shadow-[0_0_34px_rgba(244,63,94,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+    : "group inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-rose-400/60 bg-rose-500/15 px-4 py-2 text-sm font-black text-rose-100 shadow-[0_0_24px_rgba(244,63,94,0.28)] transition duration-300 hover:-translate-y-0.5 hover:border-rose-300 hover:bg-rose-500 hover:text-white hover:shadow-[0_0_38px_rgba(244,63,94,0.50)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 focus-visible:ring-offset-black";
+
+  return (
+    <a
+      href="/Brian_Cabrera_Resume.pdf"
+      target="_blank"
+      rel="noreferrer"
+      className={className}
+    >
+      <FileText
+        size={compact ? 14 : 15}
+        className="transition-transform duration-300 group-hover:-rotate-3 group-hover:scale-110"
+      />
+      Resume
+    </a>
+  );
+}
 
 function AuthNavLinks({
   username,
@@ -138,6 +160,8 @@ export default function SiteNav({
               );
             })}
 
+            <ResumeNavButton />
+
             <AuthNavLinks username={username} />
 
             <a
@@ -192,6 +216,8 @@ export default function SiteNav({
                 </Link>
               );
             })}
+
+            <ResumeNavButton compact />
 
             <AuthNavLinks username={username} compact />
           </nav>

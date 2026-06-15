@@ -8,6 +8,7 @@ import {
   ExternalLink,
   Gamepad2,
   Globe2,
+  MapPinned,
   Plane,
   Shield,
   Smartphone,
@@ -70,6 +71,23 @@ const featuredProjects: ProjectItem[] = [
     button: "Open Data Lab",
   },
   {
+    title: "Geo Lab",
+    href: "/geo-lab",
+    label: "ArcGIS Geospatial Lab",
+    status: "WIP",
+    text: "An interactive geospatial project using ArcGIS for on-demand 3D terrain, address search, elevation readings, browser location consent, geofence testing, event logging, and CSV snapshot export. The ArcGIS runtime stays unloaded until the visitor activates the map.",
+    icon: MapPinned,
+    tags: [
+      "ArcGIS",
+      "GIS",
+      "3D Terrain",
+      "Geofencing",
+      "Geolocation",
+      "CSV Export",
+    ],
+    button: "Open Geo Lab",
+  },
+  {
     title: "Playground",
     href: "/playground",
     label: "Interactive Builds",
@@ -124,8 +142,8 @@ const gameProjects: WorkItem[] = [
 const professionalWork: WorkItem[] = [
   {
     title: "Casino Offer & Campaign QA",
-    text: "Used SQL, SQL Server-style querying, Excel, VBA, and Python to clean campaign data, formulate player offer groups, validate assigned offers, and support marketing exports. Work included checking player eligibility, offer accuracy, tier segmentation, and audit outputs before campaign launch.",
-    tags: ["SQL", "SQL Server", "Python", "VBA", "Offer Validation", "Campaign QA"],
+    text: "Used MySQL, Excel, VBA, and Python to clean campaign data, formulate player offer groups, validate assigned offers, and support marketing exports. Work included checking player eligibility, offer accuracy, tier segmentation, and audit outputs before campaign launch.",
+    tags: ["MySQL", "Python", "VBA", "Offer Validation", "Campaign QA"],
     button: {
       href: "mailto:briandacellcabrera@gmail.com",
       label: "Ask About This",
@@ -134,7 +152,7 @@ const professionalWork: WorkItem[] = [
   {
     title: "Player Segmentation & Tier Logic",
     text: "Built segmentation workflows that grouped players into tiers based on campaign rules, database outputs, and offer logic. Created VBA scripts and Python programs to verify IDs, groups, tiers, and offer assignments so mismatches could be caught before launch.",
-    tags: ["SQL", "T-SQL", "Excel", "Tier Logic", "Segmentation", "Audit Outputs"],
+    tags: ["MySQL", "Excel", "Tier Logic", "Segmentation", "Audit Outputs"],
     button: {
       href: "mailto:briandacellcabrera@gmail.com",
       label: "Discuss Workflow",
@@ -266,7 +284,11 @@ function ProjectButton({
 
   if (isInternal) {
     return (
-      <Link href={href} className={className}>
+      <Link
+        href={href}
+        prefetch={href === "/geo-lab" ? false : undefined}
+        className={className}
+      >
         {children}
       </Link>
     );
@@ -366,14 +388,14 @@ export default function ProjectsPage() {
           </p>
 
           <h1 className="mt-5 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
-            Data automation, shipped games, and full-stack interactive builds
+            Data automation, geospatial tools, shipped games, and full-stack builds
           </h1>
 
           <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-300 md:text-lg">
             A focused collection of professional data workflows, gameplay work,
-            analytics tools, mobile-first experiments, and the portfolio
-            platform itself. Live work is separated clearly from prototypes and
-            active work-in-progress systems.
+            analytics tools, ArcGIS experiments, mobile-first interfaces, and
+            the portfolio platform itself. Live work is separated clearly from
+            prototypes and active work-in-progress systems.
           </p>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -383,6 +405,10 @@ export default function ProjectsPage() {
 
             <ProjectButton href="/data-lab">
               Open Data Lab <ExternalLink size={15} />
+            </ProjectButton>
+
+            <ProjectButton href="/geo-lab">
+              Open Geo Lab <ExternalLink size={15} />
             </ProjectButton>
 
             <ProjectButton href="/" subtle>
@@ -404,9 +430,9 @@ export default function ProjectsPage() {
             </div>
 
             <p className="max-w-xl text-sm leading-6 text-zinc-400 md:text-right">
-              Shipped game work, live analytics tools, a custom full-stack
-              portfolio platform, interactive demos, and phone-first frontend
-              development.
+              Shipped game work, live analytics tools, an ArcGIS geospatial
+              lab, a custom full-stack portfolio platform, interactive demos,
+              and phone-first frontend development.
             </p>
           </div>
 
@@ -526,10 +552,11 @@ export default function ProjectsPage() {
 
           <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-300 md:text-base">
             My work sits between software engineering, analytics, automation,
-            mobile frontend development, game development, and full-stack web
-            architecture. The portfolio itself is part of that proof: a live,
-            deployed application with interactive tools, external integrations,
-            responsive design, and an actively developing account system.
+            geospatial development, mobile frontend work, game development, and
+            full-stack web architecture. The portfolio itself is part of that
+            proof: a live deployed application with interactive tools, ArcGIS
+            integration, responsive design, and an actively developing account
+            system.
           </p>
         </section>
       </section>
