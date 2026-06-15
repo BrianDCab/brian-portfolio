@@ -49,9 +49,6 @@ export const labNavLinks = [
   },
 ];
 
-/*
-  Preserved in case another component imports siteNavLinks.
-*/
 export const siteNavLinks = [...primaryNavLinks, ...labNavLinks];
 
 function isLinkActive(pathname: string, href: string) {
@@ -203,12 +200,6 @@ function DesktopLabsDropdown({ pathname }: { pathname: string }) {
   }
 
   function handleLinkClick(event: MouseEvent<HTMLAnchorElement>) {
-    /*
-      Close the dropdown immediately after selecting a page.
-
-      suppressHover prevents it from instantly reopening while
-      the cursor is still positioned over the dropdown.
-    */
     setIsOpen(false);
     setSuppressHover(true);
     event.currentTarget.blur();
@@ -271,13 +262,6 @@ function DesktopLabsDropdown({ pathname }: { pathname: string }) {
         />
       </button>
 
-      {/*
-        pt-3 creates an invisible hover bridge between the
-        Labs button and dropdown.
-
-        Do not replace pt-3 with mt-3. Margin would create a
-        dead zone that closes the dropdown while moving into it.
-      */}
       <div
         className={[
           "absolute left-1/2 top-full z-50 w-80 -translate-x-1/2 pt-3",
@@ -353,9 +337,6 @@ export default function SiteNav({
     isLinkActive(pathname, link.href),
   );
 
-  /*
-    Close mobile navigation after changing pages.
-  */
   useEffect(() => {
     setMobileMenuOpen(false);
     setMobileLabsOpen(false);
@@ -364,7 +345,6 @@ export default function SiteNav({
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-xl">
       <div className="mx-auto max-w-7xl px-4 md:px-6">
-        {/* Desktop navigation */}
         <div className="hidden items-center justify-between gap-6 py-4 lg:flex">
           <Link href="/" className="group shrink-0">
             <div className="text-sm font-black tracking-[0.32em] text-white transition group-hover:text-cyan-300">
@@ -425,7 +405,6 @@ export default function SiteNav({
           </nav>
         </div>
 
-        {/* Mobile navigation */}
         <div className="lg:hidden">
           <div className="flex items-center justify-between gap-3 py-3">
             <Link href="/" className="shrink-0">
@@ -570,7 +549,7 @@ export default function SiteNav({
 
                 <a
                   href="mailto:briandacellcabrera@gmail.com"
-                  className="inline-flex w-full items-center justify-center rounded-full bg-cyan-400 px-4 py-3 text-sm font-bold text-black transition hover:bg-cyan-300"
+                  className="inline-flex w-full items-center justify-center rounded-full bg-cyan-400 px-3 py-2 text-xs font-bold text-black transition hover:bg-cyan-300"
                 >
                   Contact
                 </a>
