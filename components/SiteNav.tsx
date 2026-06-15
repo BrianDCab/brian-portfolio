@@ -7,6 +7,7 @@ export const siteNavLinks = [
   { label: "Home", href: "/" },
   { label: "Projects", href: "/projects" },
   { label: "Data Lab", href: "/data-lab" },
+  { label: "Geo Lab", href: "/geo-lab" },
   { label: "Security", href: "/security-lab" },
   { label: "Playground", href: "/playground" },
   { label: "Chaos Lab", href: "/chaos-lab" },
@@ -48,7 +49,9 @@ function AuthNavLinks({
           className={
             baseButton +
             " " +
-            (pathname.startsWith("/dashboard") ? activeButton : neutralButton)
+            (pathname.startsWith("/dashboard")
+              ? activeButton
+              : neutralButton)
           }
         >
           Dashboard
@@ -79,7 +82,9 @@ function AuthNavLinks({
         className={
           baseButton +
           " " +
-          (pathname.startsWith("/register") ? activeButton : registerButton)
+          (pathname.startsWith("/register")
+            ? activeButton
+            : registerButton)
         }
       >
         Register
@@ -88,7 +93,11 @@ function AuthNavLinks({
   );
 }
 
-export default function SiteNav({ username }: { username?: string | null }) {
+export default function SiteNav({
+  username,
+}: {
+  username?: string | null;
+}) {
   const pathname = usePathname();
 
   return (
@@ -99,6 +108,7 @@ export default function SiteNav({ username }: { username?: string | null }) {
             <div className="text-sm font-black tracking-[0.32em] text-white transition group-hover:text-cyan-300">
               BC
             </div>
+
             <div className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/70">
               Data • Code • Systems
             </div>
@@ -115,6 +125,7 @@ export default function SiteNav({ username }: { username?: string | null }) {
                 <Link
                   key={link.href}
                   href={link.href}
+                  prefetch={link.href === "/geo-lab" ? false : undefined}
                   className={
                     "rounded-full px-4 py-2 text-sm font-semibold transition " +
                     (isActive
@@ -144,6 +155,7 @@ export default function SiteNav({ username }: { username?: string | null }) {
               <div className="text-sm font-black tracking-[0.3em] text-white">
                 BC
               </div>
+
               <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-300/70">
                 Portfolio
               </div>
@@ -168,6 +180,7 @@ export default function SiteNav({ username }: { username?: string | null }) {
                 <Link
                   key={link.href}
                   href={link.href}
+                  prefetch={link.href === "/geo-lab" ? false : undefined}
                   className={
                     "shrink-0 rounded-full px-3 py-2 text-xs font-semibold transition " +
                     (isActive

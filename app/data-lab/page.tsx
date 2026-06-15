@@ -3528,7 +3528,7 @@ export default function DataLabPage() {
 
                   <div className="mt-5 flex items-center justify-between gap-3">
                     <span className="inline-flex rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-cyan-100">
-                      {isActive ? "Open now" : "Open model"}
+                      {isActive ? "Currently Open" : "Open model"}
                     </span>
 
                     {isActive && (

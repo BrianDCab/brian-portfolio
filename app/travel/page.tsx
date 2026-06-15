@@ -654,7 +654,7 @@ export default function TravelPage() {
 
                 <div className="mt-5 flex items-center justify-between gap-3">
                   <span className="inline-flex items-center gap-2 text-sm font-bold text-cyan-300">
-                    {active ? "Open now" : "Open section"}
+                    {active ? "Currently Open" : "Open Model"}
                     <ArrowRight size={15} />
                   </span>
 

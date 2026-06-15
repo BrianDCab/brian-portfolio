@@ -297,10 +297,11 @@ export default function AIWorkflowPage() {
           <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-300 md:text-base">
             I used AI while brainstorming interfaces, testing technical
             blueprints, learning new syntax, restructuring copy, reviewing
-            code, and troubleshooting development issues. I still made the final
-            design decisions, connected the pages, reviewed the code, ran
+            code for a second opinion, and troubleshooting development issues. I still made the final
+            design decisions, wrote the codeconnected the pages, reviewed the code, ran
             production builds, tested the features, handled deployment, and
-            decided what was accurate enough to publish.
+            decided what was accurate enough to publish. 
+            We do not vibe-code here but we do use all the tools available.
           </p>
         </section>
       </section>
