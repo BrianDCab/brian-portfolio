@@ -161,6 +161,13 @@ type InterpretationFinding = {
   trend?: "up" | "down" | "neutral";
 };
 
+type CorrelationGuidance = {
+  meaning: string;
+  nextCheck: string;
+  possibleAction: string;
+  caution: string;
+};
+
 const glassPanel =
   "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
 
@@ -1682,6 +1689,257 @@ function describeCorrelation(pair: CorrelationPair) {
   return `${correlationStrength(pair.value)} ${direction} relationship: ${movement} in the currently loaded rows.`;
 }
 
+
+function pairIncludes(pair: CorrelationPair, keys: string[]) {
+  return keys.includes(pair.left.key) || keys.includes(pair.right.key);
+}
+
+function metricLabelForKeys(pair: CorrelationPair, keys: string[]) {
+  if (keys.includes(pair.left.key)) return pair.left.label;
+  if (keys.includes(pair.right.key)) return pair.right.label;
+  return "the selected metric";
+}
+
+function buildCorrelationGuidance(
+  pair: CorrelationPair,
+  lab: LabKey
+): CorrelationGuidance {
+  const positive = pair.value >= 0;
+  const strength = correlationStrength(pair.value).toLowerCase();
+  const leftLabel = pair.left.label;
+  const rightLabel = pair.right.label;
+
+  const offerValueKeys = ["NetADT", "MonthlyTheo", "TripsMonth"];
+  const assignedOfferKeys = ["OfferFSP", "OfferTG", "OfferFood"];
+  const redemptionKeys = ["TotalRedeemedValue"];
+  const responseKeys = ["PostOfferTrips", "PostOfferTheo"];
+  const recencyKeys = ["DaysSinceLastTrip"];
+
+  const weatherPressureKeys = [
+    "WeatherRiskScore",
+    "TempHigh",
+    "RainChance",
+    "WindMPH",
+  ];
+  const trafficKeys = ["ActualTrips", "TripDeltaPercent"];
+  const demandKeys = [
+    "FSPRedemptions",
+    "HotelBookings",
+    "FoodRedemptions",
+  ];
+  const revenueKeys = ["TheoWin", "ActualWin"];
+
+  if (lab === "offers") {
+    if (
+      pairIncludes(pair, offerValueKeys) &&
+      pairIncludes(pair, assignedOfferKeys)
+    ) {
+      const valueMetric = metricLabelForKeys(pair, offerValueKeys);
+      const offerMetric = metricLabelForKeys(pair, assignedOfferKeys);
+
+      return positive
+        ? {
+            meaning: `In these rows, higher ${valueMetric} generally appears with higher ${offerMetric}. That is consistent with a tiered offer strategy where stronger player value receives a larger incentive.`,
+            nextCheck: `Break the rows out by SegmentName, WorthGroup, and TierRank. Then compare the average ${offerMetric} with baseline ${valueMetric}, redemption, and post-offer results inside each group.`,
+            possibleAction: `Keep the tiered structure if the higher offers also produce acceptable post-offer trips or theo. Add caps or review rules where offer value rises faster than player response.`,
+            caution: `This does not prove the larger offer caused better behavior. The same player-value rule may be driving both metrics.`,
+          }
+        : {
+            meaning: `In these rows, higher ${valueMetric} tends to appear with lower ${offerMetric}. That may mean the assignment rules are not scaling with player value, or that a reactivation or exception group is receiving larger offers than active high-value players.`,
+            nextCheck: `Review the offer matrix by SegmentName, WorthGroup, active/inactive status, and exception flags. Look for reversed tiers, manual overrides, missing values, or special campaigns.`,
+            possibleAction: `Flag mismatched rows for review before export. If the pattern is intentional, document the business rule so it is not mistaken for a bad assignment.`,
+            caution: `A negative relationship can be valid when the campaign intentionally targets lower-value or lapsed players.`,
+          };
+    }
+
+    if (
+      pairIncludes(pair, assignedOfferKeys) &&
+      pairIncludes(pair, redemptionKeys)
+    ) {
+      const offerMetric = metricLabelForKeys(pair, assignedOfferKeys);
+
+      return positive
+        ? {
+            meaning: `Larger ${offerMetric} values are appearing with more redeemed value. That may show that the larger packages are being used, but raw redeemed dollars will naturally rise when the assigned amount is larger.`,
+            nextCheck: `Calculate redemption rate, cost per redeemer, and post-offer theo by segment instead of comparing redeemed dollars alone. Compare similar players who received different offer levels where possible.`,
+            possibleAction: `Keep the offer level only where utilization and post-offer value justify the cost. Reduce or test lower amounts in groups with high assigned cost but weak response.`,
+            caution: `This relationship is partly mechanical because a larger available offer creates a larger possible redeemed amount.`,
+          }
+        : {
+            meaning: `Larger ${offerMetric} values are appearing with lower redeemed value. That can point to weak utilization, poor delivery timing, eligibility friction, or offers that are too large for the segment receiving them.`,
+            nextCheck: `Check app, mail, and email eligibility; valid dates; redemption flags; player recency; and whether the offer was actually delivered. Compare redemption rate by segment and channel.`,
+            possibleAction: `Test smaller or differently timed offers, fix delivery problems, and review rows with large assignments but no redemption activity.`,
+            caution: `Low redeemed value may reflect delivery or tracking gaps rather than a weak offer.`,
+          };
+    }
+
+    if (
+      pairIncludes(pair, redemptionKeys) &&
+      pairIncludes(pair, responseKeys)
+    ) {
+      const responseMetric = metricLabelForKeys(pair, responseKeys);
+
+      return positive
+        ? {
+            meaning: `Players with more redeemed value also show higher ${responseMetric}. That is a useful response signal and may indicate that the campaign is reaching players who return and generate activity.`,
+            nextCheck: `Compare redeemers with non-redeemers who had similar NetADT, MonthlyTheo, trips, tier, and recency before the offer. Also compare the result against a pre-offer period.`,
+            possibleAction: `Prioritize the segments where redemption is followed by meaningful trips or theo, then test whether the same pattern holds in another month or campaign.`,
+            caution: `More active or valuable players may be more likely both to redeem and to return, so this is not proof that redemption caused the response.`,
+          }
+        : {
+            meaning: `More redeemed value is appearing with lower ${responseMetric}. That may indicate expensive redemptions without enough follow-up activity, or a small set of unusual rows pulling the result downward.`,
+            nextCheck: `Inspect the individual high-redemption rows, compare offer cost with post-offer theo, and separate reactivation, VIP, and active-player campaigns.`,
+            possibleAction: `Review the economics of the affected segments before repeating the same package. Consider lower-cost tests or different eligibility thresholds.`,
+            caution: `A short observation window can understate later trips or revenue, especially for infrequent players.`,
+          };
+    }
+
+    if (
+      pairIncludes(pair, recencyKeys) &&
+      (pairIncludes(pair, ["TripsMonth"]) || pairIncludes(pair, responseKeys))
+    ) {
+      const activityMetric = pairIncludes(pair, ["TripsMonth"])
+        ? "Trips This Month"
+        : metricLabelForKeys(pair, responseKeys);
+
+      return positive
+        ? {
+            meaning: `More days since the last trip is appearing with higher ${activityMetric}. That can happen when a reactivation campaign successfully brings back lapsed players, but it can also be driven by a few outliers.`,
+            nextCheck: `Separate active and inactive segments, inspect the lapsed-player rows, and compare medians as well as averages.`,
+            possibleAction: `If the pattern holds for reactivation players, preserve that campaign logic and track repeat visits after the first return.`,
+            caution: `Recency and post-offer activity need a clear time window. Mixed campaign dates can make this relationship misleading.`,
+          }
+        : {
+            meaning: `As days since the last trip increase, ${activityMetric} tends to decrease. That is the expected pattern when recent visitors remain more active than lapsed players.`,
+            nextCheck: `Create recency bands such as 0–30, 31–60, 61–90, and 90+ days, then compare offer response and post-offer value inside each band.`,
+            possibleAction: `Use different offer levels and messaging for recent, cooling, and lapsed players instead of treating all rows as one audience.`,
+            caution: `Recent activity can be a stronger predictor than the offer itself, so compare within similar recency groups.`,
+          };
+    }
+
+    if (
+      pairIncludes(pair, offerValueKeys) &&
+      pairIncludes(pair, responseKeys)
+    ) {
+      const valueMetric = metricLabelForKeys(pair, offerValueKeys);
+      const responseMetric = metricLabelForKeys(pair, responseKeys);
+
+      return positive
+        ? {
+            meaning: `Higher baseline ${valueMetric} is appearing with higher ${responseMetric}. The strongest players in the file are also producing stronger post-offer activity.`,
+            nextCheck: `Compare response within narrow value bands so the result is not only describing the existing value hierarchy.`,
+            possibleAction: `Use baseline value to forecast response, but measure incremental lift separately so high-value players are not over-credited to the campaign.`,
+            caution: `This may reflect normal player value persistence rather than an effect from the assigned offer.`,
+          }
+        : {
+            meaning: `Higher baseline ${valueMetric} is appearing with lower ${responseMetric}. That may point to fatigue, a weak offer fit for top players, or a small sample with unusual outcomes.`,
+            nextCheck: `Review high-value rows individually, verify the post-offer window, and compare hosted, VIP, and standard segments separately.`,
+            possibleAction: `Test a different benefit, channel, or timing for the affected high-value group rather than simply increasing the dollar amount.`,
+            caution: `Small VIP samples can swing correlations sharply, so row-level review matters.`,
+          };
+    }
+  }
+
+  if (lab === "weather") {
+    if (
+      pairIncludes(pair, weatherPressureKeys) &&
+      pairIncludes(pair, trafficKeys)
+    ) {
+      const weatherMetric = metricLabelForKeys(pair, weatherPressureKeys);
+      const trafficMetric = metricLabelForKeys(pair, trafficKeys);
+
+      return positive
+        ? {
+            meaning: `Higher ${weatherMetric} is appearing with higher ${trafficMetric}. That is not the usual weather-drag pattern, so another factor such as an event, promotion, weekend, or holiday may be overpowering the weather signal.`,
+            nextCheck: `Split event and non-event days, promo and non-promo days, and weekends versus weekdays. Review the same relationship inside each group.`,
+            possibleAction: `Do not increase staffing or marketing solely because of this correlation. First identify which event or promotion conditions are offsetting the weather risk.`,
+            caution: `Weather and event activity can move together in a small sample and create a misleading positive relationship.`,
+          }
+        : {
+            meaning: `Higher ${weatherMetric} is appearing with lower ${trafficMetric}. That supports the working idea that difficult weather is associated with traffic falling below the normal baseline.`,
+            nextCheck: `Compare high-risk and low-risk days with similar weekday, event, and promotion conditions. Check whether the effect is driven by heat, rain, wind, or one extreme day.`,
+            possibleAction: `Prepare staffing, app messaging, hotel, and food plans for high-risk days. Use the relationship as an operating threshold to test, not as a final rule.`,
+            caution: `The relationship does not prove weather caused the traffic change; events, holidays, road conditions, and campaign intensity may also matter.`,
+          };
+    }
+
+    if (
+      pairIncludes(pair, weatherPressureKeys) &&
+      pairIncludes(pair, ["HotelBookings"])
+    ) {
+      const weatherMetric = metricLabelForKeys(pair, weatherPressureKeys);
+
+      return positive
+        ? {
+            meaning: `Higher ${weatherMetric} is appearing with more hotel bookings. Poor travel conditions may be reducing day trips while increasing the value of staying on property.`,
+            nextCheck: `Compare local versus non-local guests, same-day bookings, occupancy, cancellations, and whether event dates are driving both hotel demand and weather exposure.`,
+            possibleAction: `Consider hotel-focused messaging or stay packages on forecasted high-risk dates, then measure incremental bookings and total property value.`,
+            caution: `Major events can increase hotel bookings regardless of weather, so control for the event calendar.`,
+          }
+        : {
+            meaning: `Higher ${weatherMetric} is appearing with fewer hotel bookings. That may mean difficult conditions are discouraging travel altogether rather than shifting guests into overnight stays.`,
+            nextCheck: `Review booking lead time, cancellations, drive-market distance, and event status. Compare forecasts with actual conditions.`,
+            possibleAction: `Use earlier weather-triggered communication, flexible booking messages, or targeted offers for guests close enough to travel safely.`,
+            caution: `Hotel bookings may be made days or weeks before the weather occurs, so same-day correlation can miss the true timing.`,
+          };
+    }
+
+    if (
+      pairIncludes(pair, trafficKeys) &&
+      (pairIncludes(pair, demandKeys) || pairIncludes(pair, revenueKeys))
+    ) {
+      const trafficMetric = metricLabelForKeys(pair, trafficKeys);
+      const outcomeMetric = pairIncludes(pair, demandKeys)
+        ? metricLabelForKeys(pair, demandKeys)
+        : metricLabelForKeys(pair, revenueKeys);
+
+      return positive
+        ? {
+            meaning: `Higher ${trafficMetric} is appearing with higher ${outcomeMetric}. Busier days are also producing more of this demand or revenue measure.`,
+            nextCheck: `Convert the outcome to a per-trip rate. For example, compare redemptions or theo per 100 trips so volume is separated from guest behavior.`,
+            possibleAction: `Align staffing and inventory with forecast traffic, but use per-guest rates to decide whether the day was actually more productive.`,
+            caution: `Total outcomes usually rise with total traffic. The per-trip result may tell a different story.`,
+          }
+        : {
+            meaning: `Higher ${trafficMetric} is appearing with lower ${outcomeMetric}. That can signal lower-value traffic, capacity friction, a promotion mix change, or a few unusual days.`,
+            nextCheck: `Review the rows with the largest traffic counts and compare per-trip redemptions, theo, actual win, event type, and operational notes.`,
+            possibleAction: `Investigate whether busy days need different staffing, floor coverage, food capacity, or offer design rather than assuming more traffic automatically means more value.`,
+            caution: `Actual win is volatile and may move opposite traffic over short periods even when theoretical value is healthy.`,
+          };
+    }
+
+    if (
+      pairIncludes(pair, ["ExpectedTrips"]) &&
+      pairIncludes(pair, ["ActualTrips"])
+    ) {
+      return positive
+        ? {
+            meaning: `Expected and actual trips move together, which suggests the baseline forecast is tracking the general shape of demand.`,
+            nextCheck: `Review the residuals: the days where actual trips differ most from expected trips. Then test whether weather, events, promotions, or weekdays explain those misses.`,
+            possibleAction: `Keep the baseline model, but add the strongest residual drivers as adjustment factors and validate them on a later period.`,
+            caution: `A high correlation can still hide a consistent over-forecast or under-forecast bias.`,
+          }
+        : {
+            meaning: `Expected and actual trips are not moving together. The baseline may be missing important drivers or may be built on a different period than the rows being reviewed.`,
+            nextCheck: `Check date alignment, event and promotion flags, weekday patterns, seasonality, and whether the expected values were generated before or after the actual period.`,
+            possibleAction: `Rebuild or recalibrate the baseline before using weather adjustments for staffing or campaign decisions.`,
+            caution: `A short or unusual period can make a reasonable long-run forecast look weak.`,
+          };
+    }
+  }
+
+  return {
+    meaning: `${leftLabel} and ${rightLabel} show a ${strength} ${
+      positive ? "positive" : "negative"
+    } relationship in the loaded rows. That means they tend to move ${
+      positive ? "in the same direction" : "in opposite directions"
+    }, but the pattern does not explain why.`,
+    nextCheck: `Plot the individual rows, inspect outliers, split the data into meaningful groups, and check whether the pattern remains after controlling for dates, segments, events, or other business rules.`,
+    possibleAction: `Use this relationship to form a testable hypothesis. Make a small operational or campaign test, define the success metric in advance, and compare the result with a similar group or period.`,
+    caution: `Correlation is a screening signal. It should narrow the investigation, not end it.`,
+  };
+}
+
 function describeDistribution(
   stats: ReturnType<typeof getMetricStats>,
   metric: MetricOption
@@ -2118,10 +2376,12 @@ function CorrelationSummaryCard({
   title,
   pair,
   icon,
+  lab,
 }: {
   title: string;
   pair?: CorrelationPair;
   icon: ReactNode;
+  lab: LabKey;
 }) {
   if (!pair) {
     return (
@@ -2134,14 +2394,16 @@ function CorrelationSummaryCard({
         </div>
 
         <p className="mt-4 text-sm leading-6 text-zinc-400">
-          Not enough variation exists in the loaded rows to calculate this
-          relationship.
+          There is not enough variation in the loaded rows to calculate a
+          useful relationship here. Import more rows or check whether one of
+          the columns contains the same value throughout the file.
         </p>
       </div>
     );
   }
 
   const isPositive = pair.value >= 0;
+  const guidance = buildCorrelationGuidance(pair, lab);
 
   return (
     <div className="rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
@@ -2181,6 +2443,26 @@ function CorrelationSummaryCard({
           }}
         />
       </div>
+
+      <div className="mt-5 space-y-3">
+        <div className="rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.06] p-4">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
+            What this may mean
+          </p>
+          <p className="mt-2 text-sm leading-6 text-zinc-300">
+            {guidance.meaning}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-zinc-300">
+            What I would check next
+          </p>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">
+            {guidance.nextCheck}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -2191,12 +2473,14 @@ function DataInterpretationPanel({
   rowCount,
   correlations,
   findings,
+  lab,
 }: {
   title: string;
   summary: string;
   rowCount: number;
   correlations: CorrelationPair[];
   findings: InterpretationFinding[];
+  lab: LabKey;
 }) {
   const strongestPositive = [...correlations]
     .filter((pair) => pair.value > 0)
@@ -2207,6 +2491,10 @@ function DataInterpretationPanel({
     .sort((first, second) => first.value - second.value)[0];
 
   const topRelationships = correlations.slice(0, 6);
+  const leadPair = correlations[0];
+  const leadGuidance = leadPair
+    ? buildCorrelationGuidance(leadPair, lab)
+    : null;
 
   return (
     <section className={`${glassPanel} p-6 md:p-8`}>
@@ -2214,7 +2502,7 @@ function DataInterpretationPanel({
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-cyan-200">
             <Sparkles size={14} />
-            What the Data Says
+            My Read of the Data
           </div>
 
           <h3 className="mt-5 text-3xl font-black text-white md:text-4xl">
@@ -2228,11 +2516,11 @@ function DataInterpretationPanel({
 
         <div className="rounded-3xl border border-cyan-300/20 bg-black/25 px-5 py-4 text-right">
           <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">
-            Rows Interpreted
+            Rows Reviewed
           </p>
           <p className="mt-2 text-3xl font-black text-white">{rowCount}</p>
           <p className="mt-1 text-xs text-zinc-500">
-            Updates automatically after CSV import.
+            This section recalculates when a CSV is imported.
           </p>
         </div>
       </div>
@@ -2242,62 +2530,134 @@ function DataInterpretationPanel({
           title="Strongest Positive Relationship"
           pair={strongestPositive}
           icon={<TrendingUp size={16} />}
+          lab={lab}
         />
 
         <CorrelationSummaryCard
           title="Strongest Negative Relationship"
           pair={strongestNegative}
           icon={<TrendingDown size={16} />}
+          lab={lab}
         />
       </div>
+
+      {leadPair && leadGuidance && (
+        <div className="mt-7 rounded-[2rem] border border-cyan-300/20 bg-cyan-300/[0.06] p-5 md:p-6">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+            How I would use the strongest signal
+          </p>
+
+          <h4 className="mt-3 text-2xl font-black text-white">
+            {leadPair.left.label} and {leadPair.right.label} are the first place
+            I would investigate
+          </h4>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-3">
+            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
+                Working hypothesis
+              </p>
+              <p className="mt-2 text-sm leading-6 text-zinc-300">
+                {leadGuidance.meaning}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
+                Next comparison
+              </p>
+              <p className="mt-2 text-sm leading-6 text-zinc-300">
+                {leadGuidance.nextCheck}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
+                Possible action
+              </p>
+              <p className="mt-2 text-sm leading-6 text-zinc-300">
+                {leadGuidance.possibleAction}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-yellow-300/20 bg-yellow-300/10 p-4">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-300">
+              Before acting on it
+            </p>
+            <p className="mt-2 text-sm leading-6 text-yellow-50/85">
+              {leadGuidance.caution}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="mt-7">
         <div className="flex items-center gap-2">
           <BarChart3 size={17} className="text-cyan-300" />
           <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
-            Top Measured Relationships
+            Other relationships worth reviewing
           </p>
         </div>
 
         {topRelationships.length === 0 ? (
           <div className="mt-4 rounded-3xl border border-cyan-300/15 bg-black/25 p-5 text-sm leading-6 text-zinc-400">
-            Add at least three varied rows to calculate correlations.
+            Add at least three rows with real variation to calculate
+            correlations. A column filled with the same value cannot produce a
+            useful relationship.
           </div>
         ) : (
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {topRelationships.map((pair) => (
-              <div
-                key={`${pair.left.key}-${pair.right.key}`}
-                className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <p className="text-sm font-black leading-5 text-white">
-                    {pair.left.label} ↔ {pair.right.label}
-                  </p>
-                  <span
-                    className={
-                      pair.value >= 0
-                        ? "text-sm font-black text-green-300"
-                        : "text-sm font-black text-red-300"
-                    }
-                  >
-                    {formatCorrelation(pair.value)}
-                  </span>
-                </div>
+            {topRelationships.map((pair) => {
+              const guidance = buildCorrelationGuidance(pair, lab);
 
-                <p className="mt-2 text-xs leading-5 text-zinc-400">
-                  {correlationStrength(pair.value)}{" "}
-                  {correlationDirection(pair.value)} association.
-                </p>
-              </div>
-            ))}
+              return (
+                <div
+                  key={`${pair.left.key}-${pair.right.key}`}
+                  className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-sm font-black leading-5 text-white">
+                      {pair.left.label} ↔ {pair.right.label}
+                    </p>
+                    <span
+                      className={
+                        pair.value >= 0
+                          ? "text-sm font-black text-green-300"
+                          : "text-sm font-black text-red-300"
+                      }
+                    >
+                      {formatCorrelation(pair.value)}
+                    </span>
+                  </div>
+
+                  <p className="mt-2 text-xs font-bold leading-5 text-zinc-400">
+                    {correlationStrength(pair.value)}{" "}
+                    {correlationDirection(pair.value)} association
+                  </p>
+
+                  <p className="mt-3 text-xs leading-5 text-zinc-300">
+                    {guidance.meaning}
+                  </p>
+
+                  <div className="mt-3 border-t border-white/10 pt-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-300">
+                      Practical next step
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-zinc-400">
+                      {guidance.possibleAction}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
       <div className="mt-7">
         <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
-          Notable Findings
+          File-level findings
         </p>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -2315,15 +2675,16 @@ function DataInterpretationPanel({
 
       <div className="mt-7 rounded-3xl border border-yellow-300/20 bg-yellow-300/10 p-5">
         <p className="text-xs font-black uppercase tracking-[0.22em] text-yellow-300">
-          Interpretation Note
+          What correlation can and cannot tell us
         </p>
 
         <p className="mt-3 text-sm leading-7 text-yellow-50/85">
-          Correlation measures association, not causation. Small samples,
-          missing values, outliers, promotions, holidays, and operational
-          decisions can all influence the relationships shown here. Treat this
-          section as a decision-support summary rather than proof of cause and
-          effect.
+          A correlation tells me which columns move together strongly enough to
+          investigate. It does not tell me that one column caused the other. I
+          would use the result to form a working hypothesis, split the data into
+          fair comparison groups, inspect outliers, confirm the time window, and
+          test the decision on a later campaign or period before turning it into
+          a production rule.
         </p>
       </div>
     </section>
@@ -2389,17 +2750,26 @@ function OfferExportModel() {
       (row) => row.ActiveInactive === "Inactive"
     ).length;
 
-    const summary = `${rows.length} player rows are loaded. ${passRate.toFixed(
+    const summary = `I am reviewing ${rows.length} player rows. ${stats.passRows} rows pass validation, ${stats.reviewRows} need review, and ${stats.failRows} fail, which puts the current pass rate at ${passRate.toFixed(
       1
-    )}% pass validation and ${appEligibleRate.toFixed(
+    )}%. ${stats.appEligible} rows are app eligible (${appEligibleRate.toFixed(
       1
-    )}% are app eligible. The selected ${selectedMetric.label} metric has an average of ${formatMetricValue(
+    )}%). For ${selectedMetric.label}, the average is ${formatMetricValue(
       metricStats.average,
       selectedMetric.format
-    )} and a median of ${formatMetricValue(
+    )}, the median is ${formatMetricValue(
       metricStats.median,
       selectedMetric.format
-    )}. ${describeDistribution(metricStats, selectedMetric)}`;
+    )}, and the range runs from ${formatMetricValue(
+      metricStats.min,
+      selectedMetric.format
+    )} to ${formatMetricValue(
+      metricStats.max,
+      selectedMetric.format
+    )}. ${describeDistribution(
+      metricStats,
+      selectedMetric
+    )} I would read the validation counts first, then use the relationships below to decide which assignment rules, segments, delivery flags, or response measures deserve a row-level review.`;
 
     const findings: InterpretationFinding[] = [
       {
@@ -2488,16 +2858,18 @@ function OfferExportModel() {
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
-              Casino Offer Export Model
+              Offer File Review
             </p>
 
             <h2 className="mt-3 text-3xl font-black text-white md:text-5xl">
-              Live offer export analyzer
+              Check the file before it reaches production
             </h2>
 
             <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-300 md:text-base">
-              Download the template, fill out the highlighted required columns,
-              import the CSV, and the table plus histogram update live.
+              I built this around the kind of monthly file review I actually did:
+              pull the rows, confirm the required fields, inspect assignments,
+              find exceptions, and understand what the response data is saying
+              before anything moves forward.
             </p>
           </div>
 
@@ -2580,10 +2952,10 @@ function OfferExportModel() {
         <div className="mb-5 flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-300">
-              Detail Block
+              Rows Behind the Result
             </p>
             <h3 className="mt-2 text-2xl font-black text-white">
-              Imported table and export schema
+              The records and fields behind the summary
             </h3>
           </div>
 
@@ -2635,6 +3007,7 @@ function OfferExportModel() {
         rowCount={rows.length}
         correlations={interpretation.correlations}
         findings={interpretation.findings}
+        lab="offers"
       />
     </div>
   );
@@ -2727,19 +3100,28 @@ function WeatherTrafficModel() {
     const riskTrafficCorrelation =
       calculateCorrelation(rows, "WeatherRiskScore", "TripDeltaPercent") ?? 0;
 
-    const summary = `${rows.length} daily rows are loaded. Actual traffic is ${Math.abs(
+    const summary = `I am reviewing ${rows.length} daily rows. Actual traffic finished ${Math.abs(
       stats.totalTripDeltaPercent
     ).toFixed(1)}% ${
       stats.totalTripDeltaPercent >= 0 ? "above" : "below"
-    } the expected baseline overall, while average weather risk is ${
-      stats.averageRisk
-    }/100. The selected ${selectedMetric.label} metric averages ${formatMetricValue(
+    } the expected baseline, a difference of ${formatNumber(
+      Math.abs(stats.totalTripDelta)
+    )} trips. Average weather risk is ${stats.averageRisk}/100. For ${selectedMetric.label}, the average is ${formatMetricValue(
       metricStats.average,
       selectedMetric.format
-    )} with a median of ${formatMetricValue(
+    )}, the median is ${formatMetricValue(
       metricStats.median,
       selectedMetric.format
-    )}. ${describeDistribution(metricStats, selectedMetric)}`;
+    )}, and the range runs from ${formatMetricValue(
+      metricStats.min,
+      selectedMetric.format
+    )} to ${formatMetricValue(
+      metricStats.max,
+      selectedMetric.format
+    )}. ${describeDistribution(
+      metricStats,
+      selectedMetric
+    )} I would compare high-risk and low-risk days first, then separate event, promotion, and weekend effects before treating weather as the reason traffic changed.`;
 
     const findings: InterpretationFinding[] = [
       {
@@ -2848,16 +3230,18 @@ function WeatherTrafficModel() {
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
-              Weather vs. Player Traffic Model
+              Traffic and Conditions Review
             </p>
 
             <h2 className="mt-3 text-3xl font-black text-white md:text-5xl">
-              Weather impact traffic analyzer
+              See what may be moving traffic
             </h2>
 
             <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-300 md:text-base">
-              Import weather, trip, redemption, and hotel demand data to model
-              how heat, rain, wind, and events may affect player traffic.
+              Import daily conditions, traffic, redemption, hotel, and gaming
+              results. I use the comparisons to see which patterns are worth
+              investigating, what may need an operating response, and what still
+              needs a fairer test before I trust it.
             </p>
           </div>
 
@@ -2975,10 +3359,10 @@ function WeatherTrafficModel() {
         <div className="mb-5 flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-300">
-              Detail Block
+              Rows Behind the Result
             </p>
             <h3 className="mt-2 text-2xl font-black text-white">
-              Imported table and weather schema
+              The daily records and fields behind the summary
             </h3>
           </div>
 
@@ -3030,6 +3414,7 @@ function WeatherTrafficModel() {
         rowCount={rows.length}
         correlations={interpretation.correlations}
         findings={interpretation.findings}
+        lab="weather"
       />
     </div>
   );
@@ -3042,20 +3427,23 @@ export default function DataLabPage() {
     {
       key: "offers" as LabKey,
       title: "Casino Offer Export",
-      eyebrow: "Template + Import",
+      eyebrow: "Monthly File Review",
       description:
-        "Offer values, hotel codes, eligibility flags, validation status, and export-ready campaign rows.",
+        "I use this model to check assignment logic, required fields, delivery eligibility, validation status, player value, and post-offer response.",
       icon: ShieldCheck,
     },
     {
       key: "weather" as LabKey,
       title: "Weather vs. Player Traffic",
-      eyebrow: "Traffic Modeling",
+      eyebrow: "Traffic Investigation",
       description:
-        "Weather risk, trip deltas, redemption demand, hotel bookings, and traffic recommendations.",
+        "This model compares daily conditions with traffic, redemptions, hotel demand, and gaming results so I can see what deserves a closer look.",
       icon: CloudSun,
     },
   ];
+
+  const activeLabDetails =
+    labCards.find((card) => card.key === activeLab) ?? labCards[0];
 
   return (
     <main className="relative min-h-screen overflow-hidden px-5 pb-20 pt-28 text-white md:px-10">
@@ -3069,14 +3457,16 @@ export default function DataLabPage() {
               </div>
 
               <h1 className="mt-6 max-w-4xl text-5xl font-black tracking-tight md:text-7xl">
-                Casino analytics demos with live CSV import.
+                I wanted the numbers to explain themselves
               </h1>
 
-              <p className="mt-6 max-w-3xl text-base leading-8 text-zinc-300 md:text-lg">
-                A hands-on analyst dashboard for casino offer exports and
-                weather-driven player traffic modeling. Download templates,
-                fill required fields, import CSV files, and watch the metrics,
-                histograms, and tables update.
+              <p className="mt-6 max-w-4xl text-base leading-8 text-zinc-300 md:text-lg">
+                A chart can show that two columns move together, but that is not
+                the end of the analysis. I built this page to import a file,
+                check whether the rows are usable, describe the distribution,
+                find the strongest relationships, explain what those patterns
+                may mean, and show what I would investigate before making a
+                decision.
               </p>
             </div>
 
@@ -3103,7 +3493,8 @@ export default function DataLabPage() {
                   key={card.key}
                   type="button"
                   onClick={() => setActiveLab(card.key)}
-                  className={`text-left ${glassCard} p-6 ${
+                  aria-pressed={isActive}
+                  className={`group flex h-full flex-col text-left ${glassCard} p-6 ${
                     isActive
                       ? "border-cyan-300/60 bg-cyan-300/[0.11] shadow-[0_0_30px_rgba(34,211,238,0.12)]"
                       : ""
@@ -3118,23 +3509,52 @@ export default function DataLabPage() {
                       <h2 className="mt-3 text-2xl font-black text-white">
                         {card.title}
                       </h2>
-
-                      <p className="mt-3 text-sm leading-6 text-zinc-400">
-                        {card.description}
-                      </p>
                     </div>
 
-                    <div className="rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-3 text-cyan-200">
+                    <div
+                      className={`rounded-2xl border p-3 ${
+                        isActive
+                          ? "border-cyan-200/60 bg-cyan-300 text-black"
+                          : "border-cyan-300/25 bg-cyan-300/10 text-cyan-200"
+                      }`}
+                    >
                       <Icon size={24} />
                     </div>
                   </div>
 
-                  <div className="mt-5 inline-flex rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-cyan-100">
-                    {isActive ? "Currently Open" : "Open Model"}
+                  <p className="mt-4 flex-1 text-sm leading-6 text-zinc-400">
+                    {card.description}
+                  </p>
+
+                  <div className="mt-5 flex items-center justify-between gap-3">
+                    <span className="inline-flex rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-cyan-100">
+                      {isActive ? "Open now" : "Open model"}
+                    </span>
+
+                    {isActive && (
+                      <span className="rounded-full bg-cyan-400 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-black">
+                        Selected
+                      </span>
+                    )}
                   </div>
                 </button>
               );
             })}
+          </div>
+
+          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.07] p-4">
+            <BarChart3 className="mt-0.5 shrink-0 text-cyan-300" size={18} />
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">
+                Currently open
+              </p>
+              <p className="mt-1 text-sm font-bold text-white">
+                {activeLabDetails.title}
+              </p>
+              <p className="mt-1 text-sm leading-6 text-zinc-400">
+                {activeLabDetails.description}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -3142,9 +3562,88 @@ export default function DataLabPage() {
           {activeLab === "offers" && <OfferExportModel />}
           {activeLab === "weather" && <WeatherTrafficModel />}
         </div>
+
+        <section className={`${glassPanel} mt-8 p-6 md:p-8`}>
+          <div className="flex items-start gap-4">
+            <BarChart3 className="mt-1 shrink-0 text-cyan-300" size={24} />
+
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+                Why I built this page
+              </p>
+
+              <h2 className="mt-3 max-w-4xl text-3xl font-black text-white md:text-4xl">
+                I wanted to show the part of analysis that happens after the
+                export finishes
+              </h2>
+
+              <p className="mt-5 max-w-5xl text-sm leading-7 text-zinc-300 md:text-base">
+                In my database work, pulling the rows was only the beginning. I
+                still had to check IDs, assignment rules, eligibility, dates,
+                suppression flags, duplicates, totals, delivery channels, and
+                whether the output made sense against the business request. I
+                also had to explain what the results meant to people who were
+                not looking at the SQL or the raw file.
+              </p>
+
+              <p className="mt-4 max-w-5xl text-sm leading-7 text-zinc-300 md:text-base">
+                That is what this page is trying to show. It does not stop at an
+                average, histogram, or correlation coefficient. It turns the
+                result into a working hypothesis, explains what I would compare
+                next, suggests a possible action, and keeps the limitations next
+                to the recommendation instead of hiding them.
+              </p>
+
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-5">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
+                    First: trust the file
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-zinc-300">
+                    Confirm required columns, data types, flags, IDs, dates,
+                    duplicates, and validation status before interpreting the
+                    results.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-5">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
+                    Then: explain the pattern
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-zinc-300">
+                    Describe the size and direction of the relationship in plain
+                    language and connect it to the actual campaign or operating
+                    question.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-5">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
+                    Finally: test the decision
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-zinc-300">
+                    Compare fair groups, inspect outliers, define the success
+                    metric, and validate the result on a later period before
+                    making it a production rule.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-yellow-300/20 bg-yellow-300/10 p-5">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-300">
+                  Demo data and privacy
+                </p>
+                <p className="mt-3 text-sm leading-7 text-yellow-50/85">
+                  The records on this page are synthetic examples. They are
+                  shaped like the kinds of files and checks I worked with, but
+                  they do not contain private player information, internal
+                  campaign data, or proprietary business rules.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
       </section>
     </main>
   );
 }
-
-
