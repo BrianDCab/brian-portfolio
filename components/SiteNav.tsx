@@ -1,37 +1,102 @@
 ﻿"use client";
 
+import {
+  useEffect,
+  useState,
+  type FocusEvent,
+  type MouseEvent,
+} from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText } from "lucide-react";
+import { ChevronDown, FileText, Menu, X } from "lucide-react";
 
-export const siteNavLinks = [
+export const primaryNavLinks = [
   { label: "Home", href: "/" },
   { label: "Projects", href: "/projects" },
-  { label: "Data Lab", href: "/data-lab" },
-  { label: "Geo Lab", href: "/geo-lab" },
-  { label: "Security", href: "/security-lab" },
-  { label: "Playground", href: "/playground" },
-  { label: "Chaos Lab", href: "/chaos-lab" },
-  { label: "Gravity Lab", href: "/gravity-lab" },
   { label: "Travel", href: "/travel" },
 ];
 
-function ResumeNavButton({ compact = false }: { compact?: boolean }) {
-  const className = compact
-    ? "group inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-rose-400/60 bg-rose-500/15 px-3 py-2 text-xs font-black text-rose-100 shadow-[0_0_22px_rgba(244,63,94,0.25)] transition duration-300 hover:border-rose-300 hover:bg-rose-500 hover:text-white hover:shadow-[0_0_34px_rgba(244,63,94,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-    : "group inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-rose-400/60 bg-rose-500/15 px-4 py-2 text-sm font-black text-rose-100 shadow-[0_0_24px_rgba(244,63,94,0.28)] transition duration-300 hover:-translate-y-0.5 hover:border-rose-300 hover:bg-rose-500 hover:text-white hover:shadow-[0_0_38px_rgba(244,63,94,0.50)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 focus-visible:ring-offset-black";
+export const labNavLinks = [
+  {
+    label: "Data Lab",
+    href: "/data-lab",
+    description: "CSV tools, dashboards, and data experiments",
+  },
+  {
+    label: "Geo Lab",
+    href: "/geo-lab",
+    description: "Interactive mapping and location tools",
+  },
+  {
+    label: "Security Lab",
+    href: "/security-lab",
+    description: "Security-focused projects and demonstrations",
+  },
+  {
+    label: "Playground",
+    href: "/playground",
+    description: "Games and interactive coding projects",
+  },
+  {
+    label: "Chaos Lab",
+    href: "/chaos-lab",
+    description: "Experimental interfaces and interactions",
+  },
+  {
+    label: "Gravity Lab",
+    href: "/gravity-lab",
+    description: "Physics and motion experiments",
+  },
+];
+
+/*
+  Preserved in case another component imports siteNavLinks.
+*/
+export const siteNavLinks = [...primaryNavLinks, ...labNavLinks];
+
+function isLinkActive(pathname: string, href: string) {
+  if (href === "/") {
+    return pathname === "/";
+  }
+
+  return pathname.startsWith(href);
+}
+
+function ResumeNavButton({
+  compact = false,
+  fullWidth = false,
+}: {
+  compact?: boolean;
+  fullWidth?: boolean;
+}) {
+  const sizeClasses = compact
+    ? "px-3 py-2 text-xs"
+    : "px-4 py-2 text-sm";
 
   return (
     <a
       href="/Brian_Cabrera_Resume.pdf"
       target="_blank"
       rel="noreferrer"
-      className={className}
+      className={[
+        "group inline-flex shrink-0 items-center justify-center gap-2 rounded-full",
+        "border border-rose-400/60 bg-rose-500/15 font-black text-rose-100",
+        "shadow-[0_0_24px_rgba(244,63,94,0.28)]",
+        "transition duration-300",
+        "hover:-translate-y-0.5 hover:border-rose-300 hover:bg-rose-500",
+        "hover:text-white hover:shadow-[0_0_38px_rgba(244,63,94,0.50)]",
+        "focus-visible:outline-none focus-visible:ring-2",
+        "focus-visible:ring-rose-300 focus-visible:ring-offset-2",
+        "focus-visible:ring-offset-black",
+        sizeClasses,
+        fullWidth ? "w-full" : "",
+      ].join(" ")}
     >
       <FileText
         size={compact ? 14 : 15}
         className="transition-transform duration-300 group-hover:-rotate-3 group-hover:scale-110"
       />
+
       Resume
     </a>
   );
@@ -40,16 +105,20 @@ function ResumeNavButton({ compact = false }: { compact?: boolean }) {
 function AuthNavLinks({
   username,
   compact = false,
+  fullWidth = false,
 }: {
   username?: string | null;
   compact?: boolean;
+  fullWidth?: boolean;
 }) {
   const pathname = usePathname();
   const isLoggedIn = Boolean(username);
 
-  const baseButton = compact
-    ? "inline-flex shrink-0 items-center justify-center rounded-full px-3 py-2 text-xs font-semibold transition"
-    : "inline-flex shrink-0 items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition";
+  const baseButton = [
+    "inline-flex shrink-0 items-center justify-center rounded-full font-semibold transition",
+    compact ? "px-3 py-2 text-xs" : "px-4 py-2 text-sm",
+    fullWidth ? "w-full" : "",
+  ].join(" ");
 
   const neutralButton =
     "border border-white/10 bg-white/5 text-zinc-300 hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white";
@@ -66,20 +135,19 @@ function AuthNavLinks({
   if (isLoggedIn) {
     return (
       <>
-        <a
+        <Link
           href="/dashboard"
-          className={
-            baseButton +
-            " " +
-            (pathname.startsWith("/dashboard")
+          className={[
+            baseButton,
+            pathname.startsWith("/dashboard")
               ? activeButton
-              : neutralButton)
-          }
+              : neutralButton,
+          ].join(" ")}
         >
           Dashboard
-        </a>
+        </Link>
 
-        <a href="/logout" className={baseButton + " " + logoutButton}>
+        <a href="/logout" className={`${baseButton} ${logoutButton}`}>
           Logout
         </a>
       </>
@@ -90,28 +158,184 @@ function AuthNavLinks({
     <>
       <Link
         href="/login"
-        className={
-          baseButton +
-          " " +
-          (pathname.startsWith("/login") ? activeButton : neutralButton)
-        }
+        className={[
+          baseButton,
+          pathname.startsWith("/login")
+            ? activeButton
+            : neutralButton,
+        ].join(" ")}
       >
         Login
       </Link>
 
       <Link
         href="/register"
-        className={
-          baseButton +
-          " " +
-          (pathname.startsWith("/register")
+        className={[
+          baseButton,
+          pathname.startsWith("/register")
             ? activeButton
-            : registerButton)
-        }
+            : registerButton,
+        ].join(" ")}
       >
         Register
       </Link>
     </>
+  );
+}
+
+function DesktopLabsDropdown({ pathname }: { pathname: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [suppressHover, setSuppressHover] = useState(false);
+
+  const isLabsActive = labNavLinks.some((link) =>
+    isLinkActive(pathname, link.href),
+  );
+
+  function handleMouseEnter() {
+    if (!suppressHover) {
+      setIsOpen(true);
+    }
+  }
+
+  function handleMouseLeave() {
+    setIsOpen(false);
+    setSuppressHover(false);
+  }
+
+  function handleLinkClick(event: MouseEvent<HTMLAnchorElement>) {
+    /*
+      Close the dropdown immediately after selecting a page.
+
+      suppressHover prevents it from instantly reopening while
+      the cursor is still positioned over the dropdown.
+    */
+    setIsOpen(false);
+    setSuppressHover(true);
+    event.currentTarget.blur();
+  }
+
+  function handleBlur(event: FocusEvent<HTMLDivElement>) {
+    const nextFocusedElement = event.relatedTarget as Node | null;
+
+    if (
+      !nextFocusedElement ||
+      !event.currentTarget.contains(nextFocusedElement)
+    ) {
+      setIsOpen(false);
+    }
+  }
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onFocusCapture={() => {
+        if (!suppressHover) {
+          setIsOpen(true);
+        }
+      }}
+      onBlurCapture={handleBlur}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          setIsOpen(false);
+          setSuppressHover(true);
+
+          const activeElement =
+            document.activeElement as HTMLElement | null;
+
+          activeElement?.blur();
+        }
+      }}
+    >
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        className={[
+          "inline-flex items-center gap-1.5 rounded-full px-4 py-2",
+          "text-sm font-semibold transition",
+          isLabsActive
+            ? "bg-cyan-400 text-black shadow-[0_0_24px_rgba(34,211,238,0.35)]"
+            : "border border-white/10 bg-white/5 text-zinc-300 hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white",
+        ].join(" ")}
+      >
+        Labs
+
+        <ChevronDown
+          size={15}
+          className={[
+            "transition-transform duration-200",
+            isOpen ? "rotate-180" : "",
+          ].join(" ")}
+        />
+      </button>
+
+      {/*
+        pt-3 creates an invisible hover bridge between the
+        Labs button and dropdown.
+
+        Do not replace pt-3 with mt-3. Margin would create a
+        dead zone that closes the dropdown while moving into it.
+      */}
+      <div
+        className={[
+          "absolute left-1/2 top-full z-50 w-80 -translate-x-1/2 pt-3",
+          "transition duration-200",
+          isOpen
+            ? "visible translate-y-0 opacity-100 pointer-events-auto"
+            : "invisible translate-y-2 opacity-0 pointer-events-none",
+        ].join(" ")}
+      >
+        <div
+          role="menu"
+          className="rounded-2xl border border-white/10 bg-zinc-950/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-xl"
+        >
+          <div className="px-3 pb-2 pt-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-cyan-300/70">
+              Interactive Labs
+            </p>
+          </div>
+
+          <div className="grid gap-1">
+            {labNavLinks.map((link) => {
+              const isActive = isLinkActive(pathname, link.href);
+
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  prefetch={
+                    link.href === "/geo-lab" ? false : undefined
+                  }
+                  role="menuitem"
+                  onClick={handleLinkClick}
+                  className={[
+                    "rounded-xl border px-3 py-3 transition",
+                    isActive
+                      ? "border-cyan-300/40 bg-cyan-400/15"
+                      : "border-transparent hover:border-white/10 hover:bg-white/5",
+                  ].join(" ")}
+                >
+                  <div
+                    className={[
+                      "text-sm font-bold",
+                      isActive ? "text-cyan-200" : "text-white",
+                    ].join(" ")}
+                  >
+                    {link.label}
+                  </div>
+
+                  <div className="mt-1 text-xs leading-relaxed text-zinc-500">
+                    {link.description}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -122,9 +346,25 @@ export default function SiteNav({
 }) {
   const pathname = usePathname();
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileLabsOpen, setMobileLabsOpen] = useState(false);
+
+  const isLabsActive = labNavLinks.some((link) =>
+    isLinkActive(pathname, link.href),
+  );
+
+  /*
+    Close mobile navigation after changing pages.
+  */
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setMobileLabsOpen(false);
+  }, [pathname]);
+
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-black/75 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-xl">
       <div className="mx-auto max-w-7xl px-4 md:px-6">
+        {/* Desktop navigation */}
         <div className="hidden items-center justify-between gap-6 py-4 lg:flex">
           <Link href="/" className="group shrink-0">
             <div className="text-sm font-black tracking-[0.32em] text-white transition group-hover:text-cyan-300">
@@ -136,29 +376,41 @@ export default function SiteNav({
             </div>
           </Link>
 
-          <nav className="flex flex-wrap items-center justify-end gap-2">
-            {siteNavLinks.map((link) => {
-              const isActive =
-                link.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(link.href);
+          <nav className="flex items-center justify-end gap-2">
+            {primaryNavLinks
+              .filter((link) => link.href !== "/travel")
+              .map((link) => {
+                const isActive = isLinkActive(pathname, link.href);
 
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  prefetch={link.href === "/geo-lab" ? false : undefined}
-                  className={
-                    "rounded-full px-4 py-2 text-sm font-semibold transition " +
-                    (isActive
-                      ? "bg-cyan-400 text-black shadow-[0_0_24px_rgba(34,211,238,0.35)]"
-                      : "border border-white/10 bg-white/5 text-zinc-300 hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white")
-                  }
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={[
+                      "rounded-full px-4 py-2 text-sm font-semibold transition",
+                      isActive
+                        ? "bg-cyan-400 text-black shadow-[0_0_24px_rgba(34,211,238,0.35)]"
+                        : "border border-white/10 bg-white/5 text-zinc-300 hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white",
+                    ].join(" ")}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+
+            <DesktopLabsDropdown pathname={pathname} />
+
+            <Link
+              href="/travel"
+              className={[
+                "rounded-full px-4 py-2 text-sm font-semibold transition",
+                isLinkActive(pathname, "/travel")
+                  ? "bg-cyan-400 text-black shadow-[0_0_24px_rgba(34,211,238,0.35)]"
+                  : "border border-white/10 bg-white/5 text-zinc-300 hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white",
+              ].join(" ")}
+            >
+              Travel
+            </Link>
 
             <ResumeNavButton />
 
@@ -173,6 +425,7 @@ export default function SiteNav({
           </nav>
         </div>
 
+        {/* Mobile navigation */}
         <div className="lg:hidden">
           <div className="flex items-center justify-between gap-3 py-3">
             <Link href="/" className="shrink-0">
@@ -185,42 +438,145 @@ export default function SiteNav({
               </div>
             </Link>
 
-            <a
-              href="mailto:briandacellcabrera@gmail.com"
-              className="rounded-full bg-cyan-400 px-4 py-2 text-xs font-bold text-black"
+            <button
+              type="button"
+              onClick={() =>
+                setMobileMenuOpen((current) => !current)
+              }
+              aria-label={
+                mobileMenuOpen
+                  ? "Close navigation menu"
+                  : "Open navigation menu"
+              }
+              aria-expanded={mobileMenuOpen}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:border-cyan-300/40 hover:bg-cyan-300/10"
             >
-              Contact
-            </a>
+              {mobileMenuOpen ? <X size={19} /> : <Menu size={19} />}
+            </button>
           </div>
 
-          <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-3">
-            {siteNavLinks.map((link) => {
-              const isActive =
-                link.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(link.href);
+          {mobileMenuOpen && (
+            <nav className="border-t border-white/10 pb-4 pt-3">
+              <div className="grid gap-2">
+                {primaryNavLinks
+                  .filter((link) => link.href !== "/travel")
+                  .map((link) => {
+                    const isActive = isLinkActive(
+                      pathname,
+                      link.href,
+                    );
 
-              return (
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className={[
+                          "rounded-xl border px-4 py-3 text-sm font-semibold transition",
+                          isActive
+                            ? "border-cyan-300/40 bg-cyan-400 text-black"
+                            : "border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white",
+                        ].join(" ")}
+                      >
+                        {link.label}
+                      </Link>
+                    );
+                  })}
+
+                <div className="overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMobileLabsOpen((current) => !current)
+                    }
+                    aria-expanded={mobileLabsOpen}
+                    className={[
+                      "flex w-full items-center justify-between px-4 py-3",
+                      "text-left text-sm font-semibold transition",
+                      isLabsActive
+                        ? "text-cyan-200"
+                        : "text-zinc-300",
+                    ].join(" ")}
+                  >
+                    <span>Labs</span>
+
+                    <ChevronDown
+                      size={16}
+                      className={[
+                        "transition-transform duration-200",
+                        mobileLabsOpen ? "rotate-180" : "",
+                      ].join(" ")}
+                    />
+                  </button>
+
+                  {mobileLabsOpen && (
+                    <div className="grid gap-1 border-t border-white/10 p-2">
+                      {labNavLinks.map((link) => {
+                        const isActive = isLinkActive(
+                          pathname,
+                          link.href,
+                        );
+
+                        return (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            prefetch={
+                              link.href === "/geo-lab"
+                                ? false
+                                : undefined
+                            }
+                            className={[
+                              "rounded-lg px-3 py-3 transition",
+                              isActive
+                                ? "bg-cyan-400/15 text-cyan-200"
+                                : "text-zinc-400 hover:bg-white/5 hover:text-white",
+                            ].join(" ")}
+                          >
+                            <div className="text-sm font-semibold">
+                              {link.label}
+                            </div>
+
+                            <div className="mt-1 text-xs leading-relaxed text-zinc-500">
+                              {link.description}
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 <Link
-                  key={link.href}
-                  href={link.href}
-                  prefetch={link.href === "/geo-lab" ? false : undefined}
-                  className={
-                    "shrink-0 rounded-full px-3 py-2 text-xs font-semibold transition " +
-                    (isActive
-                      ? "bg-cyan-400 text-black"
-                      : "border border-white/10 bg-white/5 text-zinc-300")
-                  }
+                  href="/travel"
+                  className={[
+                    "rounded-xl border px-4 py-3 text-sm font-semibold transition",
+                    isLinkActive(pathname, "/travel")
+                      ? "border-cyan-300/40 bg-cyan-400 text-black"
+                      : "border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white",
+                  ].join(" ")}
                 >
-                  {link.label}
+                  Travel
                 </Link>
-              );
-            })}
 
-            <ResumeNavButton compact />
+                <div className="my-1 h-px bg-white/10" />
 
-            <AuthNavLinks username={username} compact />
-          </nav>
+                <ResumeNavButton compact fullWidth />
+
+                <AuthNavLinks
+                  username={username}
+                  compact
+                  fullWidth
+                />
+
+                <a
+                  href="mailto:briandacellcabrera@gmail.com"
+                  className="inline-flex w-full items-center justify-center rounded-full bg-cyan-400 px-4 py-3 text-sm font-bold text-black transition hover:bg-cyan-300"
+                >
+                  Contact
+                </a>
+              </div>
+            </nav>
+          )}
         </div>
       </div>
     </header>
