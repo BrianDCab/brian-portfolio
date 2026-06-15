@@ -341,8 +341,10 @@ export default function SecurityLab() {
       Number(checks.number) +
       Number(checks.symbol);
 
-    const lengthScore = clamp(password.length * 4, 0, 45);
-    const varietyBonus = varietyScore * 11;
+    // 40 points come from length and 60 from character variety.
+    // A long password containing all four character categories can reach 100.
+    const lengthScore = clamp(password.length * 4, 0, 40);
+    const varietyBonus = varietyScore * 15;
     const commonPenalty = checks.noCommon ? 0 : 25;
     const repeatPenalty = /(.)\1{2,}/.test(password) ? 12 : 0;
 

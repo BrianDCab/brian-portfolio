@@ -2,13 +2,13 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   BarChart3,
+  BrainCircuit,
   BriefcaseBusiness,
   Code2,
   ExternalLink,
   Gamepad2,
   Globe2,
   Mail,
-  Smartphone,
 } from "lucide-react";
 
 type FeaturedProject = {
@@ -27,12 +27,12 @@ type SkillGroup = {
 
 const strengths = [
   {
-    title: "Data Systems & Reporting",
-    text: "SQL reporting, segmentation, campaign validation, exports, and data-quality workflows.",
+    title: "Monthly Segmentation & Reporting",
+    text: "Recurring SQL, Excel, and campaign workflows across large player populations, offer groups, and monthly production files.",
   },
   {
     title: "Automation & Quality Control",
-    text: "Python and VBA tools that reduce repetitive work and catch errors before launch.",
+    text: "Python and VBA tools that reduce repetitive work, validate combinations, and catch errors before launch.",
   },
   {
     title: "Interactive Software",
@@ -43,15 +43,18 @@ const strengths = [
 const proofPoints = [
   {
     value: "100K+",
-    label: "Records handled in large reporting and segmentation workflows",
+    label:
+      "Player records handled during recurring monthly segmentation and reporting cycles",
   },
   {
-    value: "400+",
-    label: "Player and campaign groups reviewed across complex exports",
+    value: "500+",
+    label:
+      "Player, offer, and campaign groups reviewed across monthly production workflows",
   },
   {
-    value: "30+",
-    label: "Validation combinations supported through audit logic",
+    value: "50+",
+    label:
+      "Validation combinations checked through repeatable monthly audit logic",
   },
   {
     value: "1",
@@ -103,11 +106,18 @@ const skillGroups: SkillGroup[] = [
       "Data Cleaning",
       "QA Checks",
       "Segmentation",
+      "Quantitative Analysis",
     ],
   },
   {
     title: "Automation",
-    skills: ["Python", "VBA", "CSV Workflows", "Process Automation", "Audit Logic"],
+    skills: [
+      "Python",
+      "VBA",
+      "CSV Workflows",
+      "Process Automation",
+      "Audit Logic",
+    ],
   },
   {
     title: "Web Development",
@@ -246,9 +256,9 @@ export default function Home() {
           <p className="mt-5 max-w-4xl text-base leading-7 text-zinc-300 md:text-xl md:leading-9">
             I’m a data analyst and programmer who builds SQL reporting, Python
             and VBA automation, data-quality checks, and interactive web tools.
-            My experience includes large-scale player segmentation, campaign
-            validation, audit workflows, game development, and full-stack
-            portfolio projects.
+            My professional work includes recurring monthly segmentation,
+            campaign validation, audit workflows, and quantitative reporting
+            across large production datasets.
           </p>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -289,6 +299,19 @@ export default function Home() {
                 </p>
               </div>
             ))}
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.07] p-5">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+              Recurring monthly production work
+            </p>
+
+            <p className="mt-3 max-w-4xl text-sm leading-7 text-zinc-300">
+              These were not one-time portfolio numbers. Each month I worked
+              through large player populations, hundreds of campaign and offer
+              groups, and dozens of validation combinations before files and
+              offers moved forward.
+            </p>
           </div>
         </div>
 
@@ -393,9 +416,17 @@ export default function Home() {
             work directly instead of only describing it on a résumé.
           </p>
 
-          <div className="mt-7">
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <PrimaryButton href="/projects" icon={<Globe2 size={16} />} subtle>
               See How the Site Was Built
+            </PrimaryButton>
+
+            <PrimaryButton
+              href="/ai-workflow"
+              icon={<BrainCircuit size={16} />}
+              subtle
+            >
+              How I Use AI
             </PrimaryButton>
           </div>
         </div>
@@ -410,7 +441,7 @@ export default function Home() {
           </h2>
 
           <p className="mt-5 text-sm leading-7 text-zinc-300 md:text-base">
-            I’m open to data analyst, programmer, automation, reporting, and
+            I’m open to data analyst, programmer, engineering, automation, reporting, and
             technical operations opportunities.
           </p>
 
