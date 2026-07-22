@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import {
-  useEffect,
   useState,
   type FocusEvent,
   type MouseEvent,
@@ -76,14 +75,14 @@ function ResumeNavButton({
       target="_blank"
       rel="noreferrer"
       className={[
-        "group inline-flex shrink-0 items-center justify-center gap-2 rounded-full",
-        "border border-rose-400/60 bg-rose-500/15 font-black text-rose-100",
-        "shadow-[0_0_24px_rgba(244,63,94,0.28)]",
+        "group inline-flex shrink-0 items-center justify-center gap-2 rounded-sm",
+        "border border-fuchsia-400/50 bg-fuchsia-500/10 font-semibold text-fuchsia-200",
+        "",
         "transition duration-300",
-        "hover:-translate-y-0.5 hover:border-rose-300 hover:bg-rose-500",
-        "hover:text-white hover:shadow-[0_0_38px_rgba(244,63,94,0.50)]",
+        "hover:border-fuchsia-300 hover:bg-fuchsia-500/80",
+        "hover:text-white",
         "focus-visible:outline-none focus-visible:ring-2",
-        "focus-visible:ring-rose-300 focus-visible:ring-offset-2",
+        "focus-visible:ring-fuchsia-300 focus-visible:ring-offset-2",
         "focus-visible:ring-offset-black",
         sizeClasses,
         fullWidth ? "w-full" : "",
@@ -112,23 +111,19 @@ function AuthNavLinks({
   const isLoggedIn = Boolean(username);
 
   const baseButton = [
-    "inline-flex shrink-0 items-center justify-center rounded-full font-semibold transition",
+    "inline-flex shrink-0 items-center justify-center rounded-sm font-semibold transition",
     compact ? "px-3 py-2 text-xs" : "px-4 py-2 text-sm",
     fullWidth ? "w-full" : "",
   ].join(" ");
 
   const neutralButton =
-    "border border-white/10 bg-white/5 text-zinc-300 hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white";
+    "border border-white/10 bg-white/5 text-zinc-300 hover:border-accent-300/40 hover:bg-accent-400/10 hover:text-white";
 
   const activeButton =
-    "bg-cyan-400 text-black shadow-[0_0_24px_rgba(34,211,238,0.35)]";
+    "border border-accent-400/60 bg-accent-500/15 text-accent-200";
 
-  const registerButton =
-    "border border-cyan-300/40 bg-cyan-400 text-black hover:bg-cyan-300";
-
-  const logoutButton =
-    "border border-red-300/25 bg-red-300/10 text-red-100 hover:bg-red-300/20";
-
+  // One subdued account entry either way. Recruiters don't need two
+  // competing auth buttons in the main nav.
   if (isLoggedIn) {
     return (
       <>
@@ -136,47 +131,33 @@ function AuthNavLinks({
           href="/dashboard"
           className={[
             baseButton,
-            pathname.startsWith("/dashboard")
-              ? activeButton
-              : neutralButton,
+            pathname.startsWith("/dashboard") ? activeButton : neutralButton,
           ].join(" ")}
         >
           Dashboard
         </Link>
 
-        <a href="/logout" className={`${baseButton} ${logoutButton}`}>
-          Logout
-        </a>
+        <form action="/logout" method="post" className={fullWidth ? "w-full" : ""}>
+          <button type="submit" className={`${baseButton} ${neutralButton}`}>
+            Logout
+          </button>
+        </form>
       </>
     );
   }
 
   return (
-    <>
-      <Link
-        href="/login"
-        className={[
-          baseButton,
-          pathname.startsWith("/login")
-            ? activeButton
-            : neutralButton,
-        ].join(" ")}
-      >
-        Login
-      </Link>
-
-      <Link
-        href="/register"
-        className={[
-          baseButton,
-          pathname.startsWith("/register")
-            ? activeButton
-            : registerButton,
-        ].join(" ")}
-      >
-        Register
-      </Link>
-    </>
+    <Link
+      href="/login"
+      className={[
+        baseButton,
+        pathname.startsWith("/login") || pathname.startsWith("/register")
+          ? activeButton
+          : neutralButton,
+      ].join(" ")}
+    >
+      Account
+    </Link>
   );
 }
 
@@ -244,11 +225,11 @@ function DesktopLabsDropdown({ pathname }: { pathname: string }) {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         className={[
-          "inline-flex items-center gap-1.5 rounded-full px-4 py-2",
+          "inline-flex items-center gap-1.5 rounded-sm px-4 py-2",
           "text-sm font-semibold transition",
           isLabsActive
-            ? "bg-cyan-400 text-black shadow-[0_0_24px_rgba(34,211,238,0.35)]"
-            : "border border-white/10 bg-white/5 text-zinc-300 hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white",
+            ? "border border-accent-400/60 bg-accent-500/15 text-accent-200"
+            : "border border-white/10 bg-white/5 text-zinc-300 hover:border-accent-300/40 hover:bg-accent-400/10 hover:text-white",
         ].join(" ")}
       >
         Labs
@@ -273,10 +254,10 @@ function DesktopLabsDropdown({ pathname }: { pathname: string }) {
       >
         <div
           role="menu"
-          className="rounded-2xl border border-white/10 bg-zinc-950/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-xl"
+          className="rounded-md border border-white/10 bg-zinc-950/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-xl"
         >
           <div className="px-3 pb-2 pt-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-cyan-300/70">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-accent-300/70">
               Interactive Labs
             </p>
           </div>
@@ -295,16 +276,16 @@ function DesktopLabsDropdown({ pathname }: { pathname: string }) {
                   role="menuitem"
                   onClick={handleLinkClick}
                   className={[
-                    "rounded-xl border px-3 py-3 transition",
+                    "rounded-md border px-3 py-3 transition",
                     isActive
-                      ? "border-cyan-300/40 bg-cyan-400/15"
+                      ? "border-accent-300/40 bg-accent-400/15"
                       : "border-transparent hover:border-white/10 hover:bg-white/5",
                   ].join(" ")}
                 >
                   <div
                     className={[
-                      "text-sm font-bold",
-                      isActive ? "text-cyan-200" : "text-white",
+                      "text-sm font-semibold",
+                      isActive ? "text-accent-200" : "text-white",
                     ].join(" ")}
                   >
                     {link.label}
@@ -333,26 +314,30 @@ export default function SiteNav({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileLabsOpen, setMobileLabsOpen] = useState(false);
 
+  // Close the mobile menu when the route changes, without an effect
+  const [lastPathname, setLastPathname] = useState(pathname);
+
+  if (lastPathname !== pathname) {
+    setLastPathname(pathname);
+    setMobileMenuOpen(false);
+    setMobileLabsOpen(false);
+  }
+
   const isLabsActive = labNavLinks.some((link) =>
     isLinkActive(pathname, link.href),
   );
 
-  useEffect(() => {
-    setMobileMenuOpen(false);
-    setMobileLabsOpen(false);
-  }, [pathname]);
-
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-xl">
-      <div className="mx-auto max-w-7xl px-4 md:px-6">
+      <div className="mx-auto max-w-6xl px-4 md:px-6">
         <div className="hidden items-center justify-between gap-6 py-4 lg:flex">
           <Link href="/" className="group shrink-0">
-            <div className="text-sm font-black tracking-[0.32em] text-white transition group-hover:text-cyan-300">
+            <div className="font-mono font-mono text-sm font-semibold tracking-[0.2em] text-white transition group-hover:text-accent-300">
               BC
             </div>
 
-            <div className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/70">
-              Data • Code • Systems
+            <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-accent-300/70">
+              data / code / systems
             </div>
           </Link>
 
@@ -367,10 +352,10 @@ export default function SiteNav({
                     key={link.href}
                     href={link.href}
                     className={[
-                      "rounded-full px-4 py-2 text-sm font-semibold transition",
+                      "rounded-sm px-4 py-2 text-sm font-semibold transition",
                       isActive
-                        ? "bg-cyan-400 text-black shadow-[0_0_24px_rgba(34,211,238,0.35)]"
-                        : "border border-white/10 bg-white/5 text-zinc-300 hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white",
+                        ? "border border-accent-400/60 bg-accent-500/15 text-accent-200"
+                        : "border border-white/10 bg-white/5 text-zinc-300 hover:border-accent-300/40 hover:bg-accent-400/10 hover:text-white",
                     ].join(" ")}
                   >
                     {link.label}
@@ -383,10 +368,10 @@ export default function SiteNav({
             <Link
               href="/travel"
               className={[
-                "rounded-full px-4 py-2 text-sm font-semibold transition",
+                "rounded-sm px-4 py-2 text-sm font-semibold transition",
                 isLinkActive(pathname, "/travel")
-                  ? "bg-cyan-400 text-black shadow-[0_0_24px_rgba(34,211,238,0.35)]"
-                  : "border border-white/10 bg-white/5 text-zinc-300 hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white",
+                  ? "border border-accent-400/60 bg-accent-500/15 text-accent-200"
+                  : "border border-white/10 bg-white/5 text-zinc-300 hover:border-accent-300/40 hover:bg-accent-400/10 hover:text-white",
               ].join(" ")}
             >
               Travel
@@ -398,7 +383,7 @@ export default function SiteNav({
 
             <a
               href="mailto:briandacellcabrera@gmail.com"
-              className="rounded-full bg-cyan-400 px-4 py-2 text-sm font-bold text-black transition hover:bg-cyan-300"
+              className="rounded-sm border border-accent-400/60 bg-accent-500/90 px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent-400"
             >
               Contact
             </a>
@@ -408,11 +393,11 @@ export default function SiteNav({
         <div className="lg:hidden">
           <div className="flex items-center justify-between gap-3 py-3">
             <Link href="/" className="shrink-0">
-              <div className="text-sm font-black tracking-[0.3em] text-white">
+              <div className="font-mono text-sm font-semibold tracking-[0.2em] text-white">
                 BC
               </div>
 
-              <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-300/70">
+              <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-accent-300/70">
                 Portfolio
               </div>
             </Link>
@@ -428,7 +413,7 @@ export default function SiteNav({
                   : "Open navigation menu"
               }
               aria-expanded={mobileMenuOpen}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:border-cyan-300/40 hover:bg-cyan-300/10"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-sm border border-white/10 bg-white/5 text-white transition hover:border-accent-300/40 hover:bg-accent-400/10"
             >
               {mobileMenuOpen ? <X size={19} /> : <Menu size={19} />}
             </button>
@@ -450,9 +435,9 @@ export default function SiteNav({
                         key={link.href}
                         href={link.href}
                         className={[
-                          "rounded-xl border px-4 py-3 text-sm font-semibold transition",
+                          "rounded-md border px-4 py-3 text-sm font-semibold transition",
                           isActive
-                            ? "border-cyan-300/40 bg-cyan-400 text-black"
+                            ? "border-accent-400/60 bg-accent-500/15 text-accent-200"
                             : "border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white",
                         ].join(" ")}
                       >
@@ -461,7 +446,7 @@ export default function SiteNav({
                     );
                   })}
 
-                <div className="overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                <div className="overflow-hidden rounded-md border border-white/10 bg-white/5">
                   <button
                     type="button"
                     onClick={() =>
@@ -472,7 +457,7 @@ export default function SiteNav({
                       "flex w-full items-center justify-between px-4 py-3",
                       "text-left text-sm font-semibold transition",
                       isLabsActive
-                        ? "text-cyan-200"
+                        ? "text-accent-200"
                         : "text-zinc-300",
                     ].join(" ")}
                   >
@@ -507,7 +492,7 @@ export default function SiteNav({
                             className={[
                               "rounded-lg px-3 py-3 transition",
                               isActive
-                                ? "bg-cyan-400/15 text-cyan-200"
+                                ? "bg-accent-400/15 text-accent-200"
                                 : "text-zinc-400 hover:bg-white/5 hover:text-white",
                             ].join(" ")}
                           >
@@ -528,9 +513,9 @@ export default function SiteNav({
                 <Link
                   href="/travel"
                   className={[
-                    "rounded-xl border px-4 py-3 text-sm font-semibold transition",
+                    "rounded-md border px-4 py-3 text-sm font-semibold transition",
                     isLinkActive(pathname, "/travel")
-                      ? "border-cyan-300/40 bg-cyan-400 text-black"
+                      ? "border-accent-400/60 bg-accent-500/15 text-accent-200"
                       : "border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white",
                   ].join(" ")}
                 >
@@ -549,7 +534,7 @@ export default function SiteNav({
 
                 <a
                   href="mailto:briandacellcabrera@gmail.com"
-                  className="inline-flex w-full items-center justify-center rounded-full bg-cyan-400 px-3 py-2 text-xs font-bold text-black transition hover:bg-cyan-300"
+                  className="inline-flex w-full items-center justify-center rounded-sm border border-accent-400/60 bg-accent-500/90 px-3 py-2 text-xs font-semibold text-white transition hover:bg-accent-400"
                 >
                   Contact
                 </a>

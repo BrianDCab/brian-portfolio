@@ -1,47 +1,83 @@
 @import "tailwindcss";
 
+/*
+  Design tokens for the whole site.
+  accent = the cyan the site originally used
+  Everything else stays near-black with thin white borders.
+*/
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --color-accent-100: #cffafe;
+  --color-accent-200: #a5f3fc;
+  --color-accent-300: #67e8f9;
+  --color-accent-400: #22d3ee;
+  --color-accent-500: #06b6d4;
+  --color-accent-600: #0891b2;
+  --color-accent-700: #0e7490;
+  --color-accent-800: #155e75;
+  --color-accent-900: #164e63;
+  --color-accent-950: #083344;
+}
+
 html {
   scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
-  background: black;
+  background: #05070c;
   color: white;
 }
 
-@keyframes cyberFloatOne {
+::selection {
+  background: rgba(34, 211, 238, 0.35);
+  color: white;
+}
+
+/* Slow drift for the background fog layers */
+@keyframes fogDrift {
   0%,
   100% {
-    opacity: 0.45;
-    scale: 1;
+    opacity: 0.5;
+    transform: translateX(0);
   }
   50% {
-    opacity: 0.75;
-    scale: 1.08;
+    opacity: 0.72;
+    transform: translateX(2%);
   }
 }
 
-@keyframes cyberFloatTwo {
-  0%,
-  100% {
-    opacity: 0.35;
-    scale: 1;
-  }
-  50% {
-    opacity: 0.62;
-    scale: 1.12;
-  }
+.fog-drift {
+  animation: fogDrift 28s ease-in-out infinite;
 }
 
-.cyber-glow-one {
-  animation: cyberFloatOne 16s ease-in-out infinite;
-}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 
-.cyber-glow-two {
-  animation: cyberFloatTwo 22s ease-in-out infinite;
+  .fog-drift {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 main.bg-black {
   background-color: transparent !important;
+}
+
+/* One focus style everywhere instead of per-element ring classes */
+:focus-visible {
+  outline: 2px solid rgba(103, 232, 249, 0.9);
+  outline-offset: 2px;
+  border-radius: 2px;
 }

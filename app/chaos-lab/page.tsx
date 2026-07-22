@@ -58,10 +58,10 @@ type WebAudioWindow = Window &
   };
 
 const glassPanel =
-  "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
+  "rounded-lg border border-white/10 bg-zinc-950/70 shadow-2xl shadow-black/40 backdrop-blur-md";
 
 const glassCard =
-  "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-cyan-300/[0.07]";
+  "rounded-lg border border-white/10 bg-zinc-950/60 backdrop-blur-md transition hover:border-accent-400/50 hover:bg-accent-950/20";
 
 const appCards = [
   {
@@ -214,7 +214,7 @@ function PageButton({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300"
+      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-sm border border-accent-400/60 bg-accent-500/90 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-accent-400"
     >
       {children}
     </Link>
@@ -234,10 +234,10 @@ function AppButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition ${
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-sm px-4 py-2 text-sm font-semibold transition ${
         active
-          ? "bg-cyan-400 text-black shadow-[0_0_20px_rgba(34,211,238,0.28)]"
-          : "border border-cyan-300/25 bg-black/25 text-cyan-200 hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10"
+          ? "border border-accent-400/60 bg-accent-500/90 text-white shadow-[0_0_20px_rgba(34,211,238,0.28)]"
+          : "border border-accent-300/25 bg-black/25 text-accent-200 hover:-translate-y-0.5 hover:border-accent-300/50 hover:bg-accent-400/10"
       }`}
     >
       {children}
@@ -256,21 +256,21 @@ function StatBox({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-4 ${
+      className={`rounded-md border p-4 ${
         accent
-          ? "border-cyan-300/40 bg-cyan-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
-          : "border-cyan-300/15 bg-black/25"
+          ? "border-accent-300/40 bg-accent-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
+          : "border-accent-300/15 bg-black/25"
       }`}
     >
-      <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300/80">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-300/80">
         {label}
       </p>
 
       <p
         className={
           accent
-            ? "mt-2 text-3xl font-black text-cyan-200"
-            : "mt-2 text-2xl font-black text-white"
+            ? "mt-2 text-3xl font-semibold text-accent-200"
+            : "mt-2 text-2xl font-semibold text-white"
         }
       >
         {value}
@@ -293,7 +293,7 @@ function SoundToggle({
         setSoundOn(!soundOn);
         playSound(true, soundOn ? "error" : "ding");
       }}
-      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-black transition ${
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-sm border px-4 py-2 text-sm font-semibold transition ${
         soundOn
           ? "border-green-300/35 bg-green-400/15 text-green-200"
           : "border-zinc-600 bg-black/25 text-zinc-300"
@@ -323,11 +323,11 @@ function AppHeader({
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
           {kicker}
         </p>
 
-        <h2 className="mt-3 text-3xl font-black text-white md:text-5xl">
+        <h2 className="mt-3 text-3xl font-semibold text-white md:text-5xl">
           {title}
         </h2>
 
@@ -373,21 +373,21 @@ function ModalShell({
       />
 
       <div
-        className={`relative z-10 w-full overflow-hidden border border-cyan-300/25 bg-[#07111c]/95 text-white shadow-[0_0_80px_rgba(34,211,238,0.23)] transition-all ${
+        className={`relative z-10 w-full overflow-hidden border border-accent-300/25 bg-[#07111c]/95 text-white shadow-[0_0_80px_rgba(34,211,238,0.23)] transition-all ${
           maximized
-            ? "min-h-[calc(100vh-2rem)] max-w-none rounded-2xl"
-            : "max-w-6xl rounded-[1.65rem]"
+            ? "min-h-[calc(100vh-2rem)] max-w-none rounded-md"
+            : "max-w-6xl rounded-lg"
         }`}
       >
-        <div className="sticky top-0 z-20 border-b border-cyan-300/15 bg-[#081522]/95 backdrop-blur-xl">
+        <div className="sticky top-0 z-20 border-b border-accent-300/15 bg-[#081522]/95 backdrop-blur-xl">
           <div className="flex items-center justify-between gap-3 px-4 py-3">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-300 text-sm font-black text-black">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent-500/30 text-sm font-semibold text-accent-100">
                 CL
               </div>
 
               <div className="min-w-0">
-                <p className="truncate text-sm font-black text-cyan-100">
+                <p className="truncate text-sm font-semibold text-accent-100">
                   Chaos Lab Desktop
                 </p>
                 <p className="truncate text-xs text-zinc-500">
@@ -400,7 +400,7 @@ function ModalShell({
               <button
                 type="button"
                 onClick={() => setMaximized((current) => !current)}
-                className="hidden h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-300 transition hover:border-cyan-300/30 hover:text-cyan-100 sm:flex"
+                className="hidden h-9 w-9 items-center justify-center rounded-md border border-white/10 bg-white/5 text-zinc-300 transition hover:border-accent-300/30 hover:text-accent-100 sm:flex"
                 aria-label={maximized ? "Restore window size" : "Maximize window"}
                 title={maximized ? "Restore window size" : "Maximize window"}
               >
@@ -410,7 +410,7 @@ function ModalShell({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-red-300/30 bg-red-400/10 text-red-200 transition hover:bg-red-400/20"
+                className="flex h-10 w-10 items-center justify-center rounded-md border border-red-300/30 bg-red-400/10 text-red-200 transition hover:bg-red-400/20"
                 aria-label="Close app"
               >
                 <X size={19} />
@@ -418,7 +418,7 @@ function ModalShell({
             </div>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto border-t border-cyan-300/10 px-4 py-3 lg:hidden">
+          <div className="flex gap-2 overflow-x-auto border-t border-accent-300/10 px-4 py-3 lg:hidden">
             {appCards.map((app) => {
               const isActive = activeApp === app.key;
 
@@ -428,10 +428,10 @@ function ModalShell({
                   type="button"
                   onClick={() => setActiveApp(app.key)}
                   aria-pressed={isActive}
-                  className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] transition ${
+                  className={`whitespace-nowrap rounded-sm px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
                     isActive
-                      ? "bg-cyan-300 text-black shadow-[0_0_18px_rgba(34,211,238,0.25)]"
-                      : "border border-cyan-300/20 bg-black/25 text-cyan-200"
+                      ? "border border-accent-400/60 bg-accent-500/20 text-accent-100"
+                      : "border border-accent-300/20 bg-black/25 text-accent-200"
                   }`}
                 >
                   {isActive ? `${app.title} · Open` : app.title}
@@ -442,8 +442,8 @@ function ModalShell({
         </div>
 
         <div className="grid lg:grid-cols-[280px_1fr]">
-          <aside className="hidden border-r border-cyan-300/15 bg-black/20 p-4 lg:block">
-            <p className="mb-4 text-xs font-black uppercase tracking-[0.24em] text-cyan-300">
+          <aside className="hidden border-r border-accent-300/15 bg-black/20 p-4 lg:block">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
               App Switcher
             </p>
 
@@ -458,24 +458,24 @@ function ModalShell({
                     type="button"
                     onClick={() => setActiveApp(app.key)}
                     aria-pressed={isActive}
-                    className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${
+                    className={`flex w-full items-center gap-3 rounded-md border p-3 text-left transition ${
                       isActive
-                        ? "border-cyan-300/55 bg-cyan-300/12 text-white shadow-[0_0_22px_rgba(34,211,238,0.10)]"
-                        : "border-white/5 bg-black/20 text-zinc-400 hover:border-cyan-300/25 hover:text-cyan-100"
+                        ? "border-accent-300/55 bg-accent-300/12 text-white shadow-[0_0_22px_rgba(34,211,238,0.10)]"
+                        : "border-white/5 bg-black/20 text-zinc-400 hover:border-accent-300/25 hover:text-accent-100"
                     }`}
                   >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-300/15 bg-black/30 text-cyan-300">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-accent-300/15 bg-black/30 text-accent-300">
                       <Icon size={18} />
                     </span>
 
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center justify-between gap-2">
-                        <span className="truncate text-sm font-black">
+                        <span className="truncate text-sm font-semibold">
                           {app.title}
                         </span>
 
                         {isActive && (
-                          <span className="shrink-0 rounded-full bg-cyan-300 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-black">
+                          <span className="shrink-0 rounded-sm border border-accent-400/50 bg-accent-500/20 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-accent-100">
                             Open
                           </span>
                         )}
@@ -490,8 +490,8 @@ function ModalShell({
               })}
             </div>
 
-            <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-cyan-300/5 p-4">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">
+            <div className="mt-6 rounded-lg border border-accent-300/15 bg-accent-300/5 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-300">
                 The GUI experiment
               </p>
               <p className="mt-3 text-sm leading-6 text-zinc-400">
@@ -617,7 +617,7 @@ function BubbleWrapApp() {
         <StatBox label="Golden" value={goldenPopped ? "Found" : "Hidden"} />
       </div>
 
-      <div className="relative mt-8 overflow-hidden rounded-[2rem] border border-cyan-300/15 bg-black/25 p-4 sm:p-6">
+      <div className="relative mt-8 overflow-hidden rounded-lg border border-accent-300/15 bg-black/25 p-4 sm:p-6">
         {confetti.length > 0 && (
           <div className="pointer-events-none absolute inset-0 z-20">
             {confetti.map((piece) => (
@@ -633,8 +633,8 @@ function BubbleWrapApp() {
               />
             ))}
 
-            <div className="absolute inset-x-4 top-8 mx-auto max-w-sm rounded-3xl border border-yellow-300/40 bg-yellow-300/15 p-5 text-center shadow-[0_0_35px_rgba(250,204,21,0.25)] backdrop-blur-md">
-              <p className="text-3xl font-black text-yellow-200">Golden Pop</p>
+            <div className="absolute inset-x-4 top-8 mx-auto max-w-sm rounded-lg border border-yellow-300/40 bg-yellow-300/15 p-5 text-center shadow-[0_0_35px_rgba(250,204,21,0.25)] backdrop-blur-md">
+              <p className="text-3xl font-semibold text-yellow-200">Golden Pop</p>
               <p className="mt-2 text-sm text-yellow-100">
                 You found the celebration bubble.
               </p>
@@ -652,16 +652,16 @@ function BubbleWrapApp() {
                 type="button"
                 onClick={() => popBubble(index)}
                 aria-label={`Bubble ${index + 1}`}
-                className={`aspect-square min-h-11 rounded-full border transition active:scale-90 ${
+                className={`aspect-square min-h-11 rounded-sm border transition active:scale-90 ${
                   isPopped
                     ? "border-zinc-700 bg-zinc-900/70 shadow-inner"
                     : isGolden
                       ? "border-yellow-200/70 bg-yellow-300/25 shadow-[inset_0_6px_14px_rgba(255,255,255,0.35),0_0_22px_rgba(250,204,21,0.35)]"
-                      : "border-cyan-200/50 bg-cyan-300/20 shadow-[inset_0_6px_14px_rgba(255,255,255,0.28),0_0_16px_rgba(34,211,238,0.16)] hover:bg-cyan-300/30"
+                      : "border-accent-200/50 bg-accent-300/20 shadow-[inset_0_6px_14px_rgba(255,255,255,0.28),0_0_16px_rgba(34,211,238,0.16)] hover:bg-accent-400/30"
                 }`}
               >
                 <span
-                  className={`mx-auto block h-1/2 w-1/2 rounded-full ${
+                  className={`mx-auto block h-1/2 w-1/2 rounded-sm ${
                     isPopped
                       ? "bg-zinc-800"
                       : isGolden
@@ -762,7 +762,7 @@ function RunawayButtonApp() {
       </div>
 
       <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_320px]">
-        <div className="relative min-h-[390px] overflow-hidden rounded-[2rem] border border-red-300/20 bg-gradient-to-br from-red-950/20 via-black/25 to-cyan-950/20 p-4">
+        <div className="relative min-h-[390px] overflow-hidden rounded-lg border border-red-300/20 bg-gradient-to-br from-red-950/20 via-black/25 to-accent-950/20 p-4">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(239,68,68,0.13),transparent_45%)]" />
 
           <button
@@ -773,14 +773,14 @@ function RunawayButtonApp() {
               top: `${buttonPosition.y}%`,
               transform: "translate(-50%, -50%)",
             }}
-            className="absolute z-10 min-h-14 rounded-2xl bg-red-400 px-6 py-4 text-base font-black text-black shadow-[0_0_24px_rgba(248,113,113,0.35)] transition active:scale-90"
+            className="absolute z-10 min-h-14 rounded-md bg-red-400 px-6 py-4 text-base font-semibold text-black shadow-[0_0_24px_rgba(248,113,113,0.35)] transition active:scale-90"
           >
             Press Me {"(Don't)"}
           </button>
         </div>
 
-        <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+        <div className="rounded-lg border border-accent-300/15 bg-black/25 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
             Complaint Log
           </p>
 
@@ -788,12 +788,12 @@ function RunawayButtonApp() {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`rounded-2xl border p-4 text-sm leading-6 ${
+                className={`rounded-md border p-4 text-sm leading-6 ${
                   message.kind === "chaos"
                     ? "border-red-300/20 bg-red-400/10 text-red-100"
                     : message.kind === "calm"
                       ? "border-green-300/20 bg-green-400/10 text-green-100"
-                      : "border-cyan-300/15 bg-cyan-300/10 text-cyan-100"
+                      : "border-accent-300/15 bg-accent-300/10 text-accent-100"
                 }`}
               >
                 {message.text}
@@ -932,21 +932,21 @@ function BadAutocorrectApp() {
       </AppHeader>
 
       <div className="mt-8 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
+        <div className="rounded-lg border border-accent-300/15 bg-black/25 p-5">
           <label className="block">
-            <span className="text-sm font-black text-zinc-300">
+            <span className="text-sm font-semibold text-zinc-300">
               Type Here
             </span>
             <textarea
               value={input}
               onChange={(event) => updateInput(event.target.value)}
               rows={9}
-              className="mt-3 w-full rounded-2xl border border-cyan-300/20 bg-black/35 p-4 text-sm leading-6 text-white outline-none transition focus:border-cyan-300/50"
+              className="mt-3 w-full rounded-md border border-accent-300/20 bg-black/35 p-4 text-sm leading-6 text-white outline-none transition focus:border-accent-300/50"
             />
           </label>
 
           <label className="mt-5 block">
-            <span className="text-sm font-black text-zinc-300">
+            <span className="text-sm font-semibold text-zinc-300">
               Badness: {intensity}
             </span>
             <input
@@ -968,14 +968,14 @@ function BadAutocorrectApp() {
               setManualGlitch(!manualGlitch);
               playSound(soundOn, "toggle");
             }}
-            className={`mt-5 flex min-h-14 w-full items-center justify-between rounded-2xl border p-4 text-left transition ${
+            className={`mt-5 flex min-h-14 w-full items-center justify-between rounded-md border p-4 text-left transition ${
               manualGlitch
                 ? "border-fuchsia-300/45 bg-fuchsia-400/15"
-                : "border-cyan-300/15 bg-black/25"
+                : "border-accent-300/15 bg-black/25"
             }`}
           >
             <span>
-              <span className="block font-black text-white">
+              <span className="block font-semibold text-white">
                 Glitch Flavor
               </span>
               <span className="block text-sm text-zinc-400">
@@ -984,12 +984,12 @@ function BadAutocorrectApp() {
             </span>
 
             <span
-              className={`flex h-8 w-14 items-center rounded-full p-1 ${
+              className={`flex h-8 w-14 items-center rounded-sm p-1 ${
                 manualGlitch ? "bg-fuchsia-300" : "bg-zinc-800"
               }`}
             >
               <span
-                className={`h-6 w-6 rounded-full bg-black transition ${
+                className={`h-6 w-6 rounded-sm bg-black transition ${
                   manualGlitch ? "translate-x-6" : "translate-x-0"
                 }`}
               />
@@ -1003,12 +1003,12 @@ function BadAutocorrectApp() {
           </div>
         </div>
 
-        <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+        <div className="rounded-lg border border-accent-300/15 bg-black/25 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
             Live Output
           </p>
 
-          <div className="mt-4 min-h-[360px] whitespace-pre-wrap rounded-2xl border border-cyan-300/10 bg-black/45 p-5 font-mono text-lg leading-8 text-cyan-200 shadow-inner">
+          <div className="mt-4 min-h-[360px] whitespace-pre-wrap rounded-md border border-accent-300/10 bg-black/45 p-5 font-mono text-lg leading-8 text-accent-200 shadow-inner">
             {output || "Start typing and the lab will make it worse."}
           </div>
         </div>
@@ -1130,19 +1130,19 @@ function NotificationsApp() {
       </div>
 
       <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_340px]">
-        <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+        <div className="rounded-lg border border-accent-300/15 bg-black/25 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
             Desktop Preview
           </p>
 
-          <div className="relative mt-4 min-h-[430px] overflow-hidden rounded-3xl border border-cyan-300/10 bg-gradient-to-br from-slate-950 via-black to-cyan-950/30 p-5">
-            <div className="absolute bottom-4 left-4 right-4 rounded-2xl border border-cyan-300/10 bg-black/35 p-4 text-xs text-zinc-500">
+          <div className="relative mt-4 min-h-[430px] overflow-hidden rounded-lg border border-accent-300/10 bg-gradient-to-br from-slate-950 via-black to-accent-950/30 p-5">
+            <div className="absolute bottom-4 left-4 right-4 rounded-md border border-accent-300/10 bg-black/35 p-4 text-xs text-zinc-500">
               Fake taskbar · Chaos Lab Desktop · Notifications on
             </div>
 
             <div className="absolute right-4 top-4 flex w-[min(310px,calc(100%-2rem))] flex-col gap-3">
               {notifications.length === 0 ? (
-                <div className="rounded-2xl border border-cyan-300/15 bg-black/50 p-4 text-sm text-zinc-400">
+                <div className="rounded-md border border-accent-300/15 bg-black/50 p-4 text-sm text-zinc-400">
                   No notifications. Suspiciously peaceful.
                 </div>
               ) : (
@@ -1151,19 +1151,19 @@ function NotificationsApp() {
                     key={note.id}
                     type="button"
                     onClick={() => dismissNotification(note.id)}
-                    className={`rounded-2xl border p-4 text-left text-sm leading-6 shadow-xl transition active:scale-[0.98] ${
+                    className={`rounded-md border p-4 text-left text-sm leading-6 shadow-xl transition active:scale-[0.98] ${
                       note.kind === "chaos"
                         ? "border-red-300/25 bg-red-950/80 text-red-100"
                         : note.kind === "calm"
                           ? "border-teal-300/25 bg-teal-950/80 text-teal-100"
                           : note.kind === "perfect"
                             ? "border-yellow-300/25 bg-yellow-950/80 text-yellow-100"
-                            : "border-cyan-300/25 bg-slate-950/90 text-cyan-100"
+                            : "border-accent-300/25 bg-slate-950/90 text-accent-100"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="font-black">
+                        <p className="font-semibold">
                           {note.kind === "chaos"
                             ? "Chaos Alert"
                             : note.kind === "calm"
@@ -1184,8 +1184,8 @@ function NotificationsApp() {
           </div>
         </div>
 
-        <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+        <div className="rounded-lg border border-accent-300/15 bg-black/25 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
             What I was testing
           </p>
 
@@ -1252,27 +1252,27 @@ function FidgetBoardApp() {
               key={toggle.label}
               type="button"
               onClick={() => flipToggle(toggle.setter, toggle.value)}
-              className={`w-full rounded-3xl border p-5 text-left transition active:scale-[0.99] ${
+              className={`w-full rounded-lg border p-5 text-left transition active:scale-[0.99] ${
                 toggle.value
-                  ? "border-cyan-300/45 bg-cyan-300/12"
-                  : "border-cyan-300/15 bg-black/25"
+                  ? "border-accent-300/45 bg-accent-300/12"
+                  : "border-accent-300/15 bg-black/25"
               }`}
             >
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-lg font-black text-white">
+                  <p className="text-lg font-semibold text-white">
                     {toggle.label}
                   </p>
                   <p className="mt-1 text-sm text-zinc-400">{toggle.text}</p>
                 </div>
 
                 <span
-                  className={`flex h-9 w-16 items-center rounded-full p-1 ${
-                    toggle.value ? "bg-cyan-300" : "bg-zinc-800"
+                  className={`flex h-9 w-16 items-center rounded-sm p-1 ${
+                    toggle.value ? "bg-accent-300" : "bg-zinc-800"
                   }`}
                 >
                   <span
-                    className={`h-7 w-7 rounded-full bg-black transition ${
+                    className={`h-7 w-7 rounded-sm bg-black transition ${
                       toggle.value ? "translate-x-7" : "translate-x-0"
                     }`}
                   />
@@ -1281,9 +1281,9 @@ function FidgetBoardApp() {
             </button>
           ))}
 
-          <div className="rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
+          <div className="rounded-lg border border-accent-300/15 bg-black/25 p-5">
             <label className="block">
-              <span className="text-sm font-black text-zinc-300">
+              <span className="text-sm font-semibold text-zinc-300">
                 Softness: {softness}
               </span>
               <input
@@ -1300,7 +1300,7 @@ function FidgetBoardApp() {
             </label>
 
             <label className="mt-5 block">
-              <span className="text-sm font-black text-zinc-300">
+              <span className="text-sm font-semibold text-zinc-300">
                 Motion Speed: {speed}
               </span>
               <input
@@ -1317,7 +1317,7 @@ function FidgetBoardApp() {
             </label>
 
             <label className="mt-5 block">
-              <span className="text-sm font-black text-zinc-300">
+              <span className="text-sm font-semibold text-zinc-300">
                 Glow: {glow}
               </span>
               <input
@@ -1335,9 +1335,9 @@ function FidgetBoardApp() {
           </div>
         </div>
 
-        <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-6">
+        <div className="rounded-lg border border-accent-300/15 bg-black/25 p-6">
           <div
-            className={`flex min-h-[380px] items-center justify-center rounded-[2rem] border transition ${
+            className={`flex min-h-[380px] items-center justify-center rounded-lg border transition ${
               calm
                 ? "border-teal-200/25 bg-teal-300/10"
                 : "border-fuchsia-300/25 bg-fuchsia-400/10"
@@ -1348,7 +1348,7 @@ function FidgetBoardApp() {
             }}
           >
             <div
-              className="flex h-48 w-48 items-center justify-center rounded-full border text-center"
+              className="flex h-48 w-48 items-center justify-center rounded-sm border text-center"
               style={{
                 borderColor: `rgba(34,211,238,${0.25 + glow / 160})`,
                 backgroundColor: calm
@@ -1357,10 +1357,10 @@ function FidgetBoardApp() {
               }}
             >
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                   Mood
                 </p>
-                <p className="mt-2 text-4xl font-black text-white">{mood}</p>
+                <p className="mt-2 text-4xl font-semibold text-white">{mood}</p>
               </div>
             </div>
           </div>
@@ -1463,13 +1463,13 @@ function PerfectButtonApp() {
         <StatBox label="Mood" value={buttonMood} />
       </div>
 
-      <div className="relative mt-8 overflow-hidden rounded-[2rem] border border-green-300/20 bg-gradient-to-br from-green-950/25 via-black/25 to-cyan-950/25 p-6">
+      <div className="relative mt-8 overflow-hidden rounded-lg border border-green-300/20 bg-gradient-to-br from-green-950/25 via-black/25 to-accent-950/25 p-6">
         {sparkles.length > 0 && (
           <div className="pointer-events-none absolute inset-0 z-20">
             {sparkles.map((sparkle) => (
               <span
                 key={sparkle.id}
-                className="absolute h-3 w-3 animate-bounce rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.75)]"
+                className="absolute h-3 w-3 animate-bounce rounded-sm bg-accent-300 shadow-[0_0_14px_rgba(34,211,238,0.75)]"
                 style={{
                   left: `${sparkle.x}%`,
                   top: `${sparkle.y}%`,
@@ -1485,21 +1485,21 @@ function PerfectButtonApp() {
           <button
             type="button"
             onClick={clickPerfectButton}
-            className="min-h-24 rounded-[2rem] border border-green-200/50 bg-green-300 px-10 py-7 text-2xl font-black text-black shadow-[0_0_45px_rgba(134,239,172,0.35)] transition hover:-translate-y-1 hover:bg-green-200 active:scale-95"
+            className="min-h-24 rounded-lg border border-green-200/50 bg-green-300 px-10 py-7 text-2xl font-semibold text-black shadow-[0_0_45px_rgba(134,239,172,0.35)] transition hover:-translate-y-1 hover:bg-green-200 active:scale-95"
           >
             Click Me Please
           </button>
 
-          <div className="mt-8 max-w-xl rounded-3xl border border-green-300/20 bg-black/30 p-6">
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-green-300">
+          <div className="mt-8 max-w-xl rounded-lg border border-green-300/20 bg-black/30 p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-green-300">
               Button Feedback
             </p>
-            <p className="mt-3 text-2xl font-black text-white">{message}</p>
+            <p className="mt-3 text-2xl font-semibold text-white">{message}</p>
           </div>
 
-          <div className="mt-6 h-4 w-full max-w-md overflow-hidden rounded-full border border-green-300/20 bg-black/40">
+          <div className="mt-6 h-4 w-full max-w-md overflow-hidden rounded-sm border border-green-300/20 bg-black/40">
             <div
-              className="h-full rounded-full bg-green-300 transition-all"
+              className="h-full rounded-sm bg-green-300 transition-all"
               style={{ width: `${happiness}%` }}
             />
           </div>
@@ -1544,14 +1544,14 @@ export default function ChaosLabPage() {
 
   return (
     <main className="min-h-screen">
-      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16 lg:py-24">
+      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16">
         <div className={`${glassPanel} p-6 md:p-10`}>
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">
+          <div className="inline-flex items-center gap-2 rounded-sm border border-accent-300/20 bg-black/25 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
             <Sparkles size={15} />
             GUI and Interaction Experiment
           </div>
 
-          <h1 className="mt-6 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
+          <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
             I built a tiny browser desktop and filled it with weird apps
           </h1>
 
@@ -1562,7 +1562,7 @@ export default function ChaosLabPage() {
             sending the visitor to another page.
           </p>
 
-          <div className="mt-6 rounded-2xl border border-cyan-300/15 bg-black/25 p-4 text-sm leading-6 text-zinc-300">
+          <div className="mt-6 rounded-md border border-accent-300/15 bg-black/25 p-4 text-sm leading-6 text-zinc-300">
             Click anywhere on an app card below. It opens inside the same GUI
             shell. Once you are inside, use the sidebar or the mobile tabs to
             switch between apps.
@@ -1584,10 +1584,10 @@ export default function ChaosLabPage() {
         <section className="mt-12">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                 Choose an app
               </p>
-              <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+              <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
                 Six small GUI experiments
               </h2>
             </div>
@@ -1608,23 +1608,23 @@ export default function ChaosLabPage() {
                   type="button"
                   onClick={() => setActiveApp(app.key)}
                   aria-label={`Open ${app.title} in Chaos Lab Desktop`}
-                  className={`${glassCard} group flex h-full w-full flex-col p-6 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300`}
+                  className={`${glassCard} group flex h-full w-full flex-col p-6 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-300`}
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-black/25 text-cyan-300 transition group-hover:border-cyan-300/50 group-hover:bg-cyan-300/10">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-md border border-accent-300/20 bg-black/25 text-accent-300 transition group-hover:border-accent-300/50 group-hover:bg-accent-400/10">
                       <Icon size={22} />
                     </div>
 
-                    <span className="rounded-full border border-cyan-300/20 bg-black/25 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">
+                    <span className="rounded-sm border border-accent-300/20 bg-black/25 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-100">
                       GUI App
                     </span>
                   </div>
 
-                  <p className="mt-5 text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                  <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
                     {app.label}
                   </p>
 
-                  <h3 className="mt-4 text-2xl font-black text-white">
+                  <h3 className="mt-4 text-2xl font-semibold text-white">
                     {app.title}
                   </h3>
 
@@ -1632,7 +1632,7 @@ export default function ChaosLabPage() {
                     {app.text}
                   </p>
 
-                  <div className="mt-6 inline-flex items-center gap-2 text-sm font-black text-cyan-300 transition group-hover:translate-x-1 group-hover:text-cyan-100">
+                  <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-accent-300 transition group-hover:translate-x-1 group-hover:text-accent-100">
                     {app.button}
                     <ArrowRight size={15} />
                   </div>
@@ -1644,8 +1644,8 @@ export default function ChaosLabPage() {
 
         <section className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           <div className={`${glassCard} p-6`}>
-            <Gamepad2 className="text-cyan-300" size={24} />
-            <h3 className="mt-4 text-xl font-black text-white">
+            <Gamepad2 className="text-accent-300" size={24} />
+            <h3 className="mt-4 text-xl font-semibold text-white">
               Desktop style shell
             </h3>
             <p className="mt-3 text-sm leading-6 text-zinc-300">
@@ -1655,8 +1655,8 @@ export default function ChaosLabPage() {
           </div>
 
           <div className={`${glassCard} p-6`}>
-            <Zap className="text-cyan-300" size={24} />
-            <h3 className="mt-4 text-xl font-black text-white">
+            <Zap className="text-accent-300" size={24} />
+            <h3 className="mt-4 text-xl font-semibold text-white">
               Built around state
             </h3>
             <p className="mt-3 text-sm leading-6 text-zinc-300">
@@ -1666,8 +1666,8 @@ export default function ChaosLabPage() {
           </div>
 
           <div className={`${glassCard} p-6`}>
-            <MousePointerClick className="text-cyan-300" size={24} />
-            <h3 className="mt-4 text-xl font-black text-white">
+            <MousePointerClick className="text-accent-300" size={24} />
+            <h3 className="mt-4 text-xl font-semibold text-white">
               Made for touch
             </h3>
             <p className="mt-3 text-sm leading-6 text-zinc-300">
@@ -1677,8 +1677,8 @@ export default function ChaosLabPage() {
           </div>
 
           <div className={`${glassCard} p-6`}>
-            <Volume2 className="text-cyan-300" size={24} />
-            <h3 className="mt-4 text-xl font-black text-white">
+            <Volume2 className="text-accent-300" size={24} />
+            <h3 className="mt-4 text-xl font-semibold text-white">
               Sound is optional
             </h3>
             <p className="mt-3 text-sm leading-6 text-zinc-300">
@@ -1689,11 +1689,11 @@ export default function ChaosLabPage() {
         </section>
 
         <section className={`${glassPanel} mt-12 p-6 md:p-8`}>
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
             Why I made this
           </p>
 
-          <h2 className="mt-3 text-3xl font-black text-white">
+          <h2 className="mt-3 text-3xl font-semibold text-white">
             I wanted to practice GUI behavior without building another normal
             dashboard
           </h2>

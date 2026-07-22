@@ -40,10 +40,10 @@ type PermissionAction = {
 };
 
 const glassPanel =
-  "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
+  "rounded-lg border border-white/10 bg-zinc-950/70 shadow-2xl shadow-black/40 backdrop-blur-md";
 
 const glassCard =
-  "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-cyan-300/[0.07]";
+  "rounded-lg border border-white/10 bg-zinc-950/60 backdrop-blur-md transition hover:border-accent-400/50 hover:bg-accent-950/20";
 
 const tools = [
   {
@@ -202,8 +202,8 @@ function ProjectButton({
   const isInternal = href.startsWith("/");
 
   const className = subtle
-    ? "inline-flex items-center justify-center gap-2 rounded-full border border-cyan-300/25 bg-black/25 px-4 py-2 text-sm font-bold text-cyan-200 transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10"
-    : "inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300";
+    ? "inline-flex items-center justify-center gap-2 rounded-sm border border-accent-300/25 bg-black/25 px-4 py-2 text-sm font-semibold text-accent-200 transition hover:-translate-y-0.5 hover:border-accent-300/50 hover:bg-accent-400/10"
+    : "inline-flex items-center justify-center gap-2 rounded-sm border border-accent-400/60 bg-accent-500/90 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-accent-400";
 
   if (isInternal) {
     return (
@@ -236,21 +236,21 @@ function StatBox({
 }) {
   return (
     <div
-      className={`min-w-0 overflow-hidden rounded-2xl border p-4 ${
+      className={`min-w-0 overflow-hidden rounded-md border p-4 ${
         accent
-          ? "border-cyan-300/40 bg-cyan-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
-          : "border-cyan-300/15 bg-black/25"
+          ? "border-accent-300/40 bg-accent-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
+          : "border-accent-300/15 bg-black/25"
       }`}
     >
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300/80">
+      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300/80">
         {label}
       </p>
 
       <p
         className={
           accent
-            ? "mt-2 break-words text-3xl font-black leading-tight text-cyan-200"
-            : "mt-2 break-words text-2xl font-black leading-tight text-white"
+            ? "mt-2 break-words text-3xl font-semibold leading-tight text-accent-200"
+            : "mt-2 break-words text-2xl font-semibold leading-tight text-white"
         }
       >
         {value}
@@ -273,11 +273,11 @@ function Pill({
         ? "border-amber-300/25 bg-amber-300/10 text-amber-200"
         : tone === "bad"
           ? "border-red-300/25 bg-red-300/10 text-red-200"
-          : "border-cyan-300/20 bg-black/25 text-zinc-300";
+          : "border-accent-300/20 bg-black/25 text-zinc-300";
 
   return (
     <span
-      className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] ${styles}`}
+      className={`rounded-sm border px-3 py-1 font-mono text-[11px] uppercase tracking-[0.14em] ${styles}`}
     >
       {children}
     </span>
@@ -292,7 +292,7 @@ function CheckRow({
   children: ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-cyan-300/10 bg-black/25 p-4 text-sm leading-6 text-zinc-300">
+    <div className="flex items-start gap-3 rounded-md border border-accent-300/10 bg-black/25 p-4 text-sm leading-6 text-zinc-300">
       {passed ? (
         <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-300" size={18} />
       ) : (
@@ -507,14 +507,14 @@ export default function SecurityLab() {
 
   return (
     <main className="min-h-screen">
-      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16 lg:py-24">
+      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16">
         <div className={`${glassPanel} p-6 md:p-10`}>
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">
+          <div className="inline-flex items-center gap-2 rounded-sm border border-accent-300/20 bg-black/25 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
             <Shield size={15} />
             Security Lab
           </div>
 
-          <h1 className="mt-6 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
+          <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
             Here is how I think through common web security mistakes
           </h1>
 
@@ -546,11 +546,11 @@ export default function SecurityLab() {
 
         <section className="mt-12">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
               What I am trying to prevent
             </p>
 
-            <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+            <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
               The failures behind these demos
             </h2>
 
@@ -564,7 +564,7 @@ export default function SecurityLab() {
           <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {securityPrinciples.map((principle) => (
               <div key={principle.title} className={`${glassCard} p-5`}>
-                <h3 className="text-lg font-black text-white">
+                <h3 className="text-lg font-semibold text-white">
                   {principle.title}
                 </h3>
                 <p className="mt-3 text-sm leading-6 text-zinc-300">
@@ -587,22 +587,22 @@ export default function SecurityLab() {
                 onClick={() => setActiveTool(tool.key)}
                 className={`text-left ${glassCard} p-6 ${
                   active
-                    ? "border-cyan-300/60 bg-cyan-300/[0.11] shadow-[0_0_30px_rgba(34,211,238,0.12)]"
+                    ? "border-accent-300/60 bg-accent-300/[0.11] shadow-[0_0_30px_rgba(34,211,238,0.12)]"
                     : ""
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
                       {tool.label}
                     </p>
 
-                    <h2 className="mt-3 text-2xl font-black text-white">
+                    <h2 className="mt-3 text-2xl font-semibold text-white">
                       {tool.title}
                     </h2>
                   </div>
 
-                  <div className="rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-3 text-cyan-200">
+                  <div className="rounded-md border border-accent-300/25 bg-accent-300/10 p-3 text-accent-200">
                     <Icon size={24} />
                   </div>
                 </div>
@@ -611,7 +611,7 @@ export default function SecurityLab() {
                   {tool.text}
                 </p>
 
-                <div className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-cyan-300">
+                <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-accent-300">
                   Open tool <ArrowRight size={15} />
                 </div>
               </button>
@@ -622,11 +622,11 @@ export default function SecurityLab() {
         {activeTool === "password" && (
           <section className="mt-12 grid gap-5 lg:grid-cols-[1fr_0.9fr]">
             <div className={`${glassPanel} p-6 md:p-8`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Password Auditor
               </p>
 
-              <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+              <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
                 I can score the input without ever keeping it
               </h2>
 
@@ -638,11 +638,11 @@ export default function SecurityLab() {
               </p>
 
               <label className="mt-6 block">
-                <span className="text-sm font-bold text-zinc-300">
+                <span className="text-sm font-semibold text-zinc-300">
                   Test password
                 </span>
 
-                <div className="mt-2 flex overflow-hidden rounded-2xl border border-cyan-300/20 bg-black/35">
+                <div className="mt-2 flex overflow-hidden rounded-md border border-accent-300/20 bg-black/35">
                   <input
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
@@ -654,7 +654,7 @@ export default function SecurityLab() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((current) => !current)}
-                    className="border-l border-cyan-300/15 px-4 text-cyan-200 transition hover:bg-cyan-300/10"
+                    className="border-l border-accent-300/15 px-4 text-accent-200 transition hover:bg-accent-400/10"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -679,7 +679,7 @@ export default function SecurityLab() {
             </div>
 
             <div className={`${glassPanel} p-6 md:p-8`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Checklist
               </p>
 
@@ -698,7 +698,7 @@ export default function SecurityLab() {
                 ))}
               </div>
 
-              <div className="mt-6 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4 text-sm leading-6 text-amber-100">
+              <div className="mt-6 rounded-md border border-amber-300/20 bg-amber-300/10 p-4 text-sm leading-6 text-amber-100">
                 <strong>My rule:</strong> the application should never store a
                 plain-text password. A real system should use a proven auth
                 provider or a slow password-hashing algorithm, plus rate limits
@@ -711,11 +711,11 @@ export default function SecurityLab() {
         {activeTool === "auth" && (
           <section className="mt-12 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
             <div className={`${glassPanel} p-6 md:p-8`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Auth Flow Visualizer
               </p>
 
-              <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+              <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
                 Test whether the request should be trusted
               </h2>
 
@@ -728,13 +728,13 @@ export default function SecurityLab() {
 
               <div className="mt-6 grid gap-4">
                 <label className="block">
-                  <span className="text-sm font-bold text-zinc-300">Role</span>
+                  <span className="text-sm font-semibold text-zinc-300">Role</span>
                   <select
                     value={authRole}
                     onChange={(event) =>
                       setAuthRole(event.target.value as AuthRole)
                     }
-                    className="mt-2 w-full rounded-2xl border border-cyan-300/20 bg-black/35 px-4 py-3 text-sm font-bold text-white outline-none"
+                    className="mt-2 w-full rounded-md border border-accent-300/20 bg-black/35 px-4 py-3 text-sm font-semibold text-white outline-none"
                   >
                     <option>Guest</option>
                     <option>User</option>
@@ -743,7 +743,7 @@ export default function SecurityLab() {
                 </label>
 
                 <label className="block">
-                  <span className="text-sm font-bold text-zinc-300">
+                  <span className="text-sm font-semibold text-zinc-300">
                     Session State
                   </span>
                   <select
@@ -751,7 +751,7 @@ export default function SecurityLab() {
                     onChange={(event) =>
                       setSessionState(event.target.value as SessionState)
                     }
-                    className="mt-2 w-full rounded-2xl border border-cyan-300/20 bg-black/35 px-4 py-3 text-sm font-bold text-white outline-none"
+                    className="mt-2 w-full rounded-md border border-accent-300/20 bg-black/35 px-4 py-3 text-sm font-semibold text-white outline-none"
                   >
                     <option value="none">No session</option>
                     <option value="active">Active session</option>
@@ -760,13 +760,13 @@ export default function SecurityLab() {
                 </label>
 
                 <label className="block">
-                  <span className="text-sm font-bold text-zinc-300">Route</span>
+                  <span className="text-sm font-semibold text-zinc-300">Route</span>
                   <select
                     value={selectedRoute}
                     onChange={(event) =>
                       setSelectedRoute(event.target.value as RouteKey)
                     }
-                    className="mt-2 w-full rounded-2xl border border-cyan-300/20 bg-black/35 px-4 py-3 text-sm font-bold text-white outline-none"
+                    className="mt-2 w-full rounded-md border border-accent-300/20 bg-black/35 px-4 py-3 text-sm font-semibold text-white outline-none"
                   >
                     <option value="public">Public Landing Page</option>
                     <option value="dashboard">Protected Dashboard</option>
@@ -780,7 +780,7 @@ export default function SecurityLab() {
             <div className={`${glassPanel} p-6 md:p-8`}>
               <div className="flex items-center gap-3">
                 <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-2xl border ${
+                  className={`flex h-12 w-12 items-center justify-center rounded-md border ${
                     authDecision.allowed
                       ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-200"
                       : "border-red-300/30 bg-red-300/10 text-red-200"
@@ -794,10 +794,10 @@ export default function SecurityLab() {
                 </div>
 
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
                     Decision
                   </p>
-                  <h3 className="text-3xl font-black text-white">
+                  <h3 className="text-3xl font-semibold text-white">
                     {authDecision.title}
                   </h3>
                 </div>
@@ -825,7 +825,7 @@ export default function SecurityLab() {
                 />
               </div>
 
-              <div className="mt-6 rounded-2xl border border-cyan-300/15 bg-black/25 p-4 text-sm leading-6 text-zinc-300">
+              <div className="mt-6 rounded-md border border-accent-300/15 bg-black/25 p-4 text-sm leading-6 text-zinc-300">
                 I would still enforce this on the server. A hidden link or a
                 client-side redirect can improve the experience, but neither one
                 prevents someone from calling the route directly.
@@ -837,11 +837,11 @@ export default function SecurityLab() {
         {activeTool === "secrets" && (
           <section className="mt-12 grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
             <div className={`${glassPanel} p-6 md:p-8`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Secret Safety Checker
               </p>
 
-              <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+              <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
                 Catch secret exposure before it reaches a repository
               </h2>
 
@@ -856,14 +856,14 @@ export default function SecurityLab() {
                 value={secretInput}
                 onChange={(event) => setSecretInput(event.target.value)}
                 spellCheck={false}
-                className="mt-6 min-h-72 w-full rounded-3xl border border-cyan-300/20 bg-black/35 p-4 font-mono text-sm leading-6 text-cyan-100 outline-none placeholder:text-zinc-600"
+                className="mt-6 min-h-72 w-full rounded-lg border border-accent-300/20 bg-black/35 p-4 font-mono text-sm leading-6 text-accent-100 outline-none placeholder:text-zinc-600"
               />
 
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
                   type="button"
                   onClick={() => setSecretInput("")}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-cyan-300/25 bg-black/25 px-4 py-2 text-sm font-bold text-cyan-200 transition hover:border-cyan-300/50 hover:bg-cyan-300/10"
+                  className="inline-flex items-center justify-center gap-2 rounded-sm border border-accent-300/25 bg-black/25 px-4 py-2 text-sm font-semibold text-accent-200 transition hover:border-accent-300/50 hover:bg-accent-400/10"
                 >
                   Clear Text
                 </button>
@@ -875,7 +875,7 @@ export default function SecurityLab() {
                       "NEXT_PUBLIC_ANALYTICS_ID=demo_public_value\nAPI_KEY=replace_with_fake_value\nDATABASE_URL=postgres://fake.example\nSESSION_SECRET=super_fake_demo_secret"
                     )
                   }
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-cyan-300/25 bg-black/25 px-4 py-2 text-sm font-bold text-cyan-200 transition hover:border-cyan-300/50 hover:bg-cyan-300/10"
+                  className="inline-flex items-center justify-center gap-2 rounded-sm border border-accent-300/25 bg-black/25 px-4 py-2 text-sm font-semibold text-accent-200 transition hover:border-accent-300/50 hover:bg-accent-400/10"
                 >
                   Load Demo Text
                 </button>
@@ -883,7 +883,7 @@ export default function SecurityLab() {
             </div>
 
             <div className={`${glassPanel} p-6 md:p-8`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Findings
               </p>
 
@@ -894,14 +894,14 @@ export default function SecurityLab() {
 
               <div className="mt-6 space-y-3">
                 {secretFindings.length === 0 ? (
-                  <div className="rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-4 text-sm leading-6 text-emerald-100">
+                  <div className="rounded-md border border-emerald-300/20 bg-emerald-300/10 p-4 text-sm leading-6 text-emerald-100">
                     No risky patterns found in the current text.
                   </div>
                 ) : (
                   secretFindings.map((finding) => (
                     <div
                       key={`${finding.lineNumber}-${finding.label}-${finding.preview}`}
-                      className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4"
+                      className="rounded-md border border-accent-300/15 bg-black/25 p-4"
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <Pill
@@ -915,7 +915,7 @@ export default function SecurityLab() {
                         >
                           {finding.severity}
                         </Pill>
-                        <p className="text-sm font-black text-white">
+                        <p className="text-sm font-semibold text-white">
                           Line {finding.lineNumber}: {finding.label}
                         </p>
                       </div>
@@ -928,11 +928,11 @@ export default function SecurityLab() {
                 )}
               </div>
 
-              <div className="mt-6 rounded-2xl border border-red-300/20 bg-red-300/10 p-4 text-sm leading-6 text-red-100">
+              <div className="mt-6 rounded-md border border-red-300/20 bg-red-300/10 p-4 text-sm leading-6 text-red-100">
                 <AlertTriangle className="mb-2" size={18} />
                 Do not paste a real key here. If a secret has already appeared
                 in a public repository, screenshot, build log, or browser
-                bundle, hiding the file later is not enough—the credential
+                bundle, hiding the file later is not enough, the credential
                 should be rotated.
               </div>
             </div>
@@ -942,11 +942,11 @@ export default function SecurityLab() {
         {activeTool === "permissions" && (
           <section className="mt-12 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
             <div className={`${glassPanel} p-6 md:p-8`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Permissions Matrix
               </p>
 
-              <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+              <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
                 Give the account only the access it actually needs
               </h2>
 
@@ -962,10 +962,10 @@ export default function SecurityLab() {
                     key={role}
                     type="button"
                     onClick={() => setSelectedPermissionRole(role)}
-                    className={`rounded-full px-4 py-2 text-sm font-black transition ${
+                    className={`rounded-sm px-4 py-2 text-sm font-semibold transition ${
                       selectedPermissionRole === role
-                        ? "bg-cyan-400 text-black"
-                        : "border border-cyan-300/25 bg-black/25 text-cyan-200 hover:border-cyan-300/50"
+                        ? "border border-accent-400/60 bg-accent-500/90 text-white"
+                        : "border border-accent-300/25 bg-black/25 text-accent-200 hover:border-accent-300/50"
                     }`}
                   >
                     {role}
@@ -985,7 +985,7 @@ export default function SecurityLab() {
             </div>
 
             <div className={`${glassPanel} p-6 md:p-8`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Access Rules
               </p>
 
@@ -996,7 +996,7 @@ export default function SecurityLab() {
                   return (
                     <div
                       key={action.key}
-                      className="grid gap-3 rounded-2xl border border-cyan-300/10 bg-black/25 p-4 md:grid-cols-[110px_1fr]"
+                      className="grid gap-3 rounded-md border border-accent-300/10 bg-black/25 p-4 md:grid-cols-[110px_1fr]"
                     >
                       <div>
                         <Pill tone={allowed ? "good" : "bad"}>
@@ -1005,7 +1005,7 @@ export default function SecurityLab() {
                       </div>
 
                       <div>
-                        <h3 className="text-sm font-black text-white">
+                        <h3 className="text-sm font-semibold text-white">
                           {action.label}
                         </h3>
 
@@ -1018,7 +1018,7 @@ export default function SecurityLab() {
                 })}
               </div>
 
-              <div className="mt-6 rounded-2xl border border-cyan-300/15 bg-black/25 p-4 text-sm leading-6 text-zinc-300">
+              <div className="mt-6 rounded-md border border-accent-300/15 bg-black/25 p-4 text-sm leading-6 text-zinc-300">
                 Even the Admin role does not get “view secrets.” Administrative
                 power should not automatically mean unrestricted access to
                 infrastructure credentials. Those values should stay in
@@ -1030,11 +1030,11 @@ export default function SecurityLab() {
         )}
 
         <section className={`${glassPanel} mt-12 p-6 md:p-8`}>
-          <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
             Why I built this
           </p>
 
-          <h2 className="mt-3 text-3xl font-black text-white">
+          <h2 className="mt-3 text-3xl font-semibold text-white">
             I wanted to show the decisions behind the code, not just a list of
             security buzzwords.
           </h2>
@@ -1059,9 +1059,9 @@ export default function SecurityLab() {
           </div>
         </section>
 
-        <footer className="mt-12 pb-6 text-center text-sm text-zinc-500">
-          Built by Brian Cabrera. Everything here is defensive and uses local demo data only.
-        </footer>
+        <p className="mt-12 pb-6 text-center text-sm text-zinc-500">
+          Everything here is defensive and uses local demo data only.
+        </p>
       </section>
     </main>
   );

@@ -7,7 +7,7 @@ import { Eye, EyeOff, Loader2, UserPlus } from "lucide-react";
 import { createClient } from "../../utils/supabase/client";
 
 const glassPanel =
-  "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
+  "rounded-lg border border-white/10 bg-zinc-950/70 shadow-2xl shadow-black/40 backdrop-blur-md";
 
 function cleanUsername(value: string) {
   return value.trim().replace(/^@+/, "");
@@ -81,12 +81,12 @@ export default function RegisterPage() {
     <main className="min-h-screen">
       <section className="mx-auto flex min-h-screen max-w-3xl items-center px-4 py-16 md:px-6">
         <div className={`${glassPanel} w-full p-6 md:p-10`}>
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">
+          <div className="inline-flex items-center gap-2 rounded-sm border border-accent-300/20 bg-black/25 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
             <UserPlus size={15} />
             Create Account
           </div>
 
-          <h1 className="mt-6 text-4xl font-black tracking-tight text-white sm:text-5xl">
+          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
             Register for Brian Cabrera&apos;s portfolio
           </h1>
 
@@ -97,19 +97,19 @@ export default function RegisterPage() {
 
           <form onSubmit={handleRegister} className="mt-8 space-y-5">
             <label className="block">
-              <span className="text-sm font-bold text-zinc-300">Email</span>
+              <span className="text-sm font-semibold text-zinc-300">Email</span>
               <input
                 type="email"
                 required
                 autoComplete="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-cyan-300/20 bg-black/35 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300"
+                className="mt-2 w-full rounded-md border border-accent-300/20 bg-black/35 px-4 py-3 text-sm text-white outline-none transition focus:border-accent-300"
               />
             </label>
 
             <label className="block">
-              <span className="text-sm font-bold text-zinc-300">Username</span>
+              <span className="text-sm font-semibold text-zinc-300">Username</span>
               <input
                 type="text"
                 required
@@ -117,7 +117,7 @@ export default function RegisterPage() {
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 placeholder="brian_dev"
-                className="mt-2 w-full rounded-2xl border border-cyan-300/20 bg-black/35 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300"
+                className="mt-2 w-full rounded-md border border-accent-300/20 bg-black/35 px-4 py-3 text-sm text-white outline-none transition focus:border-accent-300"
               />
               <p className="mt-2 text-xs text-zinc-500">
                 Letters, numbers, and underscores only. 3–24 characters.
@@ -125,20 +125,20 @@ export default function RegisterPage() {
             </label>
 
             <label className="block">
-              <span className="text-sm font-bold text-zinc-300">Display name</span>
+              <span className="text-sm font-semibold text-zinc-300">Display name</span>
               <input
                 type="text"
                 autoComplete="name"
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
                 placeholder="Optional"
-                className="mt-2 w-full rounded-2xl border border-cyan-300/20 bg-black/35 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300"
+                className="mt-2 w-full rounded-md border border-accent-300/20 bg-black/35 px-4 py-3 text-sm text-white outline-none transition focus:border-accent-300"
               />
             </label>
 
             <label className="block">
-              <span className="text-sm font-bold text-zinc-300">Password</span>
-              <div className="mt-2 flex overflow-hidden rounded-2xl border border-cyan-300/20 bg-black/35">
+              <span className="text-sm font-semibold text-zinc-300">Password</span>
+              <div className="mt-2 flex overflow-hidden rounded-md border border-accent-300/20 bg-black/35">
                 <input
                   type={showPassword ? "text" : "password"}
                   required
@@ -150,8 +150,9 @@ export default function RegisterPage() {
 
                 <button
                   type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                   onClick={() => setShowPassword((current) => !current)}
-                  className="border-l border-cyan-300/15 px-4 text-cyan-200 transition hover:bg-cyan-300/10"
+                  className="border-l border-accent-300/15 px-4 text-accent-200 transition hover:bg-accent-400/10"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -159,13 +160,13 @@ export default function RegisterPage() {
             </label>
 
             {error && (
-              <div className="rounded-2xl border border-red-300/20 bg-red-300/10 p-4 text-sm text-red-100">
+              <div role="alert" className="rounded-md border border-accent-400/30 bg-accent-500/10 p-4 text-sm text-accent-100">
                 {error}
               </div>
             )}
 
             {message && (
-              <div className="rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-4 text-sm text-emerald-100">
+              <div role="status" className="rounded-md border border-emerald-300/20 bg-emerald-300/10 p-4 text-sm text-emerald-100">
                 {message}
               </div>
             )}
@@ -173,7 +174,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-sm border border-accent-400/60 bg-accent-500/90 px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading && <Loader2 className="animate-spin" size={16} />}
               Create account
@@ -182,7 +183,7 @@ export default function RegisterPage() {
 
           <p className="mt-6 text-center text-sm text-zinc-400">
             Already have an account?{" "}
-            <Link href="/login" className="font-bold text-cyan-300 hover:text-cyan-200">
+            <Link href="/login" className="font-semibold text-accent-300 hover:text-accent-200">
               Log in
             </Link>
           </p>

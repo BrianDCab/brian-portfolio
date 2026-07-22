@@ -1,22 +1,15 @@
 ﻿import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import CyberpunkBackground from "../components/CyberpunkBackground";
+import SiteFooter from "../components/SiteFooter";
 import SiteNav from "../components/SiteNav";
 import { createClient } from "../utils/supabase/server";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Brian Cabrera | Data Analyst & Programmer",
+  metadataBase: new URL("https://briancabrera.io"),
+  title: "Brian Cabrera | Software Engineer & Data Systems Developer",
   description:
     "Portfolio for Brian Cabrera, focused on data analytics, automation, programming, dashboards, and interactive projects.",
   keywords: [
@@ -33,13 +26,22 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Brian Cabrera" }],
   creator: "Brian Cabrera",
+  alternates: {
+    canonical: "https://briancabrera.io",
+  },
   openGraph: {
-    title: "Brian Cabrera | Data Analyst & Programmer",
+    title: "Brian Cabrera | Software Engineer & Data Systems Developer",
     description:
-      "Data analytics, automation, programming, dashboards, and interactive projects.",
+      "Data analytics, automation, full-stack development, shipped games, and interactive projects.",
     url: "https://briancabrera.io",
     siteName: "Brian Cabrera Portfolio",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Brian Cabrera | Software Engineer & Data Systems Developer",
+    description:
+      "Data analytics, automation, full-stack development, shipped games, and interactive projects.",
   },
 };
 
@@ -74,18 +76,19 @@ export default async function RootLayout({
     <html
       lang="en"
       className={
-        geistSans.variable +
+        GeistSans.variable +
         " " +
-        geistMono.variable +
+        GeistMono.variable +
         " h-full scroll-smooth antialiased"
       }
     >
-      <body className="min-h-full bg-black text-white">
+      <body className="min-h-full bg-[#05070c] font-sans text-white">
         <CyberpunkBackground />
 
         <div className="relative z-10">
           <SiteNav username={username} />
           {children}
+          <SiteFooter />
         </div>
       </body>
     </html>

@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let response = NextResponse.next();
+  const response = NextResponse.next();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

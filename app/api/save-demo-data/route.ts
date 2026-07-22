@@ -2,7 +2,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
-  let response = NextResponse.json({ ok: true });
+  const response = NextResponse.json({ ok: true });
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

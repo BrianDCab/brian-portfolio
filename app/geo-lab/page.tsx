@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- ArcGIS loads from the CDN at runtime so there are no local types for it */
 "use client";
 
 import Link from "next/link";
@@ -79,10 +80,10 @@ type ArcGISSelectionHandler = (
 ) => Promise<void>;
 
 const glassPanel =
-  "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
+  "rounded-lg border border-white/10 bg-zinc-950/70 shadow-2xl shadow-black/40 backdrop-blur-md";
 
 const glassCard =
-  "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md";
+  "rounded-lg border border-white/10 bg-zinc-950/60 backdrop-blur-md";
 
 const locatorUrl =
   "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
@@ -303,10 +304,10 @@ function Button({
       onClick={onClick}
       disabled={disabled}
       aria-pressed={active}
-      className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
+      className={`inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-300 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
         active
-          ? "bg-cyan-400 text-black shadow-[0_0_22px_rgba(34,211,238,0.28)]"
-          : "border border-cyan-300/25 bg-black/25 text-cyan-100 hover:border-cyan-300/55 hover:bg-cyan-300/10"
+          ? "border border-accent-400/60 bg-accent-500/90 text-white shadow-[0_0_22px_rgba(34,211,238,0.28)]"
+          : "border border-accent-300/25 bg-black/25 text-accent-100 hover:border-accent-300/55 hover:bg-accent-400/10"
       } disabled:cursor-not-allowed disabled:opacity-45`}
     >
       {children}
@@ -327,19 +328,19 @@ function StatBox({
 }) {
   return (
     <div
-      className={`min-w-0 rounded-2xl border p-4 ${
+      className={`min-w-0 rounded-md border p-4 ${
         accent
-          ? "border-cyan-300/40 bg-cyan-300/10 shadow-[0_0_24px_rgba(34,211,238,0.10)]"
-          : "border-cyan-300/15 bg-black/25"
+          ? "border-accent-300/40 bg-accent-300/10 shadow-[0_0_24px_rgba(34,211,238,0.10)]"
+          : "border-accent-300/15 bg-black/25"
       }`}
     >
-      <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300/80">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-300/80">
         {label}
       </p>
 
       <p
-        className={`mt-2 break-words font-black leading-tight ${
-          accent ? "text-2xl text-cyan-100" : "text-xl text-white"
+        className={`mt-2 break-words font-semibold leading-tight ${
+          accent ? "text-2xl text-accent-100" : "text-xl text-white"
         }`}
       >
         {value}
@@ -363,11 +364,11 @@ function SectionHeading({
 }) {
   return (
     <div>
-      <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
         {eyebrow}
       </p>
 
-      <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+      <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
         {title}
       </h2>
 
@@ -977,7 +978,7 @@ export default function GeoLabPage() {
     }
   }
 
-  async function useDemoPoint() {
+  async function loadDemoPoint() {
     if (!mapReady || !ArcGISPointRef.current) return;
 
     const Point = ArcGISPointRef.current;
@@ -1277,7 +1278,7 @@ export default function GeoLabPage() {
     );
 
     if (mapReady) {
-      void useDemoPoint();
+      void loadDemoPoint();
     } else {
       setSelectedLocation(null);
       setElevation({ status: "idle" });
@@ -1336,30 +1337,30 @@ export default function GeoLabPage() {
           ? "border-red-300/30 bg-red-300/10 text-red-100"
           : geofenceState === "Uncertain"
             ? "border-orange-300/30 bg-orange-300/10 text-orange-100"
-            : "border-cyan-300/20 bg-black/25 text-cyan-100";
+            : "border-accent-300/20 bg-black/25 text-accent-100";
 
   return (
     <main className="min-h-screen">
-      <section className="mx-auto max-w-7xl px-4 py-10 md:px-6 md:py-16 lg:py-24">
+      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16">
         <div className={`${glassPanel} overflow-hidden p-6 md:p-10`}>
           <div className="relative">
-            <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-cyan-300/10 blur-3xl" />
-            <div className="absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-emerald-300/10 blur-3xl" />
+            <div className="absolute -right-20 -top-24 h-72 w-72 rounded-sm bg-accent-300/10 blur-3xl" />
+            <div className="absolute -bottom-24 left-1/3 h-64 w-64 rounded-sm bg-emerald-300/10 blur-3xl" />
 
             <div className="relative">
               <div className="flex flex-wrap gap-2">
-                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+                <div className="inline-flex items-center gap-2 rounded-sm border border-accent-300/20 bg-black/25 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                   <Globe2 size={15} />
                   Geo Lab
                 </div>
 
-                <div className="inline-flex items-center gap-2 rounded-full border border-yellow-300/30 bg-yellow-300/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-yellow-100">
+                <div className="inline-flex items-center gap-2 rounded-sm border border-yellow-300/30 bg-yellow-300/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-yellow-100">
                   <Construction size={15} />
                   Work in Progress
                 </div>
               </div>
 
-              <h1 className="mt-6 max-w-5xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
+              <h1 className="mt-6 max-w-5xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
                 Terrain, location, and geofence testing in one interactive map
               </h1>
 
@@ -1374,7 +1375,7 @@ export default function GeoLabPage() {
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Link
                   href="/projects"
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:bg-cyan-300"
+                  className="inline-flex items-center justify-center gap-2 rounded-sm border border-accent-400/60 bg-accent-500/90 px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-400"
                 >
                   View Projects
                   <MapPinned size={16} />
@@ -1408,14 +1409,14 @@ export default function GeoLabPage() {
 
         <section className={`${glassPanel} mt-8 p-5 md:p-7`}>
           <div className="flex items-start gap-4">
-            <ShieldCheck className="mt-1 shrink-0 text-cyan-300" size={24} />
+            <ShieldCheck className="mt-1 shrink-0 text-accent-300" size={24} />
 
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                 Location and privacy
               </p>
 
-              <h2 className="mt-3 text-2xl font-black text-white md:text-3xl">
+              <h2 className="mt-3 text-2xl font-semibold text-white md:text-3xl">
                 Nothing location-related starts on page load
               </h2>
 
@@ -1438,7 +1439,7 @@ export default function GeoLabPage() {
           <div className={`${glassPanel} overflow-hidden p-4 md:p-5`}>
             <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                   ArcGIS Scene
                 </p>
                 <p className="mt-2 text-sm leading-6 text-zinc-400">
@@ -1473,7 +1474,7 @@ export default function GeoLabPage() {
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-[1.5rem] border border-cyan-300/20 bg-black">
+            <div className="relative overflow-hidden rounded-[1.5rem] border border-accent-300/20 bg-black">
               <div
                 ref={mapContainerRef}
                 className="h-[500px] w-full md:h-[620px]"
@@ -1484,14 +1485,14 @@ export default function GeoLabPage() {
                   <div className="max-w-lg">
                     {mapLoading ? (
                       <Activity
-                        className="mx-auto animate-pulse text-cyan-300"
+                        className="mx-auto animate-pulse text-accent-300"
                         size={30}
                       />
                     ) : (
-                      <Mountain className="mx-auto text-cyan-300" size={34} />
+                      <Mountain className="mx-auto text-accent-300" size={34} />
                     )}
 
-                    <h3 className="mt-4 text-2xl font-black text-white">
+                    <h3 className="mt-4 text-2xl font-semibold text-white">
                       {mapLoading
                         ? "Activating the interactive terrain map"
                         : "ArcGIS is currently unloaded"}
@@ -1509,7 +1510,7 @@ export default function GeoLabPage() {
                       <button
                         type="button"
                         onClick={requestMapLoad}
-                        className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-black text-black transition hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                        className="mt-5 inline-flex items-center justify-center gap-2 rounded-sm border border-accent-400/60 bg-accent-500/90 px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-300 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                       >
                         <Mountain size={16} />
                         Activate Geo Lab
@@ -1523,9 +1524,9 @@ export default function GeoLabPage() {
             <div
               role="status"
               aria-live="polite"
-              className="mt-4 rounded-2xl border border-cyan-300/15 bg-black/25 p-4"
+              className="mt-4 rounded-md border border-accent-300/15 bg-black/25 p-4"
             >
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-300">
                 Map status
               </p>
               <p className="mt-2 text-sm leading-6 text-zinc-300">
@@ -1561,16 +1562,16 @@ export default function GeoLabPage() {
 
           <aside className="space-y-5">
             <div className={`${glassCard} p-5`}>
-              <div className="flex items-center gap-2 text-cyan-300">
+              <div className="flex items-center gap-2 text-accent-300">
                 <Search size={18} />
-                <p className="text-xs font-black uppercase tracking-[0.24em]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em]">
                   Choose a place
                 </p>
               </div>
 
               <form onSubmit={searchAddress} className="mt-5">
                 <label className="block">
-                  <span className="text-sm font-bold text-zinc-300">
+                  <span className="text-sm font-semibold text-zinc-300">
                     Address, city, or landmark
                   </span>
 
@@ -1578,14 +1579,14 @@ export default function GeoLabPage() {
                     value={searchText}
                     onChange={(event) => setSearchText(event.target.value)}
                     placeholder="Moreno Valley, CA"
-                    className="mt-3 w-full rounded-2xl border border-cyan-300/20 bg-black/40 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-cyan-300"
+                    className="mt-3 w-full rounded-md border border-accent-300/20 bg-black/40 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-accent-300"
                   />
                 </label>
 
                 <button
                   type="submit"
                   disabled={searching || !mapReady}
-                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-cyan-400 px-4 py-3 text-sm font-black text-black transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-sm border border-accent-400/60 bg-accent-500/90 px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent-400 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Search size={15} />
                   {searching ? "Searching" : "Search ArcGIS"}
@@ -1593,7 +1594,7 @@ export default function GeoLabPage() {
               </form>
 
               <div className="mt-3">
-                <Button onClick={useDemoPoint} disabled={!mapReady}>
+                <Button onClick={loadDemoPoint} disabled={!mapReady}>
                   <MapPinned size={15} />
                   Use Demo Point
                 </Button>
@@ -1601,9 +1602,9 @@ export default function GeoLabPage() {
             </div>
 
             <div className={`${glassCard} p-5`}>
-              <div className="flex items-center gap-2 text-cyan-300">
+              <div className="flex items-center gap-2 text-accent-300">
                 <LocateFixed size={18} />
-                <p className="text-xs font-black uppercase tracking-[0.24em]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em]">
                   Device location
                 </p>
               </div>
@@ -1618,7 +1619,7 @@ export default function GeoLabPage() {
                   type="button"
                   onClick={requestOneTimeLocation}
                   disabled={!mapReady}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-4 py-3 text-sm font-black text-black transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-sm border border-accent-400/60 bg-accent-500/90 px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent-400 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Crosshair size={15} />
                   Use My Location Once
@@ -1632,7 +1633,7 @@ export default function GeoLabPage() {
 
               <p className="mt-4 text-xs leading-6 text-zinc-500">
                 Consent status:{" "}
-                <span className="font-bold text-zinc-300">
+                <span className="font-semibold text-zinc-300">
                   {consentState === "not-asked"
                     ? "No choice yet"
                     : consentState === "accepted"
@@ -1643,9 +1644,9 @@ export default function GeoLabPage() {
             </div>
 
             <div className={`${glassCard} p-5`}>
-              <div className="flex items-center gap-2 text-cyan-300">
+              <div className="flex items-center gap-2 text-accent-300">
                 <Radio size={18} />
-                <p className="text-xs font-black uppercase tracking-[0.24em]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em]">
                   Live geofence
                 </p>
               </div>
@@ -1660,7 +1661,7 @@ export default function GeoLabPage() {
                   <button
                     type="button"
                     onClick={stopLiveTracking}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-red-300/30 bg-red-300/10 px-4 py-3 text-sm font-black text-red-100 transition hover:bg-red-300/20"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-sm border border-red-300/30 bg-red-300/10 px-4 py-3 text-sm font-semibold text-red-100 transition hover:bg-red-300/20"
                   >
                     <StopCircle size={16} />
                     Stop Tracking
@@ -1670,7 +1671,7 @@ export default function GeoLabPage() {
                     type="button"
                     onClick={startLiveTracking}
                     disabled={!mapReady}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-green-300/30 bg-green-300/10 px-4 py-3 text-sm font-black text-green-100 transition hover:bg-green-300/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-sm border border-green-300/30 bg-green-300/10 px-4 py-3 text-sm font-semibold text-green-100 transition hover:bg-green-300/20 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Navigation size={16} />
                     Start Live Tracking
@@ -1720,11 +1721,11 @@ export default function GeoLabPage() {
             />
           </div>
 
-          <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
+          <div className="mt-6 rounded-lg border border-accent-300/15 bg-black/25 p-5">
             <div className="flex items-start gap-3">
-              <Mountain className="mt-1 shrink-0 text-cyan-300" size={21} />
+              <Mountain className="mt-1 shrink-0 text-accent-300" size={21} />
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                   Terrain reading
                 </p>
                 <p className="mt-3 text-sm leading-7 text-zinc-300">
@@ -1744,9 +1745,9 @@ export default function GeoLabPage() {
             />
 
             <label className="mt-7 block">
-              <span className="flex items-center justify-between gap-3 text-sm font-bold text-zinc-300">
+              <span className="flex items-center justify-between gap-3 text-sm font-semibold text-zinc-300">
                 <span>Boundary radius</span>
-                <span className="text-cyan-300">
+                <span className="text-accent-300">
                   {geofenceRadiusMiles.toFixed(1)} miles
                 </span>
               </span>
@@ -1760,7 +1761,7 @@ export default function GeoLabPage() {
                 onChange={(event) =>
                   setGeofenceRadiusMiles(Number(event.target.value))
                 }
-                className="mt-4 w-full accent-cyan-300"
+                className="mt-4 w-full accent-accent-300"
               />
             </label>
 
@@ -1774,16 +1775,16 @@ export default function GeoLabPage() {
                 label="Device Distance"
                 value={formatMiles(distanceFromBoundaryCenter)}
               />
-              <div className={`rounded-2xl border p-4 ${geofenceTone}`}>
-                <p className="text-xs font-black uppercase tracking-[0.2em]">
+              <div className={`rounded-md border p-4 ${geofenceTone}`}>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em]">
                   Boundary Status
                 </p>
-                <p className="mt-2 text-2xl font-black">{geofenceState}</p>
+                <p className="mt-2 text-2xl font-semibold">{geofenceState}</p>
               </div>
             </div>
 
-            <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+            <div className="mt-6 rounded-lg border border-accent-300/15 bg-black/25 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                 Result
               </p>
               <p className="mt-3 text-sm leading-7 text-zinc-300">
@@ -1794,18 +1795,18 @@ export default function GeoLabPage() {
 
           <div className={`${glassPanel} p-6 md:p-8`}>
             <div className="flex items-center gap-3">
-              <CircleDot className="text-cyan-300" size={22} />
+              <CircleDot className="text-accent-300" size={22} />
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                   Event log
                 </p>
-                <h3 className="mt-2 text-2xl font-black text-white">
+                <h3 className="mt-2 text-2xl font-semibold text-white">
                   Boundary status changes
                 </h3>
               </div>
             </div>
 
-            <div className="mt-5 rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
+            <div className="mt-5 rounded-md border border-accent-300/15 bg-black/25 p-4">
               <p className="text-sm leading-7 text-zinc-300">
                 The log adds the first live result, then another entry only when
                 the status changes.
@@ -1824,12 +1825,12 @@ export default function GeoLabPage() {
               </div>
             </div>
 
-            <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-cyan-300/15 bg-black/25 px-4 py-3">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-zinc-400">
+            <div className="mt-4 flex items-center justify-between gap-3 rounded-md border border-accent-300/15 bg-black/25 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
                 Live tracking
               </p>
               <span
-                className={`rounded-full border px-3 py-1 text-xs font-black ${
+                className={`rounded-sm border px-3 py-1 text-xs font-semibold ${
                   liveTracking
                     ? "border-green-300/30 bg-green-300/10 text-green-100"
                     : "border-zinc-300/20 bg-white/5 text-zinc-300"
@@ -1840,7 +1841,7 @@ export default function GeoLabPage() {
             </div>
 
             {eventLog.length === 0 ? (
-              <div className="mt-4 rounded-3xl border border-cyan-300/15 bg-black/25 p-5 text-sm leading-7 text-zinc-400">
+              <div className="mt-4 rounded-lg border border-accent-300/15 bg-black/25 p-5 text-sm leading-7 text-zinc-400">
                 No events recorded yet. Start live tracking or press Test Event
                 Log.
               </div>
@@ -1849,15 +1850,15 @@ export default function GeoLabPage() {
                 {eventLog.map((event) => (
                   <div
                     key={event.id}
-                    className="flex items-start justify-between gap-4 rounded-2xl border border-cyan-300/15 bg-black/25 p-4"
+                    className="flex items-start justify-between gap-4 rounded-md border border-accent-300/15 bg-black/25 p-4"
                   >
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-black text-white">
+                        <p className="text-sm font-semibold text-white">
                           {event.state}
                         </p>
                         <span
-                          className={`rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] ${
+                          className={`rounded-sm border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] ${
                             event.source === "Live"
                               ? "border-green-300/30 bg-green-300/10 text-green-100"
                               : "border-yellow-300/30 bg-yellow-300/10 text-yellow-100"
@@ -1869,7 +1870,7 @@ export default function GeoLabPage() {
                       <p className="mt-1 text-xs text-zinc-500">{event.time}</p>
                     </div>
 
-                    <p className="text-sm font-bold text-cyan-200">
+                    <p className="text-sm font-semibold text-accent-200">
                       {formatMiles(event.distanceMiles)}
                     </p>
                   </div>
@@ -1924,10 +1925,10 @@ export default function GeoLabPage() {
               return (
                 <div
                   key={item.title}
-                  className="rounded-3xl border border-cyan-300/15 bg-black/25 p-5"
+                  className="rounded-lg border border-accent-300/15 bg-black/25 p-5"
                 >
-                  <Icon className="text-cyan-300" size={22} />
-                  <h3 className="mt-4 text-xl font-black text-white">
+                  <Icon className="text-accent-300" size={22} />
+                  <h3 className="mt-4 text-xl font-semibold text-white">
                     {item.title}
                   </h3>
                   <p className="mt-3 text-sm leading-7 text-zinc-300">

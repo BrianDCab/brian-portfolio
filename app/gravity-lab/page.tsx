@@ -60,10 +60,10 @@ const soundDefaults: Record<ExperimentKey, boolean> = {
 };
 
 const glassPanel =
-  "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
+  "rounded-lg border border-white/10 bg-zinc-950/70 shadow-2xl shadow-black/40 backdrop-blur-md";
 
 const glassCard =
-  "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-cyan-300/[0.07]";
+  "rounded-lg border border-white/10 bg-zinc-950/60 backdrop-blur-md transition hover:border-accent-400/50 hover:bg-accent-950/20";
 
 const experimentCards = [
   {
@@ -115,20 +115,20 @@ function StatBox({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-4 ${
+      className={`rounded-md border p-4 ${
         accent
-          ? "border-cyan-300/40 bg-cyan-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
-          : "border-cyan-300/15 bg-black/25"
+          ? "border-accent-300/40 bg-accent-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
+          : "border-accent-300/15 bg-black/25"
       }`}
     >
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300/80">
+      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300/80">
         {label}
       </p>
       <p
         className={
           accent
-            ? "mt-2 text-3xl font-black text-cyan-200"
-            : "mt-2 text-2xl font-black text-white"
+            ? "mt-2 text-3xl font-semibold text-accent-200"
+            : "mt-2 text-2xl font-semibold text-white"
         }
       >
         {value}
@@ -141,7 +141,7 @@ function PageButton({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300"
+      className="inline-flex items-center justify-center gap-2 rounded-sm border border-accent-400/60 bg-accent-500/90 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-accent-400"
     >
       {children}
     </Link>
@@ -161,10 +161,10 @@ function GhostButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition ${
+      className={`inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2 text-sm font-semibold transition ${
         active
-          ? "bg-cyan-400 text-black shadow-[0_0_20px_rgba(34,211,238,0.28)]"
-          : "border border-cyan-300/25 bg-black/25 text-cyan-200 hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10"
+          ? "border border-accent-400/60 bg-accent-500/90 text-white shadow-[0_0_20px_rgba(34,211,238,0.28)]"
+          : "border border-accent-300/25 bg-black/25 text-accent-200 hover:-translate-y-0.5 hover:border-accent-300/50 hover:bg-accent-400/10"
       }`}
     >
       {children}
@@ -180,10 +180,10 @@ function ManualTiltControls({
   updateManualTilt: (axis: keyof TiltState, value: string) => void;
 }) {
   return (
-    <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
-      <div className="flex items-center gap-2 text-cyan-300">
+    <div className="rounded-lg border border-accent-300/15 bg-black/25 p-5">
+      <div className="flex items-center gap-2 text-accent-300">
         <SlidersHorizontal size={16} />
-        <p className="text-xs font-black uppercase tracking-[0.24em]">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em]">
           Manual Tilt
         </p>
       </div>
@@ -204,7 +204,7 @@ function ManualTiltControls({
             onChange={(event: ChangeEvent<HTMLInputElement>) =>
               updateManualTilt("x", event.target.value)
             }
-            className="mt-3 w-full accent-cyan-300"
+            className="mt-3 w-full accent-accent-300"
           />
         </label>
 
@@ -218,7 +218,7 @@ function ManualTiltControls({
             onChange={(event: ChangeEvent<HTMLInputElement>) =>
               updateManualTilt("y", event.target.value)
             }
-            className="mt-3 w-full accent-cyan-300"
+            className="mt-3 w-full accent-accent-300"
           />
         </label>
       </div>
@@ -249,11 +249,11 @@ function ExperimentToolbar({
     <div className={`${glassPanel} p-6 md:p-8`}>
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
             Active Experiment
           </p>
 
-          <h2 className="mt-3 text-3xl font-black text-white md:text-5xl">
+          <h2 className="mt-3 text-3xl font-semibold text-white md:text-5xl">
             {title}
           </h2>
 
@@ -261,8 +261,8 @@ function ExperimentToolbar({
             {description}
           </p>
 
-          <p className="mt-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500">
-            Source: <span className="text-cyan-300">{sourceLabel}</span>
+          <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+            Source: <span className="text-accent-300">{sourceLabel}</span>
           </p>
         </div>
 
@@ -664,17 +664,17 @@ export default function GravityLabPage() {
   const activeDescription = activeCard?.text ?? "";
 
   return (
-    <main className="relative min-h-screen overflow-hidden px-5 pb-20 pt-28 text-white md:px-10">
-      <section className="mx-auto max-w-7xl">
+    <main className="min-h-screen px-4 py-10 text-white md:px-6 md:py-16">
+      <section className="mx-auto max-w-6xl">
         <div className={`${glassPanel} p-6 md:p-10`}>
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-cyan-200">
+              <div className="inline-flex items-center gap-2 rounded-sm border border-accent-300/25 bg-accent-300/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-accent-200">
                 <Activity size={14} />
                 Gravity Lab
               </div>
 
-              <h1 className="mt-6 max-w-4xl text-5xl font-black tracking-tight md:text-7xl">
+              <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-tight sm:text-5xl">
                 I wanted to see how much a browser could do with phone motion.
               </h1>
 
@@ -705,8 +705,8 @@ export default function GravityLabPage() {
           </div>
 
           <div className="mt-7 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+            <div className="rounded-md border border-accent-300/15 bg-black/25 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                 Status
               </p>
               <p className="mt-2 text-sm leading-6 text-zinc-300">
@@ -714,8 +714,8 @@ export default function GravityLabPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-4">
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-200">
+            <div className="rounded-md border border-emerald-300/20 bg-emerald-300/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200">
                 Sensor Privacy
               </p>
               <p className="mt-2 text-sm leading-6 text-zinc-300">
@@ -757,17 +757,17 @@ export default function GravityLabPage() {
                 onClick={() => setActiveExperiment(experiment.key)}
                 className={`text-left ${glassCard} p-6 ${
                   isActive
-                    ? "border-cyan-300/60 bg-cyan-300/[0.11] shadow-[0_0_30px_rgba(34,211,238,0.12)]"
+                    ? "border-accent-300/60 bg-accent-300/[0.11] shadow-[0_0_30px_rgba(34,211,238,0.12)]"
                     : ""
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                       {experiment.label}
                     </p>
 
-                    <h2 className="mt-3 text-2xl font-black text-white">
+                    <h2 className="mt-3 text-2xl font-semibold text-white">
                       {experiment.title}
                     </h2>
 
@@ -777,12 +777,12 @@ export default function GravityLabPage() {
                   </div>
 
                   <div className="flex shrink-0 flex-col items-end gap-2">
-                    <div className="rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-3 text-cyan-200">
+                    <div className="rounded-md border border-accent-300/25 bg-accent-300/10 p-3 text-accent-200">
                       <Icon size={24} />
                     </div>
 
                     {isActive && (
-                      <span className="rounded-full bg-cyan-300 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-black">
+                      <span className="rounded-sm border border-accent-400/50 bg-accent-500/20 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-100">
                         Currently Open
                       </span>
                     )}
@@ -790,11 +790,11 @@ export default function GravityLabPage() {
                 </div>
 
                 <div className="mt-5 flex flex-wrap gap-2">
-                  <span className="rounded-full border border-cyan-300/15 bg-black/25 px-3 py-1 text-xs font-bold text-cyan-100">
+                  <span className="rounded-sm border border-accent-300/15 bg-black/25 px-3 py-1 text-xs font-semibold text-accent-100">
                     Motion {motionByExperiment[experiment.key] ? "On" : "Off"}
                   </span>
 
-                  <span className="rounded-full border border-cyan-300/15 bg-black/25 px-3 py-1 text-xs font-bold text-cyan-100">
+                  <span className="rounded-sm border border-accent-300/15 bg-black/25 px-3 py-1 text-xs font-semibold text-accent-100">
                     Sound {soundByExperiment[experiment.key] ? "On" : "Off"}
                   </span>
                 </div>
@@ -803,16 +803,16 @@ export default function GravityLabPage() {
           })}
         </section>
 
-        <div className="mt-5 rounded-3xl border border-cyan-300/25 bg-cyan-300/10 p-5">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-200">
+        <div className="mt-5 rounded-lg border border-accent-300/25 bg-accent-300/10 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-200">
             Currently Open
           </p>
           <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <p className="text-xl font-black text-white">
+            <p className="text-xl font-semibold text-white">
               {activeCard?.title ?? "Gravity Lab"}
             </p>
             <p className="text-sm text-zinc-300">
-              Source: <span className="font-bold text-cyan-200">{sourceLabel}</span>
+              Source: <span className="font-semibold text-accent-200">{sourceLabel}</span>
             </p>
           </div>
           <p className="mt-2 text-sm leading-6 text-zinc-400">
@@ -823,8 +823,8 @@ export default function GravityLabPage() {
 
         <section className="mt-8 grid gap-5 md:grid-cols-3">
           <div className={`${glassCard} p-6`}>
-            <Smartphone className="text-cyan-300" size={24} />
-            <h2 className="mt-4 text-xl font-black text-white">
+            <Smartphone className="text-accent-300" size={24} />
+            <h2 className="mt-4 text-xl font-semibold text-white">
               Try it on a phone
             </h2>
             <p className="mt-3 text-sm leading-6 text-zinc-300">
@@ -834,8 +834,8 @@ export default function GravityLabPage() {
           </div>
 
           <div className={`${glassCard} p-6`}>
-            <SlidersHorizontal className="text-cyan-300" size={24} />
-            <h2 className="mt-4 text-xl font-black text-white">
+            <SlidersHorizontal className="text-accent-300" size={24} />
+            <h2 className="mt-4 text-xl font-semibold text-white">
               Desktop still works
             </h2>
             <p className="mt-3 text-sm leading-6 text-zinc-300">
@@ -845,8 +845,8 @@ export default function GravityLabPage() {
           </div>
 
           <div className={`${glassCard} p-6`}>
-            <Gauge className="text-cyan-300" size={24} />
-            <h2 className="mt-4 text-xl font-black text-white">
+            <Gauge className="text-accent-300" size={24} />
+            <h2 className="mt-4 text-xl font-semibold text-white">
               Calibration matters
             </h2>
             <p className="mt-3 text-sm leading-6 text-zinc-300">
@@ -873,7 +873,7 @@ export default function GravityLabPage() {
           <div className={`${glassPanel} p-6 md:p-8`}>
             {activeExperiment === "liquid" && (
               <div>
-                <div className="relative mx-auto h-96 max-w-md overflow-hidden rounded-[2rem] border-4 border-cyan-300/25 bg-black/40 shadow-[0_0_45px_rgba(34,211,238,0.08)]">
+                <div className="relative mx-auto h-96 max-w-md overflow-hidden rounded-lg border-4 border-accent-300/25 bg-black/40 shadow-[0_0_45px_rgba(34,211,238,0.08)]">
                   <div className="absolute left-6 right-6 top-6 text-center text-sm text-zinc-500">
                     Tilt X: {formatAngle(liquidTilt.x)}
                   </div>
@@ -884,16 +884,16 @@ export default function GravityLabPage() {
                       transform: `rotate(${liquidAngle}deg) scaleX(1.35)`,
                       transformOrigin: "center top",
                     }}
-                    className="absolute bottom-[-18%] left-[-20%] right-[-20%] rounded-t-[45%] bg-cyan-300/80 shadow-[0_0_35px_rgba(34,211,238,0.35)] transition-all duration-150"
+                    className="absolute bottom-[-18%] left-[-20%] right-[-20%] rounded-t-[45%] bg-accent-300/80 shadow-[0_0_35px_rgba(34,211,238,0.35)] transition-all duration-150"
                   />
 
-                  <div className="absolute inset-x-0 bottom-6 text-center text-sm font-black text-black">
+                  <div className="absolute inset-x-0 bottom-6 text-center font-mono text-sm font-semibold text-white">
                     {isPouring ? "POURING" : "STABLE"}
                   </div>
 
                   {isPouring && (
                     <div
-                      className={`absolute top-28 h-32 w-4 rounded-full bg-cyan-300/80 shadow-[0_0_20px_rgba(34,211,238,0.45)] ${
+                      className={`absolute top-28 h-32 w-4 rounded-sm bg-accent-300/80 shadow-[0_0_20px_rgba(34,211,238,0.45)] ${
                         pourSide === "right" ? "right-2" : "left-2"
                       }`}
                     />
@@ -915,28 +915,28 @@ export default function GravityLabPage() {
               <div>
                 <div className="mx-auto flex max-w-sm flex-col items-center">
                   <div className="relative h-80 w-52">
-                    <div className="absolute left-1/2 top-1/2 z-10 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-300/40 bg-black" />
+                    <div className="absolute left-1/2 top-1/2 z-10 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border border-accent-300/40 bg-black" />
 
-                    <div className="absolute left-6 right-6 top-0 h-36 overflow-hidden rounded-b-3xl rounded-t-full border border-cyan-300/25 bg-black/45">
+                    <div className="absolute left-6 right-6 top-0 h-36 overflow-hidden rounded-b-3xl rounded-t-full border border-accent-300/25 bg-black/45">
                       <div
                         style={{ height: `${sandTopFill}%` }}
-                        className="absolute bottom-0 left-0 right-0 rounded-t-[45%] bg-cyan-300/80 transition-all duration-150"
+                        className="absolute bottom-0 left-0 right-0 rounded-t-[45%] bg-accent-300/80 transition-all duration-150"
                       />
                     </div>
 
-                    <div className="absolute left-1/2 top-36 h-8 w-2 -translate-x-1/2 bg-cyan-300/80 shadow-[0_0_16px_rgba(34,211,238,0.5)]" />
+                    <div className="absolute left-1/2 top-36 h-8 w-2 -translate-x-1/2 bg-accent-300/80 shadow-[0_0_16px_rgba(34,211,238,0.5)]" />
 
-                    <div className="absolute bottom-0 left-6 right-6 h-36 overflow-hidden rounded-b-full rounded-t-3xl border border-cyan-300/25 bg-black/45">
+                    <div className="absolute bottom-0 left-6 right-6 h-36 overflow-hidden rounded-b-full rounded-t-3xl border border-accent-300/25 bg-black/45">
                       <div
                         style={{ height: `${sandBottomFill}%` }}
-                        className="absolute bottom-0 left-0 right-0 rounded-t-[45%] bg-cyan-300/80 transition-all duration-150"
+                        className="absolute bottom-0 left-0 right-0 rounded-t-[45%] bg-accent-300/80 transition-all duration-150"
                       />
                     </div>
                   </div>
 
                   <p className="mt-5 text-center text-sm text-zinc-400">
                     Sand is mostly in the{" "}
-                    <span className="font-semibold text-cyan-300">
+                    <span className="font-semibold text-accent-300">
                       {hourglassSide}
                     </span>{" "}
                     chamber.
@@ -956,19 +956,19 @@ export default function GravityLabPage() {
 
             {activeExperiment === "marble" && (
               <div>
-                <div className="relative h-[30rem] overflow-hidden rounded-3xl border border-cyan-300/15 bg-black/40">
-                  <div className="absolute left-1/2 top-0 h-full w-px bg-cyan-300/10" />
-                  <div className="absolute left-0 top-1/2 h-px w-full bg-cyan-300/10" />
+                <div className="relative h-[30rem] overflow-hidden rounded-lg border border-accent-300/15 bg-black/40">
+                  <div className="absolute left-1/2 top-0 h-full w-px bg-accent-300/10" />
+                  <div className="absolute left-0 top-1/2 h-px w-full bg-accent-300/10" />
 
                   <div
                     style={{
                       left: `${ball.x}%`,
                       top: `${ball.y}%`,
                     }}
-                    className="absolute h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300 shadow-[0_0_35px_rgba(34,211,238,0.55)] transition-[background-color]"
+                    className="absolute h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-300 shadow-[0_0_35px_rgba(34,211,238,0.55)] transition-[background-color]"
                   />
 
-                  <div className="absolute bottom-4 left-4 right-4 rounded-2xl border border-cyan-300/15 bg-zinc-950/80 p-4 text-sm text-zinc-400">
+                  <div className="absolute bottom-4 left-4 right-4 rounded-md border border-accent-300/15 bg-zinc-950/80 p-4 text-sm text-zinc-400">
                     Motion controls the marble. It bounces off walls with small
                     sound clicks when this app sound is on.
                   </div>
@@ -1004,8 +1004,8 @@ export default function GravityLabPage() {
                   <StatBox label="Strength" value={`${tiltStrength}/100`} />
                 </div>
 
-                <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-300">
+                <div className="mt-6 rounded-lg border border-accent-300/15 bg-black/25 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                     What I am reading
                   </p>
 
@@ -1032,7 +1032,7 @@ export default function GravityLabPage() {
             />
 
             <div className={`${glassPanel} p-5`}>
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-300">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                 Experiment Stats
               </p>
 
@@ -1046,11 +1046,11 @@ export default function GravityLabPage() {
         </section>
 
         <section className={`${glassPanel} mt-10 p-6 md:p-8`}>
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
             Why I Built This
           </p>
 
-          <h2 className="mt-3 text-3xl font-black text-white">
+          <h2 className="mt-3 text-3xl font-semibold text-white">
             I wanted the phone itself to become part of the interface.
           </h2>
 
@@ -1069,24 +1069,24 @@ export default function GravityLabPage() {
           </p>
 
           <div className="mt-7 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
-              <p className="text-sm font-black text-white">Input</p>
+            <div className="rounded-md border border-accent-300/15 bg-black/25 p-4">
+              <p className="text-sm font-semibold text-white">Input</p>
               <p className="mt-2 text-sm leading-6 text-zinc-400">
                 Phone orientation, permission handling, manual fallback, and
                 calibration.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
-              <p className="text-sm font-black text-white">Behavior</p>
+            <div className="rounded-md border border-accent-300/15 bg-black/25 p-4">
+              <p className="text-sm font-semibold text-white">Behavior</p>
               <p className="mt-2 text-sm leading-6 text-zinc-400">
                 Pour thresholds, direction changes, marble velocity, friction,
                 and wall collisions.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
-              <p className="text-sm font-black text-white">Interface</p>
+            <div className="rounded-md border border-accent-300/15 bg-black/25 p-4">
+              <p className="text-sm font-semibold text-white">Interface</p>
               <p className="mt-2 text-sm leading-6 text-zinc-400">
                 Touch-friendly controls, clear status messages, optional sound,
                 and responsive layouts.
@@ -1095,10 +1095,10 @@ export default function GravityLabPage() {
           </div>
         </section>
 
-        <footer className="mt-12 pb-6 text-center text-sm text-zinc-500">
+        <p className="mt-12 pb-6 text-center text-sm text-zinc-500">
           Built by Brian Cabrera while figuring out how far phone sensors could
           push a browser interface.
-        </footer>
+        </p>
       </section>
     </main>
   );

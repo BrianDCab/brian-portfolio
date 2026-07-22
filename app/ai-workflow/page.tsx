@@ -15,10 +15,10 @@ import {
 } from "lucide-react";
 
 const glassPanel =
-  "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
+  "rounded-lg border border-white/10 bg-zinc-950/70 shadow-2xl shadow-black/40 backdrop-blur-md";
 
 const glassCard =
-  "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-cyan-300/[0.07]";
+  "rounded-lg border border-white/10 bg-zinc-950/60 backdrop-blur-md transition hover:border-accent-400/50 hover:bg-accent-950/20";
 
 const uses = [
   {
@@ -83,14 +83,14 @@ const cautionAreas = [
 export default function AIWorkflowPage() {
   return (
     <main className="min-h-screen">
-      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16 lg:py-24">
+      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16">
         <div className={`${glassPanel} p-6 md:p-10`}>
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">
+          <div className="inline-flex items-center gap-2 rounded-sm border border-accent-300/20 bg-black/25 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
             <Sparkles size={15} />
             AI-Assisted Workflow
           </div>
 
-          <h1 className="mt-6 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
+          <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
             How I use AI without handing over the work
           </h1>
 
@@ -106,7 +106,7 @@ export default function AIWorkflowPage() {
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/projects"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300"
+              className="inline-flex items-center justify-center gap-2 rounded-sm border border-accent-400/60 bg-accent-500/90 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-accent-400"
             >
               <ArrowLeft size={16} />
               Back to Projects
@@ -114,7 +114,7 @@ export default function AIWorkflowPage() {
 
             <Link
               href="/data-lab"
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-cyan-300/25 bg-black/25 px-5 py-3 text-sm font-bold text-cyan-100 transition hover:border-cyan-300/50 hover:bg-cyan-300/10"
+              className="inline-flex items-center justify-center gap-2 rounded-sm border border-accent-300/25 bg-black/25 px-5 py-3 text-sm font-semibold text-accent-100 transition hover:border-accent-300/50 hover:bg-accent-400/10"
             >
               Open Data Lab
               <ExternalLink size={15} />
@@ -123,11 +123,11 @@ export default function AIWorkflowPage() {
         </div>
 
         <section className="mt-12">
-          <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
             Where it helps
           </p>
 
-          <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+          <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
             The parts of my workflow where I use it
           </h2>
 
@@ -143,11 +143,11 @@ export default function AIWorkflowPage() {
 
               return (
                 <div key={item.title} className={`${glassCard} p-6`}>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-black/25 text-cyan-300">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-md border border-accent-300/20 bg-black/25 text-accent-300">
                     <Icon size={22} />
                   </div>
 
-                  <h3 className="mt-5 text-2xl font-black text-white">
+                  <h3 className="mt-5 text-2xl font-semibold text-white">
                     {item.title}
                   </h3>
 
@@ -163,16 +163,16 @@ export default function AIWorkflowPage() {
         <section className={`${glassPanel} mt-12 p-6 md:p-8`}>
           <div className="flex items-start gap-4">
             <CheckCircle2
-              className="mt-1 shrink-0 text-cyan-300"
+              className="mt-1 shrink-0 text-accent-300"
               size={24}
             />
 
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 What stays my responsibility
               </p>
 
-              <h2 className="mt-3 text-3xl font-black text-white">
+              <h2 className="mt-3 text-3xl font-semibold text-white">
                 I am still responsible for the final result
               </h2>
 
@@ -180,10 +180,10 @@ export default function AIWorkflowPage() {
                 {responsibilities.map((item) => (
                   <div
                     key={item}
-                    className="flex items-start gap-3 rounded-2xl border border-cyan-300/15 bg-black/25 p-4"
+                    className="flex items-start gap-3 rounded-md border border-accent-300/15 bg-black/25 p-4"
                   >
                     <CheckCircle2
-                      className="mt-0.5 shrink-0 text-cyan-300"
+                      className="mt-0.5 shrink-0 text-accent-300"
                       size={17}
                     />
 
@@ -198,16 +198,16 @@ export default function AIWorkflowPage() {
         <section className={`${glassPanel} mt-12 p-6 md:p-8`}>
           <div className="flex items-start gap-4">
             <BrainCircuit
-              className="mt-1 shrink-0 text-cyan-300"
+              className="mt-1 shrink-0 text-accent-300"
               size={24}
             />
 
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Learning and exploration
               </p>
 
-              <h2 className="mt-3 text-3xl font-black text-white">
+              <h2 className="mt-3 text-3xl font-semibold text-white">
                 Sometimes I use it to understand the idea before I build the
                 idea
               </h2>
@@ -226,11 +226,11 @@ export default function AIWorkflowPage() {
         </section>
 
         <section className="mt-12">
-          <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
             Where I slow down
           </p>
 
-          <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+          <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
             I do not trust every answer just because it sounds confident
           </h2>
 
@@ -240,11 +240,11 @@ export default function AIWorkflowPage() {
 
               return (
                 <div key={item.title} className={`${glassCard} p-6`}>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-300/20 bg-yellow-300/10 text-yellow-200">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-md border border-yellow-300/20 bg-yellow-300/10 text-yellow-200">
                     <Icon size={22} />
                   </div>
 
-                  <h3 className="mt-5 text-xl font-black text-white">
+                  <h3 className="mt-5 text-xl font-semibold text-white">
                     {item.title}
                   </h3>
 
@@ -260,16 +260,16 @@ export default function AIWorkflowPage() {
         <section className={`${glassPanel} mt-12 p-6 md:p-8`}>
           <div className="flex items-start gap-4">
             <LockKeyhole
-              className="mt-1 shrink-0 text-cyan-300"
+              className="mt-1 shrink-0 text-accent-300"
               size={24}
             />
 
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Privacy
               </p>
 
-              <h2 className="mt-3 text-3xl font-black text-white">
+              <h2 className="mt-3 text-3xl font-semibold text-white">
                 Private data does not belong in a public AI prompt
               </h2>
 
@@ -285,11 +285,11 @@ export default function AIWorkflowPage() {
         </section>
 
         <section className={`${glassPanel} mt-12 p-6 md:p-8`}>
-          <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
             This portfolio
           </p>
 
-          <h2 className="mt-3 text-3xl font-black text-white">
+          <h2 className="mt-3 text-3xl font-semibold text-white">
             AI helped with parts of the process. I still built, tested, and
             maintained the site.
           </h2>

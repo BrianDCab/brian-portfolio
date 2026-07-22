@@ -130,10 +130,10 @@ const startingSnake: Position[] = [
 ];
 
 const glassPanel =
-  "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
+  "rounded-lg border border-white/10 bg-zinc-950/70 shadow-2xl shadow-black/40 backdrop-blur-md";
 
 const glassCard =
-  "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-cyan-300/[0.07]";
+  "rounded-lg border border-white/10 bg-zinc-950/60 backdrop-blur-md transition hover:border-accent-400/50 hover:bg-accent-950/20";
 
 const demoCards = [
   {
@@ -296,7 +296,7 @@ function PageButton({ href, children }: { href: string; children: ReactNode }) {
   const isInternal = href.startsWith("/");
 
   const className =
-    "inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300";
+    "inline-flex items-center justify-center gap-2 rounded-sm border border-accent-400/60 bg-accent-500/90 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-accent-400";
 
   if (isInternal) {
     return (
@@ -327,7 +327,7 @@ function GhostButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex items-center justify-center gap-2 rounded-full border border-cyan-300/25 bg-black/25 px-4 py-2 text-sm font-bold text-cyan-200 transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:opacity-40"
+      className="inline-flex items-center justify-center gap-2 rounded-sm border border-accent-300/25 bg-black/25 px-4 py-2 text-sm font-semibold text-accent-200 transition hover:-translate-y-0.5 hover:border-accent-300/50 hover:bg-accent-400/10 disabled:cursor-not-allowed disabled:opacity-40"
     >
       {children}
     </button>
@@ -345,21 +345,21 @@ function StatBox({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-4 ${
+      className={`rounded-md border p-4 ${
         accent
-          ? "border-cyan-300/40 bg-cyan-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
-          : "border-cyan-300/15 bg-black/25"
+          ? "border-accent-300/40 bg-accent-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
+          : "border-accent-300/15 bg-black/25"
       }`}
     >
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300/80">
+      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300/80">
         {label}
       </p>
 
       <p
         className={
           accent
-            ? "mt-2 text-3xl font-black text-cyan-200"
-            : "mt-2 text-2xl font-black text-white"
+            ? "mt-2 text-3xl font-semibold text-accent-200"
+            : "mt-2 text-2xl font-semibold text-white"
         }
       >
         {value}
@@ -371,7 +371,7 @@ function StatBox({
 function CardView({ card, hidden = false }: { card?: Card; hidden?: boolean }) {
   if (hidden) {
     return (
-      <div className="flex h-28 w-20 items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-950/40 text-2xl font-black text-cyan-300 shadow-lg">
+      <div className="flex h-28 w-20 items-center justify-center rounded-md border border-accent-300/40 bg-accent-950/40 text-2xl font-semibold text-accent-300 shadow-lg">
         ?
       </div>
     );
@@ -383,7 +383,7 @@ function CardView({ card, hidden = false }: { card?: Card; hidden?: boolean }) {
 
   return (
     <div
-      className={`flex h-28 w-20 flex-col justify-between rounded-xl border border-white/40 bg-white p-3 text-lg font-black shadow-lg ${
+      className={`flex h-28 w-20 flex-col justify-between rounded-md border border-white/40 bg-white p-3 text-lg font-semibold shadow-lg ${
         isRed ? "text-red-500" : "text-black"
       }`}
     >
@@ -409,9 +409,9 @@ function RangeControl({
 }) {
   return (
     <label className="block space-y-2">
-      <span className="flex items-center justify-between gap-3 text-sm font-bold text-zinc-300">
+      <span className="flex items-center justify-between gap-3 text-sm font-semibold text-zinc-300">
         <span>{label}</span>
-        <span className={risk ? "text-red-300" : "text-cyan-300"}>{value}</span>
+        <span className={risk ? "text-red-300" : "text-accent-300"}>{value}</span>
       </span>
 
       <p className="text-xs leading-5 text-zinc-500">{help}</p>
@@ -454,8 +454,11 @@ export default function PlaygroundPage() {
 
   const [snake, setSnake] = useState<Position[]>(startingSnake);
   const [food, setFood] = useState<Position>({ x: 12, y: 8 });
+  // pending turns; each entry is validated against the one before it, and the
+  // tick consumes one per move, so mashing keys can never reverse into the neck
+  const directionQueueRef = useRef<Direction[]>([]);
+  const appliedDirectionRef = useRef<Direction>("right");
   const [direction, setDirection] = useState<Direction>("right");
-  const [nextDirection, setNextDirection] = useState<Direction>("right");
   const [snakeRunning, setSnakeRunning] = useState(false);
   const [snakeGameOver, setSnakeGameOver] = useState(false);
   const [snakeScore, setSnakeScore] = useState(0);
@@ -767,6 +770,7 @@ export default function PlaygroundPage() {
 
     if (savedHighScore) {
       const parsedHighScore = Number(savedHighScore);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time localStorage hydration on mount
       setSnakeHighScore(parsedHighScore);
       snakeHighScoreRef.current = parsedHighScore;
     }
@@ -842,8 +846,10 @@ export default function PlaygroundPage() {
 
         if (!head) return startingSnake;
 
-        const activeDirection = nextDirection;
+        const activeDirection =
+          directionQueueRef.current.shift() ?? appliedDirectionRef.current;
 
+        appliedDirectionRef.current = activeDirection;
         setDirection(activeDirection);
 
         const newHead = {
@@ -905,7 +911,7 @@ export default function PlaygroundPage() {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [snakeRunning, snakeGameOver, nextDirection, food]);
+  }, [snakeRunning, snakeGameOver, food]);
 
   function calculateHandMoney(result: GameResult, bet: number, blackjack = false) {
     if (result === "push") return { payout: bet, profit: 0 };
@@ -1350,19 +1356,18 @@ export default function PlaygroundPage() {
   function changeSnakeDirection(newDirection: Direction) {
     if (snakeGameOver) return;
 
-    setNextDirection((previousDirection) => {
-      if (
-        isOppositeDirection(previousDirection, newDirection) ||
-        previousDirection === newDirection
-      ) {
-        return previousDirection;
-      }
+    const queue = directionQueueRef.current;
+    const compareAgainst = queue[queue.length - 1] ?? appliedDirectionRef.current;
 
+    if (
+      !isOppositeDirection(compareAgainst, newDirection) &&
+      compareAgainst !== newDirection &&
+      queue.length < 2
+    ) {
+      queue.push(newDirection);
       snakeTurnsRef.current += 1;
       setSnakeTurns(snakeTurnsRef.current);
-
-      return newDirection;
-    });
+    }
 
     if (!snakeStartedAtRef.current) {
       const startTime = Date.now();
@@ -1481,8 +1486,9 @@ export default function PlaygroundPage() {
   function restartSnake() {
     setSnake(startingSnake);
     setFood(getRandomFood(startingSnake));
+    directionQueueRef.current = [];
+    appliedDirectionRef.current = "right";
     setDirection("right");
-    setNextDirection("right");
     setSnakeRunning(false);
     setSnakeGameOver(false);
     setSnakeScore(0);
@@ -1601,14 +1607,14 @@ export default function PlaygroundPage() {
 
   return (
     <main className="min-h-screen">
-      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16 lg:py-24">
+      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16">
         <div className={`${glassPanel} p-6 md:p-10`}>
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">
+          <div className="inline-flex items-center gap-2 rounded-sm border border-accent-300/20 bg-black/25 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
             <Gamepad2 size={15} />
             Playground
           </div>
 
-          <h1 className="mt-6 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
+          <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
             This is where I make ideas playable
           </h1>
 
@@ -1647,37 +1653,37 @@ export default function PlaygroundPage() {
                 aria-controls={`demo-${demo.key}`}
                 className={`group relative flex h-full flex-col p-6 text-left ${glassCard} ${
                   active
-                    ? "border-cyan-200/70 bg-cyan-300/[0.12] shadow-[0_0_34px_rgba(34,211,238,0.16)]"
+                    ? "border-accent-200/70 bg-accent-300/[0.12] shadow-[0_0_34px_rgba(34,211,238,0.16)]"
                     : ""
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div
-                    className={`flex h-12 w-12 items-center justify-center rounded-2xl border ${
+                    className={`flex h-12 w-12 items-center justify-center rounded-md border ${
                       active
-                        ? "border-cyan-200/60 bg-cyan-300/20 text-cyan-100"
-                        : "border-cyan-300/20 bg-black/25 text-cyan-300"
+                        ? "border-accent-200/60 bg-accent-300/20 text-accent-100"
+                        : "border-accent-300/20 bg-black/25 text-accent-300"
                     }`}
                   >
                     <Icon size={22} />
                   </div>
 
                   <span
-                    className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${
+                    className={`rounded-sm border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
                       active
-                        ? "border-cyan-200/50 bg-cyan-300/20 text-cyan-50"
-                        : "border-cyan-300/15 bg-black/25 text-zinc-400"
+                        ? "border-accent-200/50 bg-accent-300/20 text-accent-50"
+                        : "border-accent-300/15 bg-black/25 text-zinc-400"
                     }`}
                   >
                     {active ? "Currently Open" : "Open Model"}
                   </span>
                 </div>
 
-                <p className="mt-5 text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
                   {demo.label}
                 </p>
 
-                <h2 className="mt-4 text-2xl font-black text-white">
+                <h2 className="mt-4 text-2xl font-semibold text-white">
                   {demo.title}
                 </h2>
 
@@ -1686,8 +1692,8 @@ export default function PlaygroundPage() {
                 </p>
 
                 <div
-                  className={`mt-6 inline-flex items-center gap-2 text-sm font-bold ${
-                    active ? "text-cyan-100" : "text-cyan-300"
+                  className={`mt-6 inline-flex items-center gap-2 text-sm font-semibold ${
+                    active ? "text-accent-100" : "text-accent-300"
                   }`}
                 >
                   {active ? "Currently open" : demo.button}
@@ -1705,10 +1711,10 @@ export default function PlaygroundPage() {
           className={`${glassPanel} mt-5 flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between`}
         >
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-300">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
               Currently open
             </p>
-            <h2 className="mt-2 text-2xl font-black text-white">
+            <h2 className="mt-2 text-2xl font-semibold text-white">
               {activeDemoInfo.title}
             </h2>
           </div>
@@ -1726,11 +1732,11 @@ export default function PlaygroundPage() {
             <div className={`${glassPanel} p-6 md:p-8`}>
               <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                     Blackjack
                   </p>
 
-                  <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+                  <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
                     Blackjack with fake credits and real session stats
                   </h2>
 
@@ -1748,26 +1754,26 @@ export default function PlaygroundPage() {
                 </GhostButton>
               </div>
 
-              <div className="mt-8 grid gap-4 rounded-3xl border border-cyan-300/15 bg-black/25 p-5 lg:grid-cols-[1fr_1.2fr]">
+              <div className="mt-8 grid gap-4 rounded-lg border border-accent-300/15 bg-black/25 p-5 lg:grid-cols-[1fr_1.2fr]">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
                     Bankroll
                   </p>
 
-                  <p className="mt-2 text-4xl font-black text-cyan-200">
+                  <p className="mt-2 text-4xl font-semibold text-accent-200">
                     {formatMoney(bankroll)}
                   </p>
 
                   <p className="mt-2 text-sm text-zinc-400">
                     Current bet:{" "}
-                    <span className="font-bold text-white">
+                    <span className="font-semibold text-white">
                       {currentBet > 0 ? formatMoney(currentBet) : "No active bet"}
                     </span>
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
                     Bet Selector
                   </p>
 
@@ -1778,10 +1784,10 @@ export default function PlaygroundPage() {
                         type="button"
                         onClick={() => setSelectedBet(chip)}
                         disabled={status === "playing"}
-                        className={`rounded-full px-4 py-2 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                        className={`rounded-sm px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${
                           selectedBet === chip
-                            ? "bg-cyan-400 text-black"
-                            : "border border-cyan-300/25 bg-black/25 text-cyan-200 hover:border-cyan-300/50"
+                            ? "border border-accent-400/60 bg-accent-500/90 text-white"
+                            : "border border-accent-300/25 bg-black/25 text-accent-200 hover:border-accent-300/50"
                         }`}
                       >
                         {formatMoney(chip)}
@@ -1790,7 +1796,7 @@ export default function PlaygroundPage() {
                   </div>
 
                   <label className="mt-4 block">
-                    <span className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">
+                    <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-400">
                       Custom Bet
                     </span>
 
@@ -1803,14 +1809,14 @@ export default function PlaygroundPage() {
                       onChange={(event) =>
                         setSelectedBet(Math.max(5, Number(event.target.value)))
                       }
-                      className="mt-2 w-full rounded-2xl border border-cyan-300/20 bg-black/35 px-4 py-3 text-sm font-bold text-white outline-none transition focus:border-cyan-300 disabled:opacity-40"
+                      className="mt-2 w-full rounded-md border border-accent-300/20 bg-black/35 px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-accent-300 disabled:opacity-40"
                     />
                   </label>
                 </div>
               </div>
 
-              <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
-                <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+              <div className="mt-6 rounded-lg border border-accent-300/15 bg-black/25 p-5">
+                <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
                   Status
                 </p>
 
@@ -1822,8 +1828,8 @@ export default function PlaygroundPage() {
               <div className="mt-8 grid gap-8">
                 <div>
                   <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-xl font-black text-white">Dealer</h3>
-                    <p className="text-sm font-bold text-zinc-400">
+                    <h3 className="text-xl font-semibold text-white">Dealer</h3>
+                    <p className="text-sm font-semibold text-zinc-400">
                       Score: {dealerScore}
                     </p>
                   </div>
@@ -1847,8 +1853,8 @@ export default function PlaygroundPage() {
 
                 <div>
                   <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-xl font-black text-white">Player</h3>
-                    <p className="text-sm font-bold text-zinc-400">
+                    <h3 className="text-xl font-semibold text-white">Player</h3>
+                    <p className="text-sm font-semibold text-zinc-400">
                       Score: {playerScore}
                     </p>
                   </div>
@@ -1908,7 +1914,7 @@ export default function PlaygroundPage() {
             </div>
 
             <aside className={`${glassPanel} p-6 md:p-8`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Betting Dashboard
               </p>
 
@@ -1931,7 +1937,7 @@ export default function PlaygroundPage() {
             </aside>
 
             <div className={`${glassPanel} p-6 md:p-8 xl:col-span-2`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Session Analytics
               </p>
 
@@ -1965,11 +1971,11 @@ export default function PlaygroundPage() {
             <div className={`${glassPanel} p-6 md:p-8`}>
               <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                     Snake
                   </p>
 
-                  <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+                  <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
                     Snake that works with keys, taps, and swipes
                   </h2>
 
@@ -2005,7 +2011,7 @@ export default function PlaygroundPage() {
               <div
                 onTouchStart={handleSnakeTouchStart}
                 onTouchEnd={handleSnakeTouchEnd}
-                className="mt-8 touch-none select-none rounded-3xl border border-cyan-300/15 bg-black/25 p-3 md:p-4"
+                className="mt-8 touch-none select-none rounded-lg border border-accent-300/15 bg-black/25 p-3 md:p-4"
               >
                 <div
                   className="grid gap-1"
@@ -2028,12 +2034,12 @@ export default function PlaygroundPage() {
                         key={`${cell.x}-${cell.y}`}
                         className={`aspect-square rounded-sm border ${
                           isHead
-                            ? "border-cyan-200 bg-cyan-200 shadow-[0_0_14px_rgba(34,211,238,0.55)]"
+                            ? "border-accent-200 bg-accent-200 shadow-[0_0_14px_rgba(34,211,238,0.55)]"
                             : isSnake
-                              ? "border-cyan-300/30 bg-cyan-400/80"
+                              ? "border-accent-300/30 bg-accent-400/80"
                               : isFood
                                 ? "border-fuchsia-300/50 bg-fuchsia-400 shadow-[0_0_14px_rgba(217,70,239,0.55)]"
-                                : "border-cyan-300/10 bg-cyan-950/20"
+                                : "border-accent-300/10 bg-accent-950/20"
                         }`}
                       />
                     );
@@ -2048,7 +2054,7 @@ export default function PlaygroundPage() {
                   type="button"
                   onClick={() => changeSnakeDirection("up")}
                   disabled={snakeGameOver}
-                  className="flex h-14 items-center justify-center rounded-2xl bg-cyan-400 text-black shadow-[0_0_18px_rgba(34,211,238,0.25)] disabled:opacity-40"
+                  className="flex h-14 items-center justify-center rounded-md border border-accent-400/60 bg-accent-500/90 text-white shadow-[0_0_18px_rgba(34,211,238,0.25)] disabled:opacity-40"
                 >
                   <ArrowUp size={24} />
                 </button>
@@ -2059,7 +2065,7 @@ export default function PlaygroundPage() {
                   type="button"
                   onClick={() => changeSnakeDirection("left")}
                   disabled={snakeGameOver}
-                  className="flex h-14 items-center justify-center rounded-2xl bg-cyan-400 text-black shadow-[0_0_18px_rgba(34,211,238,0.25)] disabled:opacity-40"
+                  className="flex h-14 items-center justify-center rounded-md border border-accent-400/60 bg-accent-500/90 text-white shadow-[0_0_18px_rgba(34,211,238,0.25)] disabled:opacity-40"
                 >
                   <ArrowLeft size={24} />
                 </button>
@@ -2068,7 +2074,7 @@ export default function PlaygroundPage() {
                   type="button"
                   onClick={toggleSnakeRunning}
                   disabled={snakeGameOver}
-                  className="flex h-14 items-center justify-center rounded-2xl border border-cyan-300/25 bg-black/25 text-cyan-200 disabled:opacity-40"
+                  className="flex h-14 items-center justify-center rounded-md border border-accent-300/25 bg-black/25 text-accent-200 disabled:opacity-40"
                 >
                   {snakeRunning ? <Pause size={22} /> : <Play size={22} />}
                 </button>
@@ -2077,7 +2083,7 @@ export default function PlaygroundPage() {
                   type="button"
                   onClick={() => changeSnakeDirection("right")}
                   disabled={snakeGameOver}
-                  className="flex h-14 items-center justify-center rounded-2xl bg-cyan-400 text-black shadow-[0_0_18px_rgba(34,211,238,0.25)] disabled:opacity-40"
+                  className="flex h-14 items-center justify-center rounded-md border border-accent-400/60 bg-accent-500/90 text-white shadow-[0_0_18px_rgba(34,211,238,0.25)] disabled:opacity-40"
                 >
                   <ArrowRight size={24} />
                 </button>
@@ -2088,7 +2094,7 @@ export default function PlaygroundPage() {
                   type="button"
                   onClick={() => changeSnakeDirection("down")}
                   disabled={snakeGameOver}
-                  className="flex h-14 items-center justify-center rounded-2xl bg-cyan-400 text-black shadow-[0_0_18px_rgba(34,211,238,0.25)] disabled:opacity-40"
+                  className="flex h-14 items-center justify-center rounded-md border border-accent-400/60 bg-accent-500/90 text-white shadow-[0_0_18px_rgba(34,211,238,0.25)] disabled:opacity-40"
                 >
                   <ArrowDown size={24} />
                 </button>
@@ -2098,7 +2104,7 @@ export default function PlaygroundPage() {
             </div>
 
             <aside className={`${glassPanel} p-6 md:p-8`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Snake Dashboard
               </p>
 
@@ -2125,7 +2131,7 @@ export default function PlaygroundPage() {
             </aside>
 
             <div className={`${glassPanel} p-6 md:p-8 xl:col-span-2`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Snake Analytics
               </p>
 
@@ -2170,11 +2176,11 @@ export default function PlaygroundPage() {
             className="mt-12 grid gap-5 xl:grid-cols-[0.95fr_1.05fr]"
           >
             <div className={`${glassPanel} p-6 md:p-8`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Launch Readiness Auditor
               </p>
 
-              <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+              <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
                 Would I actually ship this project?
               </h2>
 
@@ -2186,8 +2192,8 @@ export default function PlaygroundPage() {
                 better or worse.
               </p>
 
-              <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
-                <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+              <div className="mt-6 rounded-lg border border-accent-300/15 bg-black/25 p-5">
+                <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
                   Formula
                 </p>
 
@@ -2214,8 +2220,8 @@ export default function PlaygroundPage() {
                 />
               </div>
 
-              <div className="mt-6 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
-                <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+              <div className="mt-6 rounded-lg border border-accent-300/15 bg-black/25 p-5">
+                <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
                   Recommended Actions
                 </p>
 
@@ -2223,7 +2229,7 @@ export default function PlaygroundPage() {
                   {recommendedActions.map((action) => (
                     <div
                       key={action}
-                      className="rounded-2xl border border-cyan-300/10 bg-black/25 p-4 text-sm leading-6 text-zinc-300"
+                      className="rounded-md border border-accent-300/10 bg-black/25 p-4 text-sm leading-6 text-zinc-300"
                     >
                       {action}
                     </div>
@@ -2245,11 +2251,11 @@ export default function PlaygroundPage() {
             </div>
 
             <div className={`${glassPanel} p-6 md:p-8`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Inputs
               </p>
 
-              <h3 className="mt-3 text-2xl font-black text-white">
+              <h3 className="mt-3 text-2xl font-semibold text-white">
                 Move the sliders to audit a launch
               </h3>
 
@@ -2314,8 +2320,8 @@ export default function PlaygroundPage() {
               </div>
 
               {scenarioHistory.length > 0 && (
-                <div className="mt-8 rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                <div className="mt-8 rounded-lg border border-accent-300/15 bg-black/25 p-5">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
                     Recent Audits
                   </p>
 
@@ -2323,9 +2329,9 @@ export default function PlaygroundPage() {
                     {scenarioHistory.slice(-4).reverse().map((scenario) => (
                       <div
                         key={scenario.scenarioNumber}
-                        className="grid gap-2 rounded-2xl border border-cyan-300/10 bg-black/25 p-4 sm:grid-cols-[90px_1fr_150px]"
+                        className="grid gap-2 rounded-md border border-accent-300/10 bg-black/25 p-4 sm:grid-cols-[90px_1fr_150px]"
                       >
-                        <p className="text-sm font-black text-cyan-200">
+                        <p className="text-sm font-semibold text-accent-200">
                           #{scenario.scenarioNumber}
                         </p>
 
@@ -2333,7 +2339,7 @@ export default function PlaygroundPage() {
                           Risk {scenario.riskLevel} • {scenario.decision}
                         </p>
 
-                        <p className="text-sm font-black text-white sm:text-right">
+                        <p className="text-sm font-semibold text-white sm:text-right">
                           {scenario.score}/100
                         </p>
                       </div>
@@ -2346,11 +2352,11 @@ export default function PlaygroundPage() {
         )}
 
         <section className={`${glassPanel} mt-12 p-6 md:p-8`}>
-          <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
             Why I built this page
           </p>
 
-          <h2 className="mt-3 text-3xl font-black text-white">
+          <h2 className="mt-3 text-3xl font-semibold text-white">
             I wanted the code to do more than sit in a repository
           </h2>
 
@@ -2363,24 +2369,24 @@ export default function PlaygroundPage() {
           </p>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
-              <p className="text-sm font-black text-white">Playable logic</p>
+            <div className="rounded-md border border-accent-300/15 bg-black/25 p-4">
+              <p className="text-sm font-semibold text-white">Playable logic</p>
               <p className="mt-2 text-sm leading-6 text-zinc-400">
                 The controls, rules, scoring, collisions, and state changes are
                 running in the browser.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
-              <p className="text-sm font-black text-white">Data after the game</p>
+            <div className="rounded-md border border-accent-300/15 bg-black/25 p-4">
+              <p className="text-sm font-semibold text-white">Data after the game</p>
               <p className="mt-2 text-sm leading-6 text-zinc-400">
                 I track each session so the result can be reviewed instead of
                 disappearing as soon as the game ends.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
-              <p className="text-sm font-black text-white">Desktop and phone</p>
+            <div className="rounded-md border border-accent-300/15 bg-black/25 p-4">
+              <p className="text-sm font-semibold text-white">Desktop and phone</p>
               <p className="mt-2 text-sm leading-6 text-zinc-400">
                 The page supports keyboard input, visible controls, and touch
                 interaction so the demos are not limited to one device.
@@ -2389,9 +2395,6 @@ export default function PlaygroundPage() {
           </div>
         </section>
 
-        <footer className="mt-12 pb-6 text-center text-sm text-zinc-500">
-          Built by Brian Cabrera.
-        </footer>
       </section>
     </main>
   );

@@ -169,10 +169,10 @@ type CorrelationGuidance = {
 };
 
 const glassPanel =
-  "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
+  "rounded-lg border border-white/10 bg-zinc-950/70 shadow-2xl shadow-black/40 backdrop-blur-md";
 
 const glassCard =
-  "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-cyan-300/[0.07]";
+  "rounded-lg border border-white/10 bg-zinc-950/60 backdrop-blur-md transition hover:border-accent-400/50 hover:bg-accent-950/20";
 
 const offerBase: PlayerOfferRow = {
   PlayerID: "",
@@ -1544,7 +1544,7 @@ function formatPercent(value: number) {
 
 function formatCellValue(value: unknown) {
   if (typeof value === "number") return value.toLocaleString();
-  if (value === "" || value === undefined || value === null) return "—";
+  if (value === "" || value === undefined || value === null) return "-";
   return String(value);
 }
 
@@ -2008,7 +2008,7 @@ function PageButton({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300"
+      className="inline-flex items-center justify-center gap-2 rounded-sm border border-accent-400/60 bg-accent-500/90 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-accent-400"
     >
       {children}
     </Link>
@@ -2026,7 +2026,7 @@ function GhostButton({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center justify-center gap-2 rounded-full border border-cyan-300/25 bg-black/25 px-4 py-2 text-sm font-bold text-cyan-200 transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10"
+      className="inline-flex items-center justify-center gap-2 rounded-sm border border-accent-300/25 bg-black/25 px-4 py-2 text-sm font-semibold text-accent-200 transition hover:-translate-y-0.5 hover:border-accent-300/50 hover:bg-accent-400/10"
     >
       {children}
     </button>
@@ -2044,7 +2044,7 @@ function ImportButton({
     <>
       <label
         htmlFor={id}
-        className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-cyan-300/25 bg-black/25 px-4 py-2 text-sm font-bold text-cyan-200 transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10"
+        className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-sm border border-accent-300/25 bg-black/25 px-4 py-2 text-sm font-semibold text-accent-200 transition hover:-translate-y-0.5 hover:border-accent-300/50 hover:bg-accent-400/10"
       >
         <Upload size={15} />
         Import CSV
@@ -2076,14 +2076,14 @@ function StatBox({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-4 ${
+      className={`rounded-md border p-4 ${
         accent
-          ? "border-cyan-300/40 bg-cyan-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
-          : "border-cyan-300/15 bg-black/25"
+          ? "border-accent-300/40 bg-accent-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
+          : "border-accent-300/15 bg-black/25"
       }`}
     >
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300/80">
+        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300/80">
           {label}
         </p>
 
@@ -2092,15 +2092,15 @@ function StatBox({
           <TrendingDown size={16} className="text-red-300" />
         )}
         {trend === "neutral" && (
-          <BarChart3 size={16} className="text-cyan-300" />
+          <BarChart3 size={16} className="text-accent-300" />
         )}
       </div>
 
       <p
         className={
           accent
-            ? "mt-2 text-3xl font-black text-cyan-200"
-            : "mt-2 text-2xl font-black text-white"
+            ? "mt-2 text-3xl font-semibold text-accent-200"
+            : "mt-2 text-2xl font-semibold text-white"
         }
       >
         {value}
@@ -2121,11 +2121,11 @@ function StatusPill({ status }: { status: string }) {
         ? "border-yellow-300/30 bg-yellow-400/10 text-yellow-200"
         : status === "Fail" || status === "N"
           ? "border-red-300/30 bg-red-400/10 text-red-200"
-          : "border-cyan-300/25 bg-cyan-300/10 text-cyan-200";
+          : "border-accent-300/25 bg-accent-300/10 text-accent-200";
 
   return (
     <span
-      className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusClass}`}
+      className={`inline-flex rounded-sm border px-3 py-1 text-xs font-semibold ${statusClass}`}
     >
       {status}
     </span>
@@ -2140,18 +2140,18 @@ function RequiredColumnsPanel({
   columns: string[];
 }) {
   return (
-    <div className="rounded-[2rem] border border-yellow-300/20 bg-yellow-300/10 p-5">
-      <p className="text-xs font-black uppercase tracking-[0.22em] text-yellow-300">
+    <div className="rounded-lg border border-yellow-300/20 bg-yellow-300/10 p-5">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-yellow-300">
         Required Import Columns
       </p>
 
-      <h3 className="mt-2 text-xl font-black text-white">{title}</h3>
+      <h3 className="mt-2 text-xl font-semibold text-white">{title}</h3>
 
       <div className="mt-4 flex flex-wrap gap-2">
         {columns.map((column) => (
           <span
             key={column}
-            className="rounded-full border border-yellow-300/35 bg-yellow-300/15 px-3 py-1 text-xs font-black text-yellow-100"
+            className="rounded-sm border border-yellow-300/35 bg-yellow-300/15 px-3 py-1 text-xs font-semibold text-yellow-100"
           >
             {column}
           </span>
@@ -2171,10 +2171,10 @@ function DataTable<T extends object>({
   requiredColumns?: string[];
 }) {
   return (
-    <div className="overflow-hidden rounded-[2rem] border border-cyan-300/15 bg-black/25">
+    <div className="overflow-hidden rounded-lg border border-accent-300/15 bg-black/25">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1100px] text-left text-sm">
-          <thead className="border-b border-cyan-300/15 bg-cyan-300/10 text-xs uppercase tracking-[0.16em] text-cyan-200">
+          <thead className="border-b border-accent-300/15 bg-accent-300/10 text-xs uppercase tracking-[0.16em] text-accent-200">
             <tr>
               {columns.map((column) => {
                 const columnName = String(column);
@@ -2189,7 +2189,7 @@ function DataTable<T extends object>({
                   >
                     {columnName}
                     {isRequired && (
-                      <span className="ml-2 rounded-full border border-yellow-300/30 px-2 py-0.5 text-[10px] text-yellow-100">
+                      <span className="ml-2 rounded-sm border border-yellow-300/30 px-2 py-0.5 text-[10px] text-yellow-100">
                         Required
                       </span>
                     )}
@@ -2203,7 +2203,7 @@ function DataTable<T extends object>({
             {rows.map((row, rowIndex) => (
               <tr
                 key={rowIndex}
-                className="border-b border-cyan-300/10 text-zinc-300 last:border-b-0"
+                className="border-b border-accent-300/10 text-zinc-300 last:border-b-0"
               >
                 {columns.map((column) => {
                   const columnName = String(column);
@@ -2246,7 +2246,7 @@ function MetricDropdown({
 }) {
   return (
     <label className="block">
-      <span className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
         Analyze Metric
       </span>
 
@@ -2259,7 +2259,7 @@ function MetricDropdown({
 
           onChange(next);
         }}
-        className="mt-3 w-full rounded-full border border-cyan-300/25 bg-black px-5 py-4 text-lg font-black text-cyan-100 outline-none transition focus:border-cyan-300"
+        className="mt-3 w-full rounded-sm border border-accent-300/25 bg-black px-5 py-4 text-lg font-semibold text-accent-100 outline-none transition focus:border-accent-300"
       >
         {options.map((option) => (
           <option key={option.key} value={option.key}>
@@ -2285,25 +2285,25 @@ function HistogramCard({
   const maxCount = Math.max(...bins.map((bin) => bin.count), 1);
 
   return (
-    <div className="rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
+    <div className="rounded-lg border border-accent-300/15 bg-black/25 p-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
             Histogram
           </p>
 
-          <h3 className="mt-2 text-2xl font-black text-white">{title}</h3>
+          <h3 className="mt-2 text-2xl font-semibold text-white">{title}</h3>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
             {metric.description}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-cyan-300/15 bg-cyan-300/10 px-4 py-3 text-right">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">
+        <div className="rounded-md border border-accent-300/15 bg-accent-300/10 px-4 py-3 text-right">
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
             Avg
           </p>
-          <p className="text-2xl font-black text-cyan-100">
+          <p className="text-2xl font-semibold text-accent-100">
             {formatMetricValue(stats.average, metric.format)}
           </p>
         </div>
@@ -2329,7 +2329,7 @@ function HistogramCard({
         />
       </div>
 
-      <div className="mt-7 rounded-3xl border border-cyan-300/10 bg-black/30 p-5">
+      <div className="mt-7 rounded-lg border border-accent-300/10 bg-black/30 p-5">
         {bins.length === 0 ? (
           <div className="flex min-h-[230px] items-center justify-center text-sm text-zinc-500">
             Import rows to generate a histogram.
@@ -2349,18 +2349,18 @@ function HistogramCard({
                   key={bin.label}
                   className="flex h-full flex-col justify-end"
                 >
-                  <p className="mb-2 text-center text-sm font-black text-cyan-100">
+                  <p className="mb-2 text-center text-sm font-semibold text-accent-100">
                     {bin.count}
                   </p>
 
-                  <div className="flex h-44 items-end rounded-2xl border border-cyan-300/10 bg-black/30 p-1">
+                  <div className="flex h-44 items-end rounded-md border border-accent-300/10 bg-black/30 p-1">
                     <div
-                      className="w-full rounded-xl bg-cyan-300 shadow-[0_0_22px_rgba(34,211,238,0.28)] transition-all"
+                      className="w-full rounded-md bg-accent-300 shadow-[0_0_22px_rgba(34,211,238,0.28)] transition-all"
                       style={{ height: `${height}%` }}
                     />
                   </div>
 
-                  <p className="mt-3 min-h-10 text-center text-[10px] font-bold leading-4 text-zinc-400">
+                  <p className="mt-3 min-h-10 text-center text-[10px] font-semibold leading-4 text-zinc-400">
                     {bin.label}
                   </p>
                 </div>
@@ -2385,10 +2385,10 @@ function CorrelationSummaryCard({
 }) {
   if (!pair) {
     return (
-      <div className="rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
-        <div className="flex items-center gap-2 text-cyan-300">
+      <div className="rounded-lg border border-accent-300/15 bg-black/25 p-5">
+        <div className="flex items-center gap-2 text-accent-300">
           {icon}
-          <p className="text-xs font-black uppercase tracking-[0.2em]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em]">
             {title}
           </p>
         </div>
@@ -2406,15 +2406,15 @@ function CorrelationSummaryCard({
   const guidance = buildCorrelationGuidance(pair, lab);
 
   return (
-    <div className="rounded-3xl border border-cyan-300/15 bg-black/25 p-5">
-      <div className="flex items-center gap-2 text-cyan-300">
+    <div className="rounded-lg border border-accent-300/15 bg-black/25 p-5">
+      <div className="flex items-center gap-2 text-accent-300">
         {icon}
-        <p className="text-xs font-black uppercase tracking-[0.2em]">{title}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em]">{title}</p>
       </div>
 
       <div className="mt-4 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="break-words text-lg font-black text-white">
+          <p className="break-words text-lg font-semibold text-white">
             {pair.left.label} ↔ {pair.right.label}
           </p>
           <p className="mt-2 text-sm leading-6 text-zinc-400">
@@ -2423,7 +2423,7 @@ function CorrelationSummaryCard({
         </div>
 
         <span
-          className={`shrink-0 rounded-full border px-3 py-1 text-sm font-black ${
+          className={`shrink-0 rounded-sm border px-3 py-1 text-sm font-semibold ${
             isPositive
               ? "border-green-300/30 bg-green-400/10 text-green-200"
               : "border-red-300/30 bg-red-400/10 text-red-200"
@@ -2433,9 +2433,9 @@ function CorrelationSummaryCard({
         </span>
       </div>
 
-      <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/5">
+      <div className="mt-5 h-2 overflow-hidden rounded-sm bg-white/5">
         <div
-          className={`h-full rounded-full ${
+          className={`h-full rounded-sm ${
             isPositive ? "bg-green-300" : "bg-red-300"
           }`}
           style={{
@@ -2445,8 +2445,8 @@ function CorrelationSummaryCard({
       </div>
 
       <div className="mt-5 space-y-3">
-        <div className="rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.06] p-4">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
+        <div className="rounded-md border border-accent-300/15 bg-accent-300/[0.06] p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
             What this may mean
           </p>
           <p className="mt-2 text-sm leading-6 text-zinc-300">
@@ -2454,8 +2454,8 @@ function CorrelationSummaryCard({
           </p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-zinc-300">
+        <div className="rounded-md border border-white/10 bg-white/[0.03] p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-300">
             What I would check next
           </p>
           <p className="mt-2 text-sm leading-6 text-zinc-400">
@@ -2500,12 +2500,12 @@ function DataInterpretationPanel({
     <section className={`${glassPanel} p-6 md:p-8`}>
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-cyan-200">
+          <div className="inline-flex items-center gap-2 rounded-sm border border-accent-300/25 bg-accent-300/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-accent-200">
             <Sparkles size={14} />
             My Read of the Data
           </div>
 
-          <h3 className="mt-5 text-3xl font-black text-white md:text-4xl">
+          <h3 className="mt-5 text-3xl font-semibold text-white md:text-4xl">
             {title}
           </h3>
 
@@ -2514,11 +2514,11 @@ function DataInterpretationPanel({
           </p>
         </div>
 
-        <div className="rounded-3xl border border-cyan-300/20 bg-black/25 px-5 py-4 text-right">
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">
+        <div className="rounded-lg border border-accent-300/20 bg-black/25 px-5 py-4 text-right">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-300">
             Rows Reviewed
           </p>
-          <p className="mt-2 text-3xl font-black text-white">{rowCount}</p>
+          <p className="mt-2 text-3xl font-semibold text-white">{rowCount}</p>
           <p className="mt-1 text-xs text-zinc-500">
             This section recalculates when a CSV is imported.
           </p>
@@ -2542,19 +2542,19 @@ function DataInterpretationPanel({
       </div>
 
       {leadPair && leadGuidance && (
-        <div className="mt-7 rounded-[2rem] border border-cyan-300/20 bg-cyan-300/[0.06] p-5 md:p-6">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+        <div className="mt-7 rounded-lg border border-accent-300/20 bg-accent-300/[0.06] p-5 md:p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
             How I would use the strongest signal
           </p>
 
-          <h4 className="mt-3 text-2xl font-black text-white">
+          <h4 className="mt-3 text-2xl font-semibold text-white">
             {leadPair.left.label} and {leadPair.right.label} are the first place
             I would investigate
           </h4>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-3">
-            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
+            <div className="rounded-md border border-accent-300/15 bg-black/25 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                 Working hypothesis
               </p>
               <p className="mt-2 text-sm leading-6 text-zinc-300">
@@ -2562,8 +2562,8 @@ function DataInterpretationPanel({
               </p>
             </div>
 
-            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
+            <div className="rounded-md border border-accent-300/15 bg-black/25 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                 Next comparison
               </p>
               <p className="mt-2 text-sm leading-6 text-zinc-300">
@@ -2571,8 +2571,8 @@ function DataInterpretationPanel({
               </p>
             </div>
 
-            <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
+            <div className="rounded-md border border-accent-300/15 bg-black/25 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                 Possible action
               </p>
               <p className="mt-2 text-sm leading-6 text-zinc-300">
@@ -2581,8 +2581,8 @@ function DataInterpretationPanel({
             </div>
           </div>
 
-          <div className="mt-4 rounded-2xl border border-yellow-300/20 bg-yellow-300/10 p-4">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-300">
+          <div className="mt-4 rounded-md border border-yellow-300/20 bg-yellow-300/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-yellow-300">
               Before acting on it
             </p>
             <p className="mt-2 text-sm leading-6 text-yellow-50/85">
@@ -2594,14 +2594,14 @@ function DataInterpretationPanel({
 
       <div className="mt-7">
         <div className="flex items-center gap-2">
-          <BarChart3 size={17} className="text-cyan-300" />
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+          <BarChart3 size={17} className="text-accent-300" />
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
             Other relationships worth reviewing
           </p>
         </div>
 
         {topRelationships.length === 0 ? (
-          <div className="mt-4 rounded-3xl border border-cyan-300/15 bg-black/25 p-5 text-sm leading-6 text-zinc-400">
+          <div className="mt-4 rounded-lg border border-accent-300/15 bg-black/25 p-5 text-sm leading-6 text-zinc-400">
             Add at least three rows with real variation to calculate
             correlations. A column filled with the same value cannot produce a
             useful relationship.
@@ -2614,24 +2614,24 @@ function DataInterpretationPanel({
               return (
                 <div
                   key={`${pair.left.key}-${pair.right.key}`}
-                  className="rounded-2xl border border-cyan-300/15 bg-black/25 p-4"
+                  className="rounded-md border border-accent-300/15 bg-black/25 p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <p className="text-sm font-black leading-5 text-white">
+                    <p className="text-sm font-semibold leading-5 text-white">
                       {pair.left.label} ↔ {pair.right.label}
                     </p>
                     <span
                       className={
                         pair.value >= 0
-                          ? "text-sm font-black text-green-300"
-                          : "text-sm font-black text-red-300"
+                          ? "text-sm font-semibold text-green-300"
+                          : "text-sm font-semibold text-red-300"
                       }
                     >
                       {formatCorrelation(pair.value)}
                     </span>
                   </div>
 
-                  <p className="mt-2 text-xs font-bold leading-5 text-zinc-400">
+                  <p className="mt-2 text-xs font-semibold leading-5 text-zinc-400">
                     {correlationStrength(pair.value)}{" "}
                     {correlationDirection(pair.value)} association
                   </p>
@@ -2641,7 +2641,7 @@ function DataInterpretationPanel({
                   </p>
 
                   <div className="mt-3 border-t border-white/10 pt-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-300">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-300">
                       Practical next step
                     </p>
                     <p className="mt-1 text-xs leading-5 text-zinc-400">
@@ -2656,7 +2656,7 @@ function DataInterpretationPanel({
       </div>
 
       <div className="mt-7">
-        <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
           File-level findings
         </p>
 
@@ -2673,8 +2673,8 @@ function DataInterpretationPanel({
         </div>
       </div>
 
-      <div className="mt-7 rounded-3xl border border-yellow-300/20 bg-yellow-300/10 p-5">
-        <p className="text-xs font-black uppercase tracking-[0.22em] text-yellow-300">
+      <div className="mt-7 rounded-lg border border-yellow-300/20 bg-yellow-300/10 p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-yellow-300">
           What correlation can and cannot tell us
         </p>
 
@@ -2857,11 +2857,11 @@ function OfferExportModel() {
       <div className={`${glassPanel} p-6 md:p-8`}>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
               Offer File Review
             </p>
 
-            <h2 className="mt-3 text-3xl font-black text-white md:text-5xl">
+            <h2 className="mt-3 text-3xl font-semibold text-white md:text-5xl">
               Check the file before it reaches production
             </h2>
 
@@ -2908,12 +2908,12 @@ function OfferExportModel() {
           </div>
         </div>
 
-        <div className="mt-5 rounded-2xl border border-cyan-300/15 bg-black/25 p-4 text-sm text-cyan-100">
+        <div className="mt-5 rounded-md border border-accent-300/15 bg-black/25 p-4 text-sm text-accent-100">
           {importMessage}
         </div>
 
         <div className="mt-7 grid items-start gap-5 lg:grid-cols-[320px_1fr]">
-          <div className="space-y-4 rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
+          <div className="space-y-4 rounded-lg border border-accent-300/15 bg-black/25 p-5">
             <MetricDropdown
               value={selectedMetric}
               options={offerMetricOptions}
@@ -2951,15 +2951,15 @@ function OfferExportModel() {
       <div className={`${glassPanel} p-5 md:p-6`}>
         <div className="mb-5 flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-300">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
               Rows Behind the Result
             </p>
-            <h3 className="mt-2 text-2xl font-black text-white">
+            <h3 className="mt-2 text-2xl font-semibold text-white">
               The records and fields behind the summary
             </h3>
           </div>
 
-          <Table2 className="text-cyan-300" size={24} />
+          <Table2 className="text-accent-300" size={24} />
         </div>
 
         <DataTable
@@ -2972,9 +2972,9 @@ function OfferExportModel() {
           {offerSchemaGroups.map((group) => (
             <div
               key={group.title}
-              className="rounded-3xl border border-cyan-300/15 bg-black/25 p-5"
+              className="rounded-lg border border-accent-300/15 bg-black/25 p-5"
             >
-              <p className="text-sm font-black uppercase tracking-[0.18em] text-cyan-300">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent-300">
                 {group.title}
               </p>
 
@@ -2985,10 +2985,10 @@ function OfferExportModel() {
                   return (
                     <span
                       key={field}
-                      className={`rounded-full border px-3 py-1 text-xs font-bold ${
+                      className={`rounded-sm border px-3 py-1 text-xs font-semibold ${
                         isRequired
                           ? "border-yellow-300/35 bg-yellow-300/15 text-yellow-100"
-                          : "border-cyan-300/15 bg-cyan-300/10 text-zinc-300"
+                          : "border-accent-300/15 bg-accent-300/10 text-zinc-300"
                       }`}
                     >
                       {field}
@@ -3229,11 +3229,11 @@ function WeatherTrafficModel() {
       <div className={`${glassPanel} p-6 md:p-8`}>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
               Traffic and Conditions Review
             </p>
 
-            <h2 className="mt-3 text-3xl font-black text-white md:text-5xl">
+            <h2 className="mt-3 text-3xl font-semibold text-white md:text-5xl">
               See what may be moving traffic
             </h2>
 
@@ -3282,12 +3282,12 @@ function WeatherTrafficModel() {
           </div>
         </div>
 
-        <div className="mt-5 rounded-2xl border border-cyan-300/15 bg-black/25 p-4 text-sm text-cyan-100">
+        <div className="mt-5 rounded-md border border-accent-300/15 bg-black/25 p-4 text-sm text-accent-100">
           {importMessage}
         </div>
 
         <div className="mt-7 grid items-start gap-5 lg:grid-cols-[320px_1fr]">
-          <div className="space-y-4 rounded-[2rem] border border-cyan-300/15 bg-black/25 p-5">
+          <div className="space-y-4 rounded-lg border border-accent-300/15 bg-black/25 p-5">
             <MetricDropdown
               value={selectedMetric}
               options={weatherMetricOptions}
@@ -3330,21 +3330,21 @@ function WeatherTrafficModel() {
           />
           <StatBox
             label="Best Traffic Day"
-            value={`${stats.bestTrafficDay.DayOfWeek || "—"} ${formatNumber(
+            value={`${stats.bestTrafficDay.DayOfWeek || "-"} ${formatNumber(
               stats.bestTrafficDay.TripDelta
             )}`}
             trend="up"
           />
           <StatBox
             label="Worst Traffic Day"
-            value={`${stats.worstTrafficDay.DayOfWeek || "—"} ${formatNumber(
+            value={`${stats.worstTrafficDay.DayOfWeek || "-"} ${formatNumber(
               stats.worstTrafficDay.TripDelta
             )}`}
             trend="down"
           />
           <StatBox
             label="Highest Redemption"
-            value={stats.highestRedemptionDay.DayOfWeek || "—"}
+            value={stats.highestRedemptionDay.DayOfWeek || "-"}
             accent
           />
           <StatBox
@@ -3358,15 +3358,15 @@ function WeatherTrafficModel() {
       <div className={`${glassPanel} p-5 md:p-6`}>
         <div className="mb-5 flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-300">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
               Rows Behind the Result
             </p>
-            <h3 className="mt-2 text-2xl font-black text-white">
+            <h3 className="mt-2 text-2xl font-semibold text-white">
               The daily records and fields behind the summary
             </h3>
           </div>
 
-          <CloudSun className="text-cyan-300" size={24} />
+          <CloudSun className="text-accent-300" size={24} />
         </div>
 
         <DataTable
@@ -3379,9 +3379,9 @@ function WeatherTrafficModel() {
           {weatherSchemaGroups.map((group) => (
             <div
               key={group.title}
-              className="rounded-3xl border border-cyan-300/15 bg-black/25 p-5"
+              className="rounded-lg border border-accent-300/15 bg-black/25 p-5"
             >
-              <p className="text-sm font-black uppercase tracking-[0.18em] text-cyan-300">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent-300">
                 {group.title}
               </p>
 
@@ -3392,10 +3392,10 @@ function WeatherTrafficModel() {
                   return (
                     <span
                       key={field}
-                      className={`rounded-full border px-3 py-1 text-xs font-bold ${
+                      className={`rounded-sm border px-3 py-1 text-xs font-semibold ${
                         isRequired
                           ? "border-yellow-300/35 bg-yellow-300/15 text-yellow-100"
-                          : "border-cyan-300/15 bg-cyan-300/10 text-zinc-300"
+                          : "border-accent-300/15 bg-accent-300/10 text-zinc-300"
                       }`}
                     >
                       {field}
@@ -3446,17 +3446,17 @@ export default function DataLabPage() {
     labCards.find((card) => card.key === activeLab) ?? labCards[0];
 
   return (
-    <main className="relative min-h-screen overflow-hidden px-5 pb-20 pt-28 text-white md:px-10">
-      <section className="mx-auto max-w-7xl">
+    <main className="min-h-screen px-4 py-10 text-white md:px-6 md:py-16">
+      <section className="mx-auto max-w-6xl">
         <div className={`${glassPanel} p-6 md:p-10`}>
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-cyan-200">
+              <div className="inline-flex items-center gap-2 rounded-sm border border-accent-300/25 bg-accent-300/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-accent-200">
                 <Sparkles size={14} />
                 Data Lab
               </div>
 
-              <h1 className="mt-6 max-w-4xl text-5xl font-black tracking-tight md:text-7xl">
+              <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-tight sm:text-5xl">
                 I wanted the numbers to explain themselves
               </h1>
 
@@ -3496,26 +3496,26 @@ export default function DataLabPage() {
                   aria-pressed={isActive}
                   className={`group flex h-full flex-col text-left ${glassCard} p-6 ${
                     isActive
-                      ? "border-cyan-300/60 bg-cyan-300/[0.11] shadow-[0_0_30px_rgba(34,211,238,0.12)]"
+                      ? "border-accent-300/60 bg-accent-300/[0.11] shadow-[0_0_30px_rgba(34,211,238,0.12)]"
                       : ""
                   }`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                         {card.eyebrow}
                       </p>
 
-                      <h2 className="mt-3 text-2xl font-black text-white">
+                      <h2 className="mt-3 text-2xl font-semibold text-white">
                         {card.title}
                       </h2>
                     </div>
 
                     <div
-                      className={`rounded-2xl border p-3 ${
+                      className={`rounded-md border p-3 ${
                         isActive
-                          ? "border-cyan-200/60 bg-cyan-300 text-black"
-                          : "border-cyan-300/25 bg-cyan-300/10 text-cyan-200"
+                          ? "border-accent-400/60 bg-accent-500/25 text-accent-100"
+                          : "border-accent-300/25 bg-accent-300/10 text-accent-200"
                       }`}
                     >
                       <Icon size={24} />
@@ -3527,12 +3527,12 @@ export default function DataLabPage() {
                   </p>
 
                   <div className="mt-5 flex items-center justify-between gap-3">
-                    <span className="inline-flex rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-cyan-100">
+                    <span className="inline-flex rounded-sm border border-accent-300/20 bg-black/25 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-accent-100">
                       {isActive ? "Currently Open" : "Open model"}
                     </span>
 
                     {isActive && (
-                      <span className="rounded-full bg-cyan-400 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-black">
+                      <span className="rounded-sm border border-accent-400/50 bg-accent-500/20 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-100">
                         Selected
                       </span>
                     )}
@@ -3542,13 +3542,13 @@ export default function DataLabPage() {
             })}
           </div>
 
-          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.07] p-4">
-            <BarChart3 className="mt-0.5 shrink-0 text-cyan-300" size={18} />
+          <div className="mt-5 flex items-start gap-3 rounded-md border border-accent-300/20 bg-accent-300/[0.07] p-4">
+            <BarChart3 className="mt-0.5 shrink-0 text-accent-300" size={18} />
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-300">
                 Currently open
               </p>
-              <p className="mt-1 text-sm font-bold text-white">
+              <p className="mt-1 text-sm font-semibold text-white">
                 {activeLabDetails.title}
               </p>
               <p className="mt-1 text-sm leading-6 text-zinc-400">
@@ -3565,14 +3565,14 @@ export default function DataLabPage() {
 
         <section className={`${glassPanel} mt-8 p-6 md:p-8`}>
           <div className="flex items-start gap-4">
-            <BarChart3 className="mt-1 shrink-0 text-cyan-300" size={24} />
+            <BarChart3 className="mt-1 shrink-0 text-accent-300" size={24} />
 
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                 Why I built this page
               </p>
 
-              <h2 className="mt-3 max-w-4xl text-3xl font-black text-white md:text-4xl">
+              <h2 className="mt-3 max-w-4xl text-3xl font-semibold text-white md:text-4xl">
                 I wanted to show the part of analysis that happens after the
                 export finishes
               </h2>
@@ -3595,8 +3595,8 @@ export default function DataLabPage() {
               </p>
 
               <div className="mt-6 grid gap-4 md:grid-cols-3">
-                <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
+                <div className="rounded-md border border-accent-300/15 bg-black/25 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                     First: trust the file
                   </p>
                   <p className="mt-3 text-sm leading-6 text-zinc-300">
@@ -3606,8 +3606,8 @@ export default function DataLabPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
+                <div className="rounded-md border border-accent-300/15 bg-black/25 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                     Then: explain the pattern
                   </p>
                   <p className="mt-3 text-sm leading-6 text-zinc-300">
@@ -3617,8 +3617,8 @@ export default function DataLabPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-cyan-300/15 bg-black/25 p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
+                <div className="rounded-md border border-accent-300/15 bg-black/25 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-300">
                     Finally: test the decision
                   </p>
                   <p className="mt-3 text-sm leading-6 text-zinc-300">
@@ -3629,8 +3629,8 @@ export default function DataLabPage() {
                 </div>
               </div>
 
-              <div className="mt-6 rounded-2xl border border-yellow-300/20 bg-yellow-300/10 p-5">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-300">
+              <div className="mt-6 rounded-md border border-yellow-300/20 bg-yellow-300/10 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-yellow-300">
                   Demo data and privacy
                 </p>
                 <p className="mt-3 text-sm leading-7 text-yellow-50/85">

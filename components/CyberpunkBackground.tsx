@@ -1,175 +1,111 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 
-const skylineBars = [
-  70, 110, 85, 145, 95, 180, 125, 75, 155, 105, 135, 90, 170, 115, 80, 150,
-  100, 190, 130, 95,
+// Chongqing at night: stacked buildings climbing a hillside, fog between the
+// layers, and cyan light bleeding into the haze. Everything here is decorative,
+// so it stays behind the content, ignores the pointer, and barely moves.
+
+// Two silhouette rows. Heights are hand-picked so the skyline reads as
+// stacked terraces instead of a flat bar chart.
+const backRow = [
+  150, 210, 175, 260, 195, 300, 230, 165, 275, 200, 245, 185, 290, 215, 170,
+  255, 190, 310, 235, 180,
 ];
 
-const sideLeftBars = [120, 180, 150, 220, 170, 260, 210, 140, 190, 155];
-const sideRightBars = [160, 210, 130, 240, 190, 280, 175, 230, 145, 205];
+const frontRow = [
+  70, 120, 90, 160, 105, 195, 135, 80, 170, 110, 145, 95, 185, 125, 85, 165,
+  100, 205, 140, 100,
+];
 
 export default function CyberpunkBackground() {
-  const [mouse, setMouse] = useState({ x: 0.5, y: 0.5 });
-  const [scrollY, setScrollY] = useState(0);
+  const parallaxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleMouseMove(event: MouseEvent) {
-      setMouse({
-        x: event.clientX / window.innerWidth,
-        y: event.clientY / window.innerHeight,
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    if (reduceMotion) return;
+
+    let frame = 0;
+
+    function handleScroll() {
+      if (frame) return;
+
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+
+        if (parallaxRef.current) {
+          parallaxRef.current.style.transform = `translateY(${
+            window.scrollY * 0.03
+          }px)`;
+        }
       });
     }
 
-    function handleScroll() {
-      setScrollY(window.scrollY);
-    }
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("scroll", handleScroll);
+      if (frame) cancelAnimationFrame(frame);
     };
   }, []);
 
-  const moveX = (mouse.x - 0.5) * 36;
-  const moveY = (mouse.y - 0.5) * 28;
-  const scrollDrift = scrollY * 0.025;
-
   return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-black">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.13),transparent_36%),linear-gradient(to_bottom,#020617,#000000_60%,#000000)]" />
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#05070c]">
+      {/* Base wash: cool light pollution fading to black over the river */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(34,211,238,0.10),transparent_55%),linear-gradient(to_bottom,#050a12,#05070c_55%,#020408)]" />
 
-      <div
-        style={{
-          transform: `translate3d(${moveX}px, ${moveY + scrollDrift}px, 0)`,
-        }}
-        className="cyber-glow-one absolute -left-28 top-12 h-72 w-72 rounded-full bg-cyan-400/20 blur-3xl"
-      />
-
-      <div
-        style={{
-          transform: `translate3d(${-moveX * 0.75}px, ${
-            -moveY * 0.45 + scrollDrift
-          }px, 0)`,
-        }}
-        className="cyber-glow-two absolute right-[-8rem] top-48 h-96 w-96 rounded-full bg-fuchsia-500/10 blur-3xl"
-      />
-
-      <div
-        style={{
-          transform: `translate3d(${moveX * 0.35}px, ${-moveY * 0.3}px, 0)`,
-        }}
-        className="absolute bottom-10 left-1/3 h-80 w-80 rounded-full bg-blue-500/10 blur-3xl"
-      />
-
-      <div className="absolute inset-0 opacity-[0.12]">
-        <div className="h-full w-full bg-[linear-gradient(rgba(34,211,238,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.18)_1px,transparent_1px)] bg-[size:48px_48px]" />
+      {/* Faint survey grid */}
+      <div className="absolute inset-0 opacity-[0.05]">
+        <div className="h-full w-full bg-[linear-gradient(rgba(255,107,122,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,107,122,0.5)_1px,transparent_1px)] bg-[size:56px_56px]" />
       </div>
 
-      <div className="absolute inset-0 opacity-[0.08]">
-        <div className="h-full w-full bg-[linear-gradient(115deg,transparent_0%,rgba(34,211,238,0.22)_1px,transparent_2px)] bg-[size:90px_90px]" />
+      <div ref={parallaxRef} className="absolute inset-0 will-change-transform">
+        {/* Back terrace, taller and dimmer */}
+        <div className="absolute bottom-0 left-0 right-0 flex items-end justify-center gap-1 px-2 opacity-25">
+          {backRow.map((height, index) => (
+            <div
+              key={`back-${index}`}
+              style={{ height, width: `${26 + (index % 5) * 8}px` }}
+              className="relative border-x border-t border-accent-300/10 bg-[#060b12]"
+            >
+              <div className="absolute left-1.5 top-4 h-1 w-1 bg-accent-300/30" />
+              <div className="absolute right-1.5 top-10 h-1 w-1 bg-fuchsia-300/25" />
+              <div className="absolute left-2 top-16 h-1 w-1 bg-accent-300/20" />
+            </div>
+          ))}
+        </div>
+
+        {/* Fog band between the two rows */}
+        <div className="fog-drift absolute bottom-16 left-0 right-0 h-40 bg-[linear-gradient(to_top,transparent,rgba(34,211,238,0.05)_40%,transparent)] blur-2xl" />
+
+        {/* Front terrace, shorter and brighter */}
+        <div className="absolute bottom-0 left-0 right-0 flex items-end justify-center gap-1.5 px-4 opacity-40">
+          {frontRow.map((height, index) => (
+            <div
+              key={`front-${index}`}
+              style={{ height, width: `${28 + (index % 4) * 9}px` }}
+              className="relative border-x border-t border-accent-300/15 bg-[#05090f] shadow-[0_0_18px_rgba(34,211,238,0.05)]"
+            >
+              <div className="absolute left-2 top-3 h-1 w-1 bg-accent-300/50" />
+              <div className="absolute right-2 top-8 h-1 w-1 bg-fuchsia-300/35" />
+              <div className="absolute left-3 top-14 h-1 w-1 bg-accent-300/30" />
+              <div className="absolute bottom-4 right-2 h-1 w-1 bg-accent-300/25" />
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div
-        style={{
-          transform: `translate3d(${-moveX * 0.45}px, ${
-            moveY * 0.2 + scrollDrift
-          }px, 0)`,
-        }}
-        className="absolute left-0 top-20 hidden h-[78vh] w-28 flex-col justify-around opacity-30 lg:flex"
-      >
-        {sideLeftBars.map((height, index) => (
-          <div
-            key={`left-${index}`}
-            style={{
-              height,
-              width: `${28 + (index % 4) * 10}px`,
-            }}
-            className="relative rounded-r-md border-y border-r border-cyan-300/20 bg-zinc-950/90 shadow-[0_0_22px_rgba(34,211,238,0.08)]"
-          >
-            <div className="absolute right-2 top-4 h-1 w-1 rounded-full bg-cyan-300/60" />
-            <div className="absolute right-4 top-10 h-1 w-1 rounded-full bg-fuchsia-300/40" />
-            <div className="absolute right-3 top-16 h-1 w-1 rounded-full bg-cyan-300/35" />
-            <div className="absolute bottom-4 right-2 h-1 w-1 rounded-full bg-cyan-300/45" />
+      {/* Low fog covering the base of the skyline */}
+      <div className="absolute bottom-0 left-0 right-0 h-56 bg-gradient-to-t from-[#05070c] via-[#05070c]/85 to-transparent" />
 
-            <div className="absolute right-0 top-0 h-full w-px bg-cyan-300/20" />
-          </div>
-        ))}
-      </div>
+      {/* One controlled glow, bottom center, like neon reflecting off water */}
+      <div className="fog-drift absolute -bottom-24 left-1/2 h-64 w-[36rem] -translate-x-1/2 rounded-sm bg-accent-500/10 blur-3xl" />
 
-      <div
-        style={{
-          transform: `translate3d(${moveX * 0.45}px, ${
-            -moveY * 0.2 + scrollDrift
-          }px, 0)`,
-        }}
-        className="absolute right-0 top-16 hidden h-[82vh] w-28 flex-col items-end justify-around opacity-30 lg:flex"
-      >
-        {sideRightBars.map((height, index) => (
-          <div
-            key={`right-${index}`}
-            style={{
-              height,
-              width: `${32 + (index % 5) * 9}px`,
-            }}
-            className="relative rounded-l-md border-y border-l border-cyan-300/20 bg-zinc-950/90 shadow-[0_0_22px_rgba(34,211,238,0.08)]"
-          >
-            <div className="absolute left-2 top-5 h-1 w-1 rounded-full bg-cyan-300/60" />
-            <div className="absolute left-4 top-12 h-1 w-1 rounded-full bg-fuchsia-300/40" />
-            <div className="absolute left-3 top-20 h-1 w-1 rounded-full bg-cyan-300/35" />
-            <div className="absolute bottom-5 left-2 h-1 w-1 rounded-full bg-cyan-300/45" />
-
-            <div className="absolute left-0 top-0 h-full w-px bg-cyan-300/20" />
-          </div>
-        ))}
-      </div>
-
-      <div
-        style={{
-          transform: `translate3d(${-moveX * 0.2}px, ${
-            scrollDrift * 0.6
-          }px, 0)`,
-        }}
-        className="absolute left-0 top-0 hidden h-full w-32 bg-gradient-to-r from-cyan-300/8 via-cyan-300/3 to-transparent lg:block"
-      />
-
-      <div
-        style={{
-          transform: `translate3d(${moveX * 0.2}px, ${
-            scrollDrift * 0.6
-          }px, 0)`,
-        }}
-        className="absolute right-0 top-0 hidden h-full w-32 bg-gradient-to-l from-fuchsia-400/8 via-cyan-300/3 to-transparent lg:block"
-      />
-
-      <div className="absolute bottom-0 left-0 right-0 h-72 bg-gradient-to-t from-black via-black/80 to-transparent" />
-
-      <div
-        style={{
-          transform: `translate3d(${-moveX * 0.25}px, ${scrollDrift}px, 0)`,
-        }}
-        className="absolute bottom-0 left-0 right-0 flex items-end justify-center gap-2 px-6 opacity-35"
-      >
-        {skylineBars.map((height, index) => (
-          <div
-            key={index}
-            style={{ height }}
-            className="relative w-8 rounded-t-md border border-cyan-300/20 bg-zinc-950/90 shadow-[0_0_20px_rgba(34,211,238,0.08)]"
-          >
-            <div className="absolute left-2 top-3 h-1 w-1 rounded-full bg-cyan-300/50" />
-            <div className="absolute right-2 top-8 h-1 w-1 rounded-full bg-fuchsia-300/40" />
-            <div className="absolute left-3 top-14 h-1 w-1 rounded-full bg-cyan-300/40" />
-            <div className="absolute bottom-5 left-2 h-1 w-1 rounded-full bg-cyan-300/30" />
-          </div>
-        ))}
-      </div>
-
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.24)_52%,rgba(0,0,0,0.84)_100%)]" />
-      <div className="absolute inset-0 bg-black/42" />
+      {/* Vignette so content stays readable */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(6,4,7,0.35)_55%,rgba(6,4,7,0.85)_100%)]" />
     </div>
   );
 }

@@ -37,10 +37,10 @@ type ToolCardProps = {
 };
 
 const glassPanel =
-  "rounded-[2rem] border border-cyan-300/25 bg-cyan-950/[0.16] shadow-2xl shadow-cyan-950/30 backdrop-blur-md";
+  "rounded-lg border border-white/10 bg-zinc-950/70 shadow-2xl shadow-black/40 backdrop-blur-md";
 
 const glassCard =
-  "rounded-3xl border border-cyan-300/20 bg-cyan-950/[0.14] shadow-2xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-cyan-300/[0.07]";
+  "rounded-lg border border-white/10 bg-zinc-950/60 backdrop-blur-md transition hover:border-accent-400/50 hover:bg-accent-950/20";
 
 const travelModes = [
   {
@@ -211,8 +211,8 @@ function ProjectButton({
   const isInternal = href.startsWith("/");
 
   const className = subtle
-    ? "inline-flex items-center justify-center gap-2 rounded-full border border-cyan-300/25 bg-black/25 px-4 py-2 text-sm font-bold text-cyan-200 transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10"
-    : "inline-flex items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-3 text-sm font-bold text-black shadow-[0_0_22px_rgba(34,211,238,0.25)] transition hover:-translate-y-0.5 hover:bg-cyan-300";
+    ? "inline-flex items-center justify-center gap-2 rounded-sm border border-accent-300/25 bg-black/25 px-4 py-2 text-sm font-semibold text-accent-200 transition hover:-translate-y-0.5 hover:border-accent-300/50 hover:bg-accent-400/10"
+    : "inline-flex items-center justify-center gap-2 rounded-sm border border-accent-400/60 bg-accent-500/90 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-accent-400";
 
   if (isInternal) {
     return (
@@ -240,21 +240,21 @@ function StatBox({
 }) {
   return (
     <div
-      className={`min-w-0 overflow-hidden rounded-2xl border p-4 ${
+      className={`min-w-0 overflow-hidden rounded-md border p-4 ${
         accent
-          ? "border-cyan-300/40 bg-cyan-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
-          : "border-cyan-300/15 bg-black/25"
+          ? "border-accent-300/40 bg-accent-300/10 shadow-[0_0_25px_rgba(34,211,238,0.10)]"
+          : "border-accent-300/15 bg-black/25"
       }`}
     >
-      <p className="truncate text-xs font-bold uppercase tracking-[0.2em] text-cyan-300/80">
+      <p className="truncate font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300/80">
         {label}
       </p>
 
       <p
         className={`mt-2 break-words leading-tight ${
           accent
-            ? "text-3xl font-black text-cyan-200"
-            : "text-2xl font-black text-white"
+            ? "text-3xl font-semibold text-accent-200"
+            : "text-2xl font-semibold text-white"
         }`}
       >
         {value}
@@ -269,7 +269,7 @@ function TagList({ tags }: { tags: string[] }) {
       {tags.map((tag) => (
         <span
           key={tag}
-          className="rounded-full border border-cyan-300/20 bg-black/25 px-3 py-1 text-xs font-semibold text-zinc-300"
+          className="rounded-sm border border-accent-300/20 bg-black/25 px-3 py-1 text-xs font-semibold text-zinc-300"
         >
           {tag}
         </span>
@@ -281,20 +281,20 @@ function TagList({ tags }: { tags: string[] }) {
 function StopCard({ stop, index }: { stop: Stop; index: number }) {
   return (
     <div className={`${glassCard} relative overflow-hidden p-6`}>
-      <div className="absolute right-5 top-4 text-5xl font-black text-cyan-300/10">
+      <div className="absolute right-5 top-4 text-5xl font-semibold text-accent-300/10">
         {String(index + 1).padStart(2, "0")}
       </div>
 
       <div className="relative">
-        <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
           {stop.region}
         </p>
 
-        <h3 className="mt-3 pr-12 text-2xl font-black text-white">
+        <h3 className="mt-3 pr-12 text-2xl font-semibold text-white">
           {stop.city}
         </h3>
 
-        <p className="mt-1 text-sm font-bold text-zinc-500">{stop.country}</p>
+        <p className="mt-1 text-sm font-semibold text-zinc-500">{stop.country}</p>
 
         <p className="mt-4 text-sm leading-7 text-zinc-300">{stop.note}</p>
 
@@ -315,14 +315,14 @@ function ToolCard({
     <div className={`${glassCard} p-6`}>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
             {label}
           </p>
 
-          <h3 className="mt-3 text-2xl font-black text-white">{title}</h3>
+          <h3 className="mt-3 text-2xl font-semibold text-white">{title}</h3>
         </div>
 
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-cyan-300/20 bg-black/25 text-cyan-300">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-accent-300/20 bg-black/25 text-accent-300">
           <Icon size={22} />
         </div>
       </div>
@@ -332,7 +332,7 @@ function ToolCard({
       <button
         type="button"
         onClick={onReset}
-        className="mt-6 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-black text-cyan-100 transition hover:border-cyan-300/50 hover:bg-cyan-300/10"
+        className="mt-6 inline-flex items-center gap-2 rounded-sm border border-accent-300/20 bg-black/25 px-4 py-2 text-xs font-semibold text-accent-100 transition hover:border-accent-300/50 hover:bg-accent-400/10"
       >
         <RefreshCcw size={14} />
         Reset this tool
@@ -360,9 +360,9 @@ function RangeInput({
 }) {
   return (
     <label className="block">
-      <span className="flex items-center justify-between gap-3 text-sm font-bold text-zinc-300">
+      <span className="flex items-center justify-between gap-3 text-sm font-semibold text-zinc-300">
         <span>{label}</span>
-        <span className="text-cyan-300">
+        <span className="text-accent-300">
           {value}
           {suffix}
         </span>
@@ -375,7 +375,7 @@ function RangeInput({
         step={step}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="mt-3 w-full accent-cyan-300"
+        className="mt-3 w-full accent-accent-300"
       />
     </label>
   );
@@ -383,8 +383,8 @@ function RangeInput({
 
 function ResultNote({ children }: { children: ReactNode }) {
   return (
-    <div className="mt-5 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.06] p-4">
-      <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">
+    <div className="mt-5 rounded-md border border-accent-300/15 bg-accent-300/[0.06] p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-300">
         What this means
       </p>
 
@@ -564,19 +564,19 @@ export default function TravelPage() {
 
   return (
     <main className="min-h-screen">
-      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16 lg:py-24">
+      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16">
         <div className={`${glassPanel} overflow-hidden p-6 md:p-10`}>
           <div className="relative">
-            <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-cyan-300/10 blur-3xl" />
-            <div className="absolute -bottom-28 left-1/3 h-56 w-56 rounded-full bg-fuchsia-400/10 blur-3xl" />
+            <div className="absolute -right-16 -top-20 h-64 w-64 rounded-sm bg-accent-300/10 blur-3xl" />
+            <div className="absolute -bottom-28 left-1/3 h-56 w-56 rounded-sm bg-fuchsia-400/10 blur-3xl" />
 
             <div className="relative">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-black/25 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">
+              <div className="inline-flex items-center gap-2 rounded-sm border border-accent-300/20 bg-black/25 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
                 <Plane size={15} />
                 My Travel Map
               </div>
 
-              <h1 className="mt-6 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-7xl">
+              <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
                 The places I think about, plan around, and want to remember
               </h1>
 
@@ -622,26 +622,26 @@ export default function TravelPage() {
                 aria-pressed={active}
                 className={`group flex h-full flex-col text-left ${glassCard} p-6 ${
                   active
-                    ? "border-cyan-300/60 bg-cyan-300/[0.11] shadow-[0_0_30px_rgba(34,211,238,0.14)]"
+                    ? "border-accent-300/60 bg-accent-300/[0.11] shadow-[0_0_30px_rgba(34,211,238,0.14)]"
                     : ""
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent-300">
                       {mode.label}
                     </p>
 
-                    <h2 className="mt-3 text-2xl font-black text-white">
+                    <h2 className="mt-3 text-2xl font-semibold text-white">
                       {mode.title}
                     </h2>
                   </div>
 
                   <div
-                    className={`rounded-2xl border p-3 ${
+                    className={`rounded-md border p-3 ${
                       active
-                        ? "border-cyan-200/60 bg-cyan-300 text-black"
-                        : "border-cyan-300/25 bg-cyan-300/10 text-cyan-200"
+                        ? "border-accent-400/60 bg-accent-500/25 text-accent-100"
+                        : "border-accent-300/25 bg-accent-300/10 text-accent-200"
                     }`}
                   >
                     <Icon size={24} />
@@ -653,13 +653,13 @@ export default function TravelPage() {
                 </p>
 
                 <div className="mt-5 flex items-center justify-between gap-3">
-                  <span className="inline-flex items-center gap-2 text-sm font-bold text-cyan-300">
+                  <span className="inline-flex items-center gap-2 text-sm font-semibold text-accent-300">
                     {active ? "Currently Open" : "Open Model"}
                     <ArrowRight size={15} />
                   </span>
 
                   {active && (
-                    <span className="rounded-full bg-cyan-400 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-black">
+                    <span className="rounded-sm border border-accent-400/50 bg-accent-500/20 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-100">
                       Selected
                     </span>
                   )}
@@ -669,14 +669,14 @@ export default function TravelPage() {
           })}
         </section>
 
-        <div className="mt-5 flex items-start gap-3 rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.07] p-4">
-          <Sparkles className="mt-0.5 shrink-0 text-cyan-300" size={18} />
+        <div className="mt-5 flex items-start gap-3 rounded-md border border-accent-300/20 bg-accent-300/[0.07] p-4">
+          <Sparkles className="mt-0.5 shrink-0 text-accent-300" size={18} />
 
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-300">
               Currently open
             </p>
-            <p className="mt-1 text-sm font-bold text-white">
+            <p className="mt-1 text-sm font-semibold text-white">
               {activeModeDetails.title}
             </p>
             <p className="mt-1 text-sm leading-6 text-zinc-400">
@@ -688,11 +688,11 @@ export default function TravelPage() {
         {activeMode === "overview" && (
           <section className="mt-12 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
             <div className={`${glassPanel} p-6 md:p-8`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Why I made this
               </p>
 
-              <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+              <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
                 I did not want the whole site to feel like a résumé
               </h2>
 
@@ -718,7 +718,7 @@ export default function TravelPage() {
             </div>
 
             <div className={`${glassPanel} p-6 md:p-8`}>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 What I was testing
               </p>
 
@@ -731,9 +731,9 @@ export default function TravelPage() {
                 ].map((item) => (
                   <div
                     key={item}
-                    className="flex items-start gap-3 rounded-2xl border border-cyan-300/15 bg-black/25 p-4 text-sm leading-6 text-zinc-300"
+                    className="flex items-start gap-3 rounded-md border border-accent-300/15 bg-black/25 p-4 text-sm leading-6 text-zinc-300"
                   >
-                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-cyan-300" />
+                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-sm bg-accent-300" />
                     {item}
                   </div>
                 ))}
@@ -746,11 +746,11 @@ export default function TravelPage() {
           <section className="mt-12">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                   Asia 2026
                 </p>
 
-                <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+                <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
                   China and Japan, stop by stop
                 </h2>
               </div>
@@ -777,11 +777,11 @@ export default function TravelPage() {
           <section className="mt-12">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                   City Notes
                 </p>
 
-                <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+                <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
                   U.S. cities and Mexico City
                 </h2>
               </div>
@@ -808,11 +808,11 @@ export default function TravelPage() {
           <section className="mt-12">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                   How I plan trips
                 </p>
 
-                <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
+                <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
                   Four small tools I would actually use
                 </h2>
               </div>
@@ -1018,14 +1018,14 @@ export default function TravelPage() {
 
         <section className={`${glassPanel} mt-12 p-6 md:p-8`}>
           <div className="flex items-start gap-4">
-            <CalendarDays className="mt-1 shrink-0 text-cyan-300" size={24} />
+            <CalendarDays className="mt-1 shrink-0 text-accent-300" size={24} />
 
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-300">
                 Why I put this here
               </p>
 
-              <h2 className="mt-3 text-3xl font-black text-white">
+              <h2 className="mt-3 text-3xl font-semibold text-white">
                 It gives the portfolio some personality without becoming random
               </h2>
 
@@ -1040,9 +1040,6 @@ export default function TravelPage() {
           </div>
         </section>
 
-        <footer className="mt-12 pb-6 text-center text-sm text-zinc-500">
-          Built by Brian Cabrera. Routes, notes, and planning experiments.
-        </footer>
       </section>
     </main>
   );
